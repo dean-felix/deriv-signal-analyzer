@@ -147,23 +147,39 @@
       <label for="tradeType">Trade Type</label>
 
       <select id="tradeType">
-        <option value="RISE">Rise</option>
-        <option value="FALL">Fall</option>
-        <option value="HIGHER">Higher</option>
-        <option value="LOWER">Lower</option>
 
-        <option value="ASIANU">Asian Up</option>
-        <option value="ASIAND">Asian Down</option>
+        <option value="RISE_FALL">
+          Rise / Fall
+        </option>
 
-        <option value="DIGITEVEN">Even</option>
-        <option value="DIGITODD">Odd</option>
-        <option value="DIGITOVER">Over</option>
-        <option value="DIGITUNDER">Under</option>
-        <option value="DIGITMATCH">Matches</option>
-        <option value="DIGITDIFF">Differs</option>
+        <option value="HIGHER_LOWER">
+          Higher / Lower
+        </option>
 
-        <option value="ONLYUP">Only Ups</option>
-        <option value="ONLYDOWN">Only Downs</option>
+        <option value="ASIAN_UP_DOWN">
+          Asian Up / Down
+        </option>
+
+        <option value="EVEN_ODD">
+          Even / Odd
+        </option>
+
+        <option value="OVER_UNDER">
+          Over / Under
+        </option>
+
+        <option value="MATCHES">
+          Matches
+        </option>
+
+        <option value="DIFFERS">
+          Differs
+        </option>
+
+        <option value="ONLY_UPS_DOWNS">
+          Only Ups / Only Downs
+        </option>
+
       </select>
 
       <button id="analyzeButton">
@@ -175,6 +191,7 @@
 
       <div class="status">
         <span class="dot" id="statusDot"></span>
+
         <span id="statusText">
           Connecting to Deriv...
         </span>
@@ -193,7 +210,7 @@
     <section class="card result">
 
       <div class="result-title">
-        BOT RESULT
+        ANALYZER RESULT
       </div>
 
       <div class="result-main" id="resultMain">
@@ -273,11 +290,6 @@
           "Connected — loading markets...",
           true
         );
-
-        /*
-          Current Deriv API:
-          product_type is no longer accepted.
-        */
 
         socket.send(JSON.stringify({
           active_symbols: "brief"
@@ -437,19 +449,10 @@
       recentTicks = [];
 
 
-      /*
-        Stop any previous tick subscriptions.
-        This is supported by the current API.
-      */
-
       socket.send(JSON.stringify({
         forget_all: "ticks"
       }));
 
-
-      /*
-        Subscribe to the selected market.
-      */
 
       socket.send(JSON.stringify({
         ticks: symbol,
@@ -491,11 +494,6 @@
       priceElement.textContent =
         String(tick.quote);
 
-
-      /*
-        Deriv supplies the quote as the live price.
-        Convert it to text and take the final digit.
-      */
 
       const priceString =
         String(tick.quote);
@@ -558,13 +556,6 @@
           return;
         }
 
-
-        /*
-          Analysis is intentionally NOT implemented yet.
-
-          First we verify that the live Deriv
-          market-data connection works correctly.
-        */
 
         resultMain.textContent =
           "DATA READY";
