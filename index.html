@@ -109,6 +109,14 @@
       line-height: 1.5;
     }
 
+    .diagnostic {
+      color: #aeb8c5;
+      font-size: 11px;
+      margin-top: 8px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
     .result {
       text-align: center;
       padding: 26px 10px;
@@ -167,6 +175,12 @@
       class="market-info"
       id="marketInfo">
       Loading market data...
+    </div>
+
+    <div
+      class="diagnostic"
+      id="historyDiagnostic">
+      History diagnostic: waiting...
     </div>
 
   </section>
@@ -294,7 +308,6 @@
    * =========================================================
    */
 
-
   const marketSelect =
     document.getElementById("market");
 
@@ -319,6 +332,9 @@
   const marketInfo =
     document.getElementById("marketInfo");
 
+  const historyDiagnostic =
+    document.getElementById("historyDiagnostic");
+
   const resultMain =
     document.getElementById("resultMain");
 
@@ -334,7 +350,6 @@
    * STATE
    * =========================================================
    */
-
 
   let socket = null;
 
@@ -352,13 +367,14 @@
 
   let requestCounter = 0;
 
+  let currentHistoryRequestId = null;
+
 
   /*
    * =========================================================
    * CONSTANTS
    * =========================================================
    */
-
 
   const HISTORY_COUNT = 200;
 
@@ -370,7 +386,6 @@
    * STATUS
    * =========================================================
    */
-
 
   function setStatus(
     text,
@@ -390,10 +405,26 @@
 
   /*
    * =========================================================
-   * HELPERS
+   * HISTORY DIAGNOSTIC
    * =========================================================
    */
 
+  function setHistoryDiagnostic(
+    text
+  ) {
+
+    historyDiagnostic.textContent =
+      "History diagnostic: " +
+      text;
+
+  }
+
+
+  /*
+   * =========================================================
+   * HELPERS
+   * =========================================================
+   */
 
   function extractLastDigit(
     quote
@@ -466,10 +497,6 @@
       return;
     }
 
-
-    /*
-     * Prevent duplicate historical/live ticks.
-     */
 
     const last =
       recentTicks[
@@ -549,7 +576,6 @@
    * =========================================================
    */
 
-
   function connect() {
 
     setStatus(
@@ -605,6 +631,10 @@
             event.data
           );
 
+          setHistoryDiagnostic(
+            "Received a non-JSON WebSocket message."
+          );
+
           return;
 
         }
@@ -616,7 +646,6 @@
          * -----------------------------------------------------
          */
 
-
         if (data.error) {
 
           console.error(
@@ -625,9 +654,44 @@
           );
 
 
+          const errorMessage =
+            data.error.message ||
+            data.error.code ||
+            "Unknown Deriv error";
+
+
+          /*
+           * If this error belongs to the current
+           * history request, show it specifically.
+           */
+
+          if (
+            data.req_id ===
+            currentHistoryRequestId
+          ) {
+
+            historyLoaded = false;
+
+            setHistoryDiagnostic(
+              "HISTORY REQUEST ERROR — " +
+              errorMessage
+            );
+
+            resultMain.textContent =
+              "WAIT";
+
+            resultScore.textContent =
+              "---";
+
+            resultDetail.textContent =
+              "Deriv rejected the historical tick request.";
+
+          }
+
+
           setStatus(
             "Deriv error: " +
-            data.error.message,
+            errorMessage,
             false
           );
 
@@ -642,7 +706,6 @@
          * ACTIVE SYMBOLS
          * -----------------------------------------------------
          */
-
 
         if (
           data.msg_type ===
@@ -665,7 +728,6 @@
          * -----------------------------------------------------
          */
 
-
         if (
           data.msg_type ===
           "history"
@@ -684,8 +746,7 @@
          * -----------------------------------------------------
          * LIVE TICK
          * -----------------------------------------------------
-         */
-
+ */
 
         if (
           data.msg_type ===
@@ -705,8 +766,7 @@
          * -----------------------------------------------------
          * CONTRACT INFORMATION
          * -----------------------------------------------------
-         */
-
+ */
 
         if (
           data.msg_type ===
@@ -721,6 +781,28 @@
 
         }
 
+
+        /*
+         * -----------------------------------------------------
+         * UNKNOWN MESSAGE
+         * -----------------------------------------------------
+ */
+
+        if (
+          data.req_id ===
+          currentHistoryRequestId
+        ) {
+
+          setHistoryDiagnostic(
+            "History request responded with msg_type: " +
+            (
+              data.msg_type ||
+              "unknown"
+            )
+          );
+
+        }
+
       };
 
 
@@ -730,6 +812,10 @@
         setStatus(
           "Connection error",
           false
+        );
+
+        setHistoryDiagnostic(
+          "WebSocket connection error."
         );
 
       };
@@ -753,7 +839,6 @@
    * MARKETS
    * =========================================================
    */
-
 
   function loadMarkets(
     markets
@@ -824,6 +909,10 @@
           .underlying_symbol;
 
 
+      marketSelect.value =
+        currentSymbol;
+
+
       subscribeToMarket(
         currentSymbol
       );
@@ -848,7 +937,6 @@
    * =========================================================
    */
 
-
   function subscribeToMarket(
     symbol
   ) {
@@ -869,8 +957,7 @@
 
 
     /*
-     * Completely reset the previous
-     * market's local data.
+     * Completely reset previous market.
      */
 
     recentTicks = [];
@@ -883,6 +970,8 @@
 
     latestPrice = null;
 
+    currentHistoryRequestId = null;
+
 
     priceElement.textContent =
       "---";
@@ -894,6 +983,13 @@
 
     marketInfo.textContent =
       "Loading historical data...";
+
+
+    setHistoryDiagnostic(
+      "Sending history request for " +
+      symbol +
+      "..."
+    );
 
 
     resultMain.textContent =
@@ -918,7 +1014,7 @@
 
 
     /*
-     * Stop previous tick stream.
+     * Stop previous tick streams.
      */
 
     socket.send(
@@ -933,15 +1029,21 @@
      * -----------------------------------------------------
      * HISTORICAL DATA
      * -----------------------------------------------------
-     *
-     * 200 previous ticks are requested immediately.
-     *
-     * Deriv supports ticks_history with:
-     * count, end, style and subscribe.
      */
 
     const historyRequestId =
       ++requestCounter;
+
+
+    currentHistoryRequestId =
+      historyRequestId;
+
+
+    setHistoryDiagnostic(
+      "Request sent. req_id=" +
+      historyRequestId +
+      ", waiting for Deriv..."
+    );
 
 
     socket.send(
@@ -973,7 +1075,7 @@
      * -----------------------------------------------------
      * CONTRACT INFORMATION
      * -----------------------------------------------------
-     */
+ */
 
     const contractsRequestId =
       ++requestCounter;
@@ -996,11 +1098,7 @@
      * -----------------------------------------------------
      * LIVE STREAM
      * -----------------------------------------------------
-     *
-     * We request the live stream after requesting
-     * history. The history response will normally arrive
-     * before the stream has accumulated much new data.
-     */
+ */
 
     socket.send(
       JSON.stringify({
@@ -1030,32 +1128,38 @@
    * =========================================================
    */
 
-
   function handleHistory(
     data
   ) {
-
-    /*
-     * Ignore history if it belongs to a
-     * different request/market.
-     */
 
     const history =
       data.history;
 
 
+    /*
+     * Confirm which request produced this response.
+     */
+
     if (
-      !history ||
-      !Array.isArray(
-        history.prices
-      ) ||
-      !Array.isArray(
-        history.times
-      )
+      data.req_id &&
+      data.req_id !==
+      currentHistoryRequestId
     ) {
 
-      marketInfo.textContent =
-        "Historical data unavailable";
+      setHistoryDiagnostic(
+        "Received history for another request. Ignored."
+      );
+
+      return;
+
+    }
+
+
+    if (!history) {
+
+      setHistoryDiagnostic(
+        "Deriv returned a history message, but no history object was present."
+      );
 
       resultMain.textContent =
         "WAIT";
@@ -1064,7 +1168,7 @@
         "---";
 
       resultDetail.textContent =
-        "Deriv did not return usable historical ticks.";
+        "History response contained no history object.";
 
       return;
 
@@ -1078,7 +1182,34 @@
       history.times;
 
 
-    recentTicks = [];
+    /*
+     * Show the actual structure received.
+     */
+
+    if (
+      !Array.isArray(prices) ||
+      !Array.isArray(times)
+    ) {
+
+      setHistoryDiagnostic(
+        "History received, but prices/times were not arrays. prices=" +
+        typeof prices +
+        ", times=" +
+        typeof times
+      );
+
+      resultMain.textContent =
+        "WAIT";
+
+      resultScore.textContent =
+        "---";
+
+      resultDetail.textContent =
+        "Deriv returned history, but the tick arrays were not usable.";
+
+      return;
+
+    }
 
 
     const length =
@@ -1086,6 +1217,31 @@
         prices.length,
         times.length
       );
+
+
+    if (
+      length === 0
+    ) {
+
+      setHistoryDiagnostic(
+        "History response received with 0 usable price/time entries."
+      );
+
+      resultMain.textContent =
+        "WAIT";
+
+      resultScore.textContent =
+        "---";
+
+      resultDetail.textContent =
+        "Deriv returned an empty history set.";
+
+      return;
+
+    }
+
+
+    recentTicks = [];
 
 
     for (
@@ -1152,6 +1308,15 @@
         " historical ticks + live stream";
 
 
+      setHistoryDiagnostic(
+        "SUCCESS — Deriv returned " +
+        length +
+        " history entries. " +
+        recentTicks.length +
+        " usable ticks loaded."
+      );
+
+
       resultMain.textContent =
         "READY";
 
@@ -1166,6 +1331,14 @@
 
     }
 
+    else {
+
+      setHistoryDiagnostic(
+        "History response arrived, but no usable ticks could be created."
+      );
+
+    }
+
   }
 
 
@@ -1175,7 +1348,6 @@
    * =========================================================
    */
 
-
   function handleLiveTick(
     tickData
   ) {
@@ -1184,10 +1356,6 @@
       return;
     }
 
-
-    /*
-     * Ignore ticks from another symbol.
-     */
 
     if (
       tickData.symbol &&
@@ -1229,11 +1397,6 @@
     );
 
 
-    /*
-     * Once historical data exists,
-     * analysis can be performed immediately.
-     */
-
     if (
       historyLoaded &&
       recentTicks.length >= 20
@@ -1252,7 +1415,6 @@
    * CONTRACT INFORMATION
    * =========================================================
    */
-
 
   function handleContracts(
     data
@@ -1290,12 +1452,6 @@
         .filter(Boolean);
 
 
-    /*
-     * We only display diagnostic information here.
-     *
-     * We deliberately DO NOT invent a barrier.
-     */
-
     if (
       availableTypes.length
     ) {
@@ -1316,7 +1472,6 @@
    * DATA ACCESS HELPERS
    * =========================================================
    */
-
 
   function getLastDigits(
     count
@@ -1381,16 +1536,7 @@
    * =========================================================
    * ANALYSIS
    * =========================================================
-   *
-   * The existing analysis functions are intentionally
-   * kept simple in this data-ingest stage.
-   *
-   * The important change here is that they now operate
-   * on historical + live data instead of waiting for
-   * freshly collected ticks.
-   * =========================================================
    */
-
 
   function analyzeEvenOdd() {
 
@@ -1459,10 +1605,6 @@
         oddRate
       );
 
-
-    /*
-     * We do not call this a true probability.
-     */
 
     const strength =
       Math.round(
@@ -1558,14 +1700,6 @@
       tradeTypeSelect.value;
 
 
-    /*
-     * For this data-ingest stage,
-     * Even/Odd is the first live calculation.
-     *
-     * The other modes will be upgraded after
-     * the historical-data pipeline is confirmed.
-     */
-
     let result;
 
 
@@ -1649,7 +1783,6 @@
    * =========================================================
    */
 
-
   marketSelect.addEventListener(
     "change",
     function() {
@@ -1710,7 +1843,6 @@
    * START
    * =========================================================
    */
-
 
   connect();
 
