@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deriv Signal Analyzer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0f14;
+      color: #ffffff;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: auto;
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      color: #8d98a6;
+      margin: 6px 0 20px;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #151b23;
+      border: 1px solid #27303b;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #9da8b5;
+      margin-bottom: 8px;
+    }
+
+    select,
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 16px;
+    }
+
+    select {
+      background: #202832;
+      color: white;
+    }
+
+    button {
+      margin-top: 14px;
+      background: #16a34a;
+      color: white;
+      font-weight: bold;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #777;
+    }
+
+    .price {
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .digit {
+      color: #9da8b5;
+      margin-top: 5px;
+    }
+
+    .result {
+      text-align: center;
+      padding: 24px 10px;
+    }
+
+    .result-title {
+      color: #9da8b5;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .result-main {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .result-score {
+      font-size: 18px;
+      margin-top: 8px;
+      color: #9da8b5;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+
+    <h1>Deriv Signal Analyzer</h1>
+    <div class="subtitle">Live market analysis</div>
+
+    <section class="card">
+      <label for="market">Market</label>
+      <select id="market">
+        <option value="">Loading markets...</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <label for="tradeType">Trade Type</label>
+      <select id="tradeType">
+        <option value="RISE">Rise</option>
+        <option value="FALL">Fall</option>
+        <option value="HIGHER">Higher</option>
+        <option value="LOWER">Lower</option>
+        <option value="ASIANU">Asian Up</option>
+        <option value="ASIAND">Asian Down</option>
+        <option value="DIGITEVEN">Even</option>
+        <option value="DIGITODD">Odd</option>
+        <option value="DIGITOVER">Over</option>
+        <option value="DIGITUNDER">Under</option>
+        <option value="DIGITMATCH">Matches</option>
+        <option value="DIGITDIFF">Differs</option>
+        <option value="ONLYUP">Only Ups</option>
+        <option value="ONLYDOWN">Only Downs</option>
+      </select>
+
+      <button id="analyzeButton">ANALYZE</button>
+    </section>
+
+    <section class="card">
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Connecting to Deriv...</span>
+      </div>
+
+      <div class="price" id="price">---</div>
+      <div class="digit" id="digit">Last digit: -</div>
+    </section>
+
+    <section class="card result">
+      <div class="result-title">BOT RESULT</div>
+      <div class="result-main" id="resultMain">WAITING FOR DATA</div>
+      <div class="result-score" id="resultScore">---</div>
+    </section>
+
+  </main>
+
+  <script>
+    const marketSelect = document.getElementById("market");
+    const tradeTypeSelect = document.getElementById("tradeType");
+    const analyzeButton = document.getElementById("analyzeButton");
+
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const priceElement = document.getElementById("price");
+    const digitElement = document.getElementById("digit");
+
+    const resultMain = document.getElementById("resultMain");
+    const resultScore = document.getElementById("resultScore");
+
+    let socket = null;
+    let currentSymbol = "";
+    let latestPrice = null;
+    let recentTicks = [];
+
+    function setStatus(text, connected) {
+      statusText.textContent = text;
+      statusDot.style.background = connected ? "#22c55e" : "#777";
+    }
+
+    function connect() {
+      setStatus("Connecting to Deriv...", false);
+
+      socket = new WebSocket(
+        "wss://api.derivws.com/trading/v1/options/ws/public"
+      );
+
+      socket.onopen = () => {
+        setStatus("Connected — loading markets...", true);
+
+        socket.send(JSON.stringify({
+          active_symbols: "brief",
+          product_type: "basic"
+        }));
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.error) {
+          console.error("Deriv error:", data.error);
+          setStatus("Deriv error: " + data.error.message, false);
+          return;
+        }
+
+        if (data.active_symbols) {
+          loadMarkets(data.active_symbols);
+          return;
+        }
+
+        if (data.tick) {
+          handleTick(data.tick);
+        }
+      };
+
+      socket.onerror = () => {
+        setStatus("Connection error", false);
+      };
+
+      socket.onclose = () => {
+        setStatus("Disconnected", false);
+      };
+    }
+
+    function loadMarkets(markets) {
+      marketSelect.innerHTML = "";
+
+      const usable = markets
+        .filter(m => m.symbol)
+        .sort((a, b) =>
+          (a.display_name || a.symbol).localeCompare(
+            b.display_name || b.symbol
+          )
+        );
+
+      usable.forEach(market => {
+        const option = document.createElement("option");
+        option.value = market.symbol;
+        option.textContent = market.display_name || market.symbol;
+        marketSelect.appendChild(option);
+      });
+
+      if (usable.length > 0) {
+        currentSymbol = usable[0].symbol;
+        subscribeToMarket(currentSymbol);
+      }
+
+      setStatus(
+        usable.length > 0
+          ? "Connected — receiving market data"
+          : "No active markets returned",
+        usable.length > 0
+      );
+    }
+
+    function subscribeToMarket(symbol) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      currentSymbol = symbol;
+      recentTicks = [];
+
+      socket.send(JSON.stringify({
+        forget_all: "ticks"
+      }));
+
+      socket.send(JSON.stringify({
+        ticks: symbol,
+        subscribe: 1
+      }));
+    }
+
+    function handleTick(tick) {
+      const price = Number(tick.quote);
+
+      if (!Number.isFinite(price)) {
+        return;
+      }
+
+      latestPrice = price;
+
+      recentTicks.push({
+        price,
+        time: tick.epoch
+      });
+
+      if (recentTicks.length > 200) {
+        recentTicks.shift();
+      }
+
+      priceElement.textContent = price;
+
+      const priceString = String(tick.quote);
+      const lastDigit = priceString.replace(/\D/g, "").slice(-1);
+
+      digitElement.textContent =
+        "Last digit: " + (lastDigit || "-");
+
+      setStatus("Receiving live ticks", true);
+    }
+
+    marketSelect.addEventListener("change", () => {
+      subscribeToMarket(marketSelect.value);
+      resultMain.textContent = "WAITING FOR DATA";
+      resultScore.textContent = "---";
+    });
+
+    analyzeButton.addEventListener("click", () => {
+      if (recentTicks.length === 0) {
+        resultMain.textContent = "WAITING FOR DATA";
+        resultScore.textContent = "No live ticks available";
+        return;
+      }
+
+      resultMain.textContent = "DATA READY";
+      resultScore.textContent =
+        recentTicks.length + " live ticks received";
+    });
+
+    connect();
+  </script>
+</body>
+</html>
