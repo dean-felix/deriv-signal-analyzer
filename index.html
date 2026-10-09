@@ -621,11 +621,11 @@ function countDigits() {
 function analyzeMatches() {
   const data = countDigits();
 
-  if (data.total < 100) {
+  if (data.total === 0) {
     return {
       signal: "WAIT",
-      score: data.total + " usable digits",
-      detail: "Matches needs at least 100 usable digits."
+      score: "No usable last digits",
+      detail: "Matches needs at least one usable last digit from " + currentSymbol + "."
     };
   }
 
@@ -637,23 +637,23 @@ function analyzeMatches() {
 
   return {
     signal: "MATCHES " + best.digit,
-    score: "Highest observed digit frequency: " +
+    score: "This digit's own observed rate: " +
       (best.rate * 100).toFixed(1) + "%",
     detail: "Digit " + best.digit + " appeared " + best.count +
-      " times in the " + data.total + " most recent usable digits from " +
-      currentSymbol + ". This always displays the most frequent digit in the sample. " +
-      "The percentage is historical frequency, not a guaranteed next-tick probability."
+      " times out of " + data.total + " usable recent digits from " +
+      currentSymbol + ". Matches selects the most frequent digit in this sample; " +
+      "no default-percentage threshold is used. This historical rate is not a guaranteed next-tick probability."
   };
 }
 
 function analyzeDiffers() {
   const data = countDigits();
 
-  if (data.total < 100) {
+  if (data.total === 0) {
     return {
       signal: "WAIT",
-      score: data.total + " usable digits",
-      detail: "Differs needs at least 100 usable digits."
+      score: "No usable last digits",
+      detail: "Differs needs at least one usable last digit from " + currentSymbol + "."
     };
   }
 
@@ -665,12 +665,12 @@ function analyzeDiffers() {
 
   return {
     signal: "DIFFERS " + rarest.digit,
-    score: "Historical non-match frequency: " +
+    score: "Own historical non-match rate: " +
       ((1 - rarest.rate) * 100).toFixed(1) + "%",
     detail: "Digit " + rarest.digit + " appeared " + rarest.count +
-      " times in the " + data.total + " most recent usable digits from " +
-      currentSymbol + ". This always selects the least frequent digit in the sample. " +
-      "The percentage is historical non-match frequency, not a guaranteed next-tick probability or profitability estimate."
+      " times out of " + data.total + " usable recent digits from " +
+      currentSymbol + ". Differs selects the least frequent digit in this sample; " +
+      "no default-percentage threshold is used. This historical rate is not a guaranteed next-tick probability or profitability estimate."
   };
 }
 
