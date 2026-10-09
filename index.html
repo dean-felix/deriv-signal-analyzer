@@ -634,25 +634,15 @@ function analyzeMatches() {
     .sort((a, b) => b.rate - a.rate);
 
   const best = ranked[0];
-  const second = ranked[1];
-  const separation = best.rate - second.rate;
-
-  if (best.rate < 0.13 || separation < 0.025) {
-    return {
-      signal: "WAIT",
-      score: "Leading digit: " + best.digit +
-        " (" + (best.rate * 100).toFixed(1) + "% observed)",
-      detail: "No digit has a sufficiently clear lead in " + data.total +
-        " recent digits from " + currentSymbol +
-        ". A past frequency difference does not guarantee the next digit."
-    };
-  }
 
   return {
     signal: "MATCHES " + best.digit,
-    score: "Observed frequency: " + (best.rate * 100).toFixed(1) + "%",
+    score: "Highest observed digit frequency: " +
+      (best.rate * 100).toFixed(1) + "%",
     detail: "Digit " + best.digit + " appeared " + best.count +
-      " times in " + data.total + " recent digits. This is a historical screen, not a win probability."
+      " times in the " + data.total + " most recent usable digits from " +
+      currentSymbol + ". This always displays the most frequent digit in the sample. " +
+      "The percentage is historical frequency, not a guaranteed next-tick probability."
   };
 }
 
@@ -672,26 +662,15 @@ function analyzeDiffers() {
     .sort((a, b) => a.rate - b.rate);
 
   const rarest = ranked[0];
-  const secondRarest = ranked[1];
-  const separation = secondRarest.rate - rarest.rate;
-
-  if (rarest.rate > 0.075 || separation < 0.025) {
-    return {
-      signal: "WAIT",
-      score: "Least frequent digit: " + rarest.digit +
-        " (" + (rarest.rate * 100).toFixed(1) + "% observed)",
-      detail: "No digit has a sufficiently clear low-frequency lead in " +
-        data.total + " recent digits from " + currentSymbol +
-        ". Differs may win on many digits, but the payout and future outcome still matter."
-    };
-  }
 
   return {
     signal: "DIFFERS " + rarest.digit,
     score: "Historical non-match frequency: " +
       ((1 - rarest.rate) * 100).toFixed(1) + "%",
     detail: "Digit " + rarest.digit + " appeared " + rarest.count +
-      " times in " + data.total + " recent digits. The non-match frequency is historical, not a guaranteed future probability or a profitability estimate."
+      " times in the " + data.total + " most recent usable digits from " +
+      currentSymbol + ". This always selects the least frequent digit in the sample. " +
+      "The percentage is historical non-match frequency, not a guaranteed next-tick probability or profitability estimate."
   };
 }
 
