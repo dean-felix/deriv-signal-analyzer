@@ -1,40 +1,30 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Deriv Signal Analyzer</title>
-
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #0b0f14;
-      color: #ffffff;
+      color: #fff;
     }
-
     .app {
       max-width: 520px;
       margin: auto;
       min-height: 100vh;
       padding: 18px;
     }
-
-    h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-
+    h1 { margin: 0; font-size: 24px; }
     .subtitle {
       color: #8d98a6;
       margin: 6px 0 20px;
       font-size: 14px;
     }
-
     .card {
       background: #151b23;
       border: 1px solid #27303b;
@@ -42,46 +32,33 @@
       padding: 16px;
       margin-bottom: 14px;
     }
-
     label {
       display: block;
       font-size: 13px;
       color: #9da8b5;
       margin-bottom: 8px;
     }
-
-    select,
-    button {
+    select, button {
       width: 100%;
       border: 0;
       border-radius: 12px;
       padding: 14px;
       font-size: 16px;
     }
-
-    select {
-      background: #202832;
-      color: white;
-    }
-
+    select { background: #202832; color: white; }
     button {
       margin-top: 14px;
       background: #16a34a;
       color: white;
       font-weight: bold;
     }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
+    button:active { transform: scale(0.98); }
     .status {
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 14px;
     }
-
     .dot {
       width: 10px;
       height: 10px;
@@ -89,1729 +66,543 @@
       background: #777;
       flex-shrink: 0;
     }
-
     .price {
       font-size: 28px;
       font-weight: bold;
       margin-top: 10px;
       word-break: break-all;
     }
-
-    .digit {
-      color: #9da8b5;
-      margin-top: 5px;
-    }
-
-    .market-info {
+    .digit { color: #9da8b5; margin-top: 5px; }
+    .market-info, .diagnostic {
       color: #7f8a97;
       font-size: 12px;
       margin-top: 8px;
       line-height: 1.5;
+      overflow-wrap: anywhere;
     }
-
-    .diagnostic {
-      color: #aeb8c5;
-      font-size: 11px;
-      margin-top: 8px;
-      line-height: 1.45;
-      word-break: break-word;
-    }
-
-    .result {
-      text-align: center;
-      padding: 26px 10px;
-    }
-
-    .result-title {
-      color: #9da8b5;
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
-
-    .result-main {
-      font-size: 30px;
-      font-weight: bold;
-    }
-
-    .result-score {
-      font-size: 18px;
-      margin-top: 8px;
-      color: #9da8b5;
-    }
-
-    .result-detail {
-      font-size: 13px;
-      color: #7f8a97;
-      margin-top: 10px;
-      line-height: 1.5;
-    }
+    .diagnostic { color: #aeb8c5; font-size: 11px; }
+    .result { text-align: center; padding: 26px 10px; }
+    .result-title { color: #9da8b5; font-size: 13px; margin-bottom: 10px; }
+    .result-main { font-size: 30px; font-weight: bold; overflow-wrap: anywhere; }
+    .result-score { font-size: 16px; margin-top: 8px; color: #9da8b5; }
+    .result-detail { font-size: 13px; color: #7f8a97; margin-top: 10px; line-height: 1.5; }
   </style>
 </head>
-
 <body>
-
 <main class="app">
-
   <h1>Deriv Signal Analyzer</h1>
-
-  <div class="subtitle">
-    Live market analysis
-  </div>
+  <div class="subtitle">Live market analysis</div>
 
   <section class="card">
-
-    <label for="market">
-      Market
-    </label>
-
+    <label for="market">Market</label>
     <select id="market">
-      <option value="">
-        Loading markets...
-      </option>
+      <option value="">Loading markets...</option>
     </select>
-
-    <div
-      class="market-info"
-      id="marketInfo">
-      Loading market data...
-    </div>
-
-    <div
-      class="diagnostic"
-      id="historyDiagnostic">
-      History diagnostic: waiting...
-    </div>
-
+    <div class="market-info" id="marketInfo">Loading market data...</div>
+    <div class="diagnostic" id="historyDiagnostic">History diagnostic: waiting...</div>
   </section>
 
   <section class="card">
-
-    <label for="tradeType">
-      Trade Type
-    </label>
-
+    <label for="tradeType">Trade Type</label>
     <select id="tradeType">
-
-      <option value="RISE_FALL">
-        Rise / Fall
-      </option>
-
-      <option value="HIGHER_LOWER">
-        Higher / Lower
-      </option>
-
-      <option value="ASIAN_UP_DOWN">
-        Asian Up / Down
-      </option>
-
-      <option value="EVEN_ODD">
-        Even / Odd
-      </option>
-
-      <option value="OVER_UNDER">
-        Over / Under
-      </option>
-
-      <option value="MATCHES">
-        Matches
-      </option>
-
-      <option value="DIFFERS">
-        Differs
-      </option>
-
-      <option value="ONLY_UPS_DOWNS">
-        Only Ups / Only Downs
-      </option>
-
+      <option value="RISE_FALL">Rise / Fall</option>
+      <option value="HIGHER_LOWER">Higher / Lower</option>
+      <option value="ASIAN_UP_DOWN">Asian Up / Down</option>
+      <option value="EVEN_ODD">Even / Odd</option>
+      <option value="OVER_UNDER">Over / Under</option>
+      <option value="MATCHES">Matches</option>
+      <option value="DIFFERS">Differs</option>
+      <option value="ONLY_UPS_DOWNS">Only Ups / Only Downs</option>
     </select>
-
-    <button id="analyzeButton">
-      ANALYZE
-    </button>
-
+    <button id="analyzeButton">ANALYZE</button>
   </section>
 
   <section class="card">
-
     <div class="status">
-
-      <span
-        class="dot"
-        id="statusDot">
-      </span>
-
-      <span id="statusText">
-        Connecting to Deriv...
-      </span>
-
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Connecting to Deriv...</span>
     </div>
-
-    <div
-      class="price"
-      id="price">
-      ---
-    </div>
-
-    <div
-      class="digit"
-      id="digit">
-      Last digit: -
-    </div>
-
+    <div class="price" id="price">---</div>
+    <div class="digit" id="digit">Last digit: -</div>
   </section>
 
   <section class="card result">
-
-    <div class="result-title">
-      ANALYZER RESULT
-    </div>
-
-    <div
-      class="result-main"
-      id="resultMain">
-      WAITING FOR DATA
-    </div>
-
-    <div
-      class="result-score"
-      id="resultScore">
-      ---
-    </div>
-
-    <div
-      class="result-detail"
-      id="resultDetail">
-      Waiting for historical market data
-    </div>
-
+    <div class="result-title">ANALYZER RESULT</div>
+    <div class="result-main" id="resultMain">WAITING FOR DATA</div>
+    <div class="result-score" id="resultScore">---</div>
+    <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
   </section>
-
 </main>
 
 <script>
+"use strict";
 
-  /*
-   * =========================================================
-   * ELEMENTS
-   * =========================================================
-   */
+const marketSelect = document.getElementById("market");
+const tradeTypeSelect = document.getElementById("tradeType");
+const analyzeButton = document.getElementById("analyzeButton");
+const statusDot = document.getElementById("statusDot");
+const statusText = document.getElementById("statusText");
+const priceElement = document.getElementById("price");
+const digitElement = document.getElementById("digit");
+const marketInfo = document.getElementById("marketInfo");
+const historyDiagnostic = document.getElementById("historyDiagnostic");
+const resultMain = document.getElementById("resultMain");
+const resultScore = document.getElementById("resultScore");
+const resultDetail = document.getElementById("resultDetail");
 
-  const marketSelect =
-    document.getElementById("market");
+let socket = null;
+let currentSymbol = "";
+let latestPrice = null;
+let recentTicks = [];
+let marketContracts = [];
+let historyLoaded = false;
+let requestCounter = 0;
+let currentHistoryRequestId = null;
+let currentContractsRequestId = null;
 
-  const tradeTypeSelect =
-    document.getElementById("tradeType");
+const HISTORY_COUNT = 200;
+const MAX_TICKS = 500;
 
-  const analyzeButton =
-    document.getElementById("analyzeButton");
+function setStatus(text, connected) {
+  statusText.textContent = text;
+  statusDot.style.background = connected ? "#22c55e" : "#777";
+}
 
-  const statusDot =
-    document.getElementById("statusDot");
+function setHistoryDiagnostic(text) {
+  historyDiagnostic.textContent = "History diagnostic: " + text;
+}
 
-  const statusText =
-    document.getElementById("statusText");
-
-  const priceElement =
-    document.getElementById("price");
-
-  const digitElement =
-    document.getElementById("digit");
-
-  const marketInfo =
-    document.getElementById("marketInfo");
-
-  const historyDiagnostic =
-    document.getElementById("historyDiagnostic");
-
-  const resultMain =
-    document.getElementById("resultMain");
-
-  const resultScore =
-    document.getElementById("resultScore");
-
-  const resultDetail =
-    document.getElementById("resultDetail");
-
-
-  /*
-   * =========================================================
-   * STATE
-   * =========================================================
-   */
-
-  let socket = null;
-
-  let currentSymbol = "";
-
-  let latestPrice = null;
-
-  let recentTicks = [];
-
-  let marketContracts = [];
-
-  let historyLoaded = false;
-
-  let liveStreamStarted = false;
-
-  let requestCounter = 0;
-
-  let currentHistoryRequestId = null;
-
-
-  /*
-   * =========================================================
-   * CONSTANTS
-   * =========================================================
-   */
-
-  const HISTORY_COUNT = 200;
-
-  const MAX_TICKS = 500;
-
-
-  /*
-   * =========================================================
-   * STATUS
-   * =========================================================
-   */
-
-  function setStatus(
-    text,
-    connected
-  ) {
-
-    statusText.textContent =
-      text;
-
-    statusDot.style.background =
-      connected
-        ? "#22c55e"
-        : "#777";
-
+function extractLastDigit(quote) {
+  const text = String(quote);
+  const decimalPoint = text.indexOf(".");
+  if (decimalPoint === -1) {
+    const digits = text.replace(/\D/g, "");
+    return digits.length ? Number(digits.slice(-1)) : null;
   }
 
+  const decimals = text.slice(decimalPoint + 1).replace(/\D/g, "");
+  return decimals.length ? Number(decimals.slice(-1)) : null;
+}
 
-  /*
-   * =========================================================
-   * HISTORY DIAGNOSTIC
-   * =========================================================
-   */
+function createTick(price, epoch) {
+  const numericPrice = Number(price);
+  if (!Number.isFinite(numericPrice)) return null;
 
-  function setHistoryDiagnostic(
-    text
-  ) {
+  return {
+    price: numericPrice,
+    time: Number(epoch) || Date.now(),
+    digit: extractLastDigit(price)
+  };
+}
 
-    historyDiagnostic.textContent =
-      "History diagnostic: " +
-      text;
+function addTick(tick) {
+  if (!tick) return;
 
+  const last = recentTicks[recentTicks.length - 1];
+  if (last && last.time === tick.time && last.price === tick.price) return;
+
+  recentTicks.push(tick);
+  if (recentTicks.length > MAX_TICKS) {
+    recentTicks = recentTicks.slice(-MAX_TICKS);
   }
+}
 
+function updateLiveDisplay(tick) {
+  if (!tick) return;
 
-  /*
-   * =========================================================
-   * HELPERS
-   * =========================================================
-   */
+  latestPrice = tick.price;
+  priceElement.textContent = String(tick.price);
+  digitElement.textContent = "Last digit: " +
+    (tick.digit === null ? "-" : tick.digit);
+  marketInfo.textContent = "Historical + live ticks: " + recentTicks.length;
+}
 
-  function extractLastDigit(
-    quote
-  ) {
+function showWait(detail) {
+  resultMain.textContent = "WAIT";
+  resultScore.textContent = "No reliable edge established";
+  resultDetail.textContent = detail;
+}
 
-    const text =
-      String(quote);
+function connect() {
+  setStatus("Connecting to Deriv...", false);
 
-    const digits =
-      text.replace(
-        /\D/g,
-        ""
-      );
+  socket = new WebSocket(
+    "wss://api.derivws.com/trading/v1/options/ws/public"
+  );
 
-    if (!digits.length) {
-      return null;
+  socket.onopen = function() {
+    setStatus("Connected — loading markets...", true);
+    socket.send(JSON.stringify({ active_symbols: "brief" }));
+  };
+
+  socket.onmessage = function(event) {
+    let data;
+
+    try {
+      data = JSON.parse(event.data);
+    } catch (error) {
+      console.error("Invalid Deriv message:", event.data);
+      setHistoryDiagnostic("Received a non-JSON WebSocket message.");
+      return;
     }
 
-    return Number(
-      digits.charAt(
-        digits.length - 1
-      )
+    if (data.error) {
+      const message = data.error.message || data.error.code || "Unknown Deriv error";
+      console.error("Deriv error:", data.error);
+
+      if (data.req_id === currentHistoryRequestId) {
+        historyLoaded = false;
+        setHistoryDiagnostic("HISTORY REQUEST ERROR — " + message);
+        showWait("Deriv rejected the historical tick request.");
+      }
+
+      if (data.req_id === currentContractsRequestId) {
+        marketContracts = [];
+        marketInfo.textContent = "Tick data is available; contract information could not be loaded.";
+      }
+
+      setStatus("Deriv error: " + message, false);
+      return;
+    }
+
+    if (data.msg_type === "active_symbols") {
+      loadMarkets(data.active_symbols || []);
+      return;
+    }
+
+    if (data.msg_type === "history") {
+      handleHistory(data);
+      return;
+    }
+
+    if (data.msg_type === "tick") {
+      handleLiveTick(data.tick);
+      return;
+    }
+
+    if (data.msg_type === "contracts_for") {
+      handleContracts(data);
+    }
+  };
+
+  socket.onerror = function() {
+    setStatus("Connection error", false);
+    setHistoryDiagnostic("WebSocket connection error.");
+  };
+
+  socket.onclose = function() {
+    setStatus("Disconnected — refresh the page to reconnect", false);
+  };
+}
+
+function loadMarkets(markets) {
+  const usable = markets
+    .filter(market => market && market.underlying_symbol)
+    .sort((a, b) =>
+      (a.underlying_symbol_name || a.underlying_symbol)
+        .localeCompare(b.underlying_symbol_name || b.underlying_symbol)
     );
 
+  marketSelect.innerHTML = "";
+
+  usable.forEach(market => {
+    const option = document.createElement("option");
+    option.value = market.underlying_symbol;
+    option.textContent = market.underlying_symbol_name || market.underlying_symbol;
+    marketSelect.appendChild(option);
+  });
+
+  if (usable.length) {
+    marketSelect.value = usable[0].underlying_symbol;
+    subscribeToMarket(marketSelect.value);
+  } else {
+    setStatus("No active markets returned", false);
+  }
+}
+
+function subscribeToMarket(symbol) {
+  if (!socket || socket.readyState !== WebSocket.OPEN || !symbol) return;
+
+  currentSymbol = symbol;
+  recentTicks = [];
+  marketContracts = [];
+  historyLoaded = false;
+  latestPrice = null;
+  currentHistoryRequestId = null;
+  currentContractsRequestId = null;
+
+  priceElement.textContent = "---";
+  digitElement.textContent = "Last digit: -";
+  marketInfo.textContent = "Loading historical data...";
+  setHistoryDiagnostic("Requesting history for " + symbol + "...");
+
+  resultMain.textContent = "LOADING DATA";
+  resultScore.textContent = "---";
+  resultDetail.textContent = "Loading recent ticks for " + symbol;
+  setStatus("Loading " + symbol + " history...", true);
+
+  socket.send(JSON.stringify({ forget_all: "ticks" }));
+
+  const historyRequestId = ++requestCounter;
+  currentHistoryRequestId = historyRequestId;
+
+  // One-time history request: deliberately omit subscribe.
+  socket.send(JSON.stringify({
+    ticks_history: symbol,
+    end: "latest",
+    count: HISTORY_COUNT,
+    style: "ticks",
+    req_id: historyRequestId
+  }));
+
+  const contractsRequestId = ++requestCounter;
+  currentContractsRequestId = contractsRequestId;
+
+  socket.send(JSON.stringify({
+    contracts_for: symbol,
+    req_id: contractsRequestId
+  }));
+
+  // Keep the live tick subscription enabled.
+  socket.send(JSON.stringify({
+    ticks: symbol,
+    subscribe: 1,
+    req_id: ++requestCounter
+  }));
+}
+
+function handleHistory(data) {
+  if (data.req_id && data.req_id !== currentHistoryRequestId) return;
+
+  const history = data.history;
+  if (!history || !Array.isArray(history.prices) || !Array.isArray(history.times)) {
+    setHistoryDiagnostic("History response did not contain usable price/time arrays.");
+    showWait("Historical ticks could not be read.");
+    return;
   }
 
+  const length = Math.min(history.prices.length, history.times.length);
+  recentTicks = [];
 
-  function createTick(
-    price,
-    epoch
-  ) {
+  for (let i = 0; i < length; i++) {
+    const tick = createTick(history.prices[i], history.times[i]);
+    if (tick) recentTicks.push(tick);
+  }
 
-    const numericPrice =
-      Number(price);
+  recentTicks = recentTicks.slice(-MAX_TICKS);
+  historyLoaded = recentTicks.length > 0;
 
-    if (
-      !Number.isFinite(
-        numericPrice
-      )
-    ) {
+  if (!historyLoaded) {
+    setHistoryDiagnostic("History returned no usable ticks.");
+    showWait("No usable historical data is available.");
+    return;
+  }
 
-      return null;
+  const last = recentTicks[recentTicks.length - 1];
+  updateLiveDisplay(last);
+  setStatus("Historical data loaded — receiving live ticks", true);
+  setHistoryDiagnostic(
+    "SUCCESS — Deriv returned " + length +
+    " history entries. " + recentTicks.length + " usable ticks loaded."
+  );
 
-    }
+  resultMain.textContent = "READY";
+  resultScore.textContent = recentTicks.length + " ticks available";
+  resultDetail.textContent = "Choose a trade type and press ANALYZE.";
+}
 
+function handleLiveTick(tickData) {
+  if (!tickData || (tickData.symbol && tickData.symbol !== currentSymbol)) return;
+
+  const tick = createTick(tickData.quote, tickData.epoch);
+  if (!tick) return;
+
+  addTick(tick);
+  updateLiveDisplay(tick);
+  setStatus("Receiving live ticks", true);
+
+  if (historyLoaded) {
+    resultDetail.textContent = "Live data updating. Press ANALYZE for a fresh result.";
+  }
+}
+
+function handleContracts(data) {
+  if (data.req_id && data.req_id !== currentContractsRequestId) return;
+
+  const contractData = data.contracts_for;
+  marketContracts = contractData && Array.isArray(contractData.available)
+    ? contractData.available
+    : [];
+
+  if (marketContracts.length) {
+    marketInfo.textContent = recentTicks.length +
+      " ticks loaded • " + marketContracts.length + " contract types available";
+  }
+}
+
+function getLastDigits(count) {
+  return recentTicks
+    .slice(-count)
+    .map(tick => tick.digit)
+    .filter(Number.isInteger);
+}
+
+function analyzeEvenOdd() {
+  const digits = getLastDigits(160);
+
+  if (digits.length < 100) {
     return {
-
-      price:
-        numericPrice,
-
-      time:
-        Number(epoch) || Date.now(),
-
-      digit:
-        extractLastDigit(
-          price
-        )
-
+      signal: "WAIT",
+      score: "---",
+      detail: "Need at least 100 usable digits for this analysis."
     };
-
   }
 
-
-  function addTick(
-    tick
-  ) {
-
-    if (!tick) {
-      return;
-    }
-
-    const last =
-      recentTicks[
-        recentTicks.length - 1
-      ];
-
-    if (
-      last &&
-      last.time === tick.time &&
-      last.price === tick.price
-    ) {
-
-      return;
-
-    }
-
-    recentTicks.push(
-      tick
-    );
-
-    if (
-      recentTicks.length >
-      MAX_TICKS
-    ) {
-
-      recentTicks =
-        recentTicks.slice(
-          -MAX_TICKS
-        );
-
-    }
-
-  }
-
-
-  function updateLiveDisplay(
-    tick
-  ) {
-
-    if (!tick) {
-      return;
-    }
-
-    latestPrice =
-      tick.price;
-
-    priceElement.textContent =
-      String(
-        tick.price
-      );
-
-    digitElement.textContent =
-      "Last digit: " +
-      (
-        tick.digit === null
-          ? "-"
-          : tick.digit
-      );
-
-    marketInfo.textContent =
-      "Historical + live ticks: " +
-      recentTicks.length;
-
-  }
-
-
-  /*
-   * =========================================================
-   * CONNECT
-   * =========================================================
-   */
-
-  function connect() {
-
-    setStatus(
-      "Connecting to Deriv...",
-      false
-    );
-
-    socket =
-      new WebSocket(
-        "wss://api.derivws.com/trading/v1/options/ws/public"
-      );
-
-    socket.onopen =
-      function() {
-
-        setStatus(
-          "Connected — loading markets...",
-          true
-        );
-
-        socket.send(
-          JSON.stringify({
-            active_symbols:
-              "brief"
-          })
-        );
-
-      };
-
-    socket.onmessage =
-      function(event) {
-
-        let data;
-
-        try {
-
-          data =
-            JSON.parse(
-              event.data
-            );
-
-        }
-
-        catch (error) {
-
-          console.error(
-            "Invalid Deriv message:",
-            event.data
-          );
-
-          setHistoryDiagnostic(
-            "Received a non-JSON WebSocket message."
-          );
-
-          return;
-
-        }
-
-
-        /*
-         * -----------------------------------------------------
-         * ERROR
-         * -----------------------------------------------------
-         */
-
-        if (data.error) {
-
-          console.error(
-            "Deriv error:",
-            data.error
-          );
-
-          const errorMessage =
-            data.error.message ||
-            data.error.code ||
-            "Unknown Deriv error";
-
-
-          if (
-            data.req_id ===
-            currentHistoryRequestId
-          ) {
-
-            historyLoaded = false;
-
-            setHistoryDiagnostic(
-              "HISTORY REQUEST ERROR — " +
-              errorMessage
-            );
-
-            resultMain.textContent =
-              "WAIT";
-
-            resultScore.textContent =
-              "---";
-
-            resultDetail.textContent =
-              "Deriv rejected the historical tick request.";
-
-          }
-
-          setStatus(
-            "Deriv error: " +
-            errorMessage,
-            false
-          );
-
-          return;
-
-        }
-
-
-        /*
-         * -----------------------------------------------------
-         * ACTIVE SYMBOLS
-         * -----------------------------------------------------
-         */
-
-        if (
-          data.msg_type ===
-          "active_symbols"
-        ) {
-
-          loadMarkets(
-            data.active_symbols ||
-            []
-          );
-
-          return;
-
-        }
-
-
-        /*
-         * -----------------------------------------------------
-         * HISTORICAL TICKS
-         * -----------------------------------------------------
-         */
-
-        if (
-          data.msg_type ===
-          "history"
-        ) {
-
-          handleHistory(
-            data
-          );
-
-          return;
-
-        }
-
-
-        /*
-         * -----------------------------------------------------
-         * LIVE TICK
-         * -----------------------------------------------------
-         */
-
-        if (
-          data.msg_type ===
-          "tick"
-        ) {
-
-          handleLiveTick(
-            data.tick
-          );
-
-          return;
-
-        }
-
-
-        /*
-         * -----------------------------------------------------
-         * CONTRACT INFORMATION
-         * -----------------------------------------------------
-         */
-
-        if (
-          data.msg_type ===
-          "contracts_for"
-        ) {
-
-          handleContracts(
-            data
-          );
-
-          return;
-
-        }
-
-
-        /*
-         * -----------------------------------------------------
-         * UNKNOWN MESSAGE
-         * -----------------------------------------------------
-         */
-
-        if (
-          data.req_id ===
-          currentHistoryRequestId
-        ) {
-
-          setHistoryDiagnostic(
-            "History request responded with msg_type: " +
-            (
-              data.msg_type ||
-              "unknown"
-            )
-          );
-
-        }
-
-      };
-
-
-    socket.onerror =
-      function() {
-
-        setStatus(
-          "Connection error",
-          false
-        );
-
-        setHistoryDiagnostic(
-          "WebSocket connection error."
-        );
-
-      };
-
-
-    socket.onclose =
-      function() {
-
-        setStatus(
-          "Disconnected",
-          false
-        );
-
-      };
-
-  }
-
-
-  /*
-   * =========================================================
-   * MARKETS
-   * =========================================================
-   */
-
-  function loadMarkets(
-    markets
-  ) {
-
-    marketSelect.innerHTML =
-      "";
-
-    const usable =
-      markets
-        .filter(
-          market =>
-            market &&
-            market.underlying_symbol
-        )
-        .sort(
-          (a, b) => {
-
-            const nameA =
-              a.underlying_symbol_name ||
-              a.underlying_symbol;
-
-            const nameB =
-              b.underlying_symbol_name ||
-              b.underlying_symbol;
-
-            return nameA.localeCompare(
-              nameB
-            );
-
-          }
-        );
-
-
-    usable.forEach(
-      market => {
-
-        const option =
-          document.createElement(
-            "option"
-          );
-
-        option.value =
-          market.underlying_symbol;
-
-        option.textContent =
-          market.underlying_symbol_name ||
-          market.underlying_symbol;
-
-        marketSelect.appendChild(
-          option
-        );
-
-      }
-    );
-
-
-    if (
-      usable.length > 0
-    ) {
-
-      currentSymbol =
-        usable[0]
-          .underlying_symbol;
-
-      marketSelect.value =
-        currentSymbol;
-
-      subscribeToMarket(
-        currentSymbol
-      );
-
-    }
-
-    else {
-
-      setStatus(
-        "No active markets returned",
-        false
-      );
-
-    }
-
-  }
-
-
-  /*
-   * =========================================================
-   * SELECT MARKET
-   * =========================================================
-   */
-
-  function subscribeToMarket(
-    symbol
-  ) {
-
-    if (
-      !socket ||
-      socket.readyState !==
-      WebSocket.OPEN
-    ) {
-
-      return;
-
-    }
-
-
-    currentSymbol =
-      symbol;
-
-
-    /*
-     * Completely reset previous market.
-     */
-
-    recentTicks = [];
-
-    marketContracts = [];
-
-    historyLoaded = false;
-
-    liveStreamStarted = false;
-
-    latestPrice = null;
-
-    currentHistoryRequestId = null;
-
-
-    priceElement.textContent =
-      "---";
-
-    digitElement.textContent =
-      "Last digit: -";
-
-    marketInfo.textContent =
-      "Loading historical data...";
-
-
-    setHistoryDiagnostic(
-      "Sending history request for " +
-      symbol +
-      "..."
-    );
-
-
-    resultMain.textContent =
-      "LOADING DATA";
-
-    resultScore.textContent =
-      "---";
-
-    resultDetail.textContent =
-      "Loading recent ticks for " +
-      symbol;
-
-
-    setStatus(
-      "Loading " +
-      symbol +
-      " history...",
-      true
-    );
-
-
-    /*
-     * Stop previous tick streams.
-     */
-
-    socket.send(
-      JSON.stringify({
-        forget_all:
-          "ticks"
-      })
-    );
-
-
-    /*
-     * -----------------------------------------------------
-     * HISTORICAL DATA
-     * -----------------------------------------------------
-     */
-
-    const historyRequestId =
-      ++requestCounter;
-
-    currentHistoryRequestId =
-      historyRequestId;
-
-
-    setHistoryDiagnostic(
-      "Request sent. req_id=" +
-      historyRequestId +
-      ", waiting for Deriv..."
-    );
-
-
-    /*
-     * IMPORTANT:
-     *
-     * Do NOT send subscribe: 0 here.
-     *
-     * The public Deriv Options WebSocket endpoint
-     * rejects subscribe: 0 for this request.
-     *
-     * The history request is therefore one-time
-     * simply by omitting subscribe.
-     */
-
-    socket.send(
-      JSON.stringify({
-
-        ticks_history:
-          symbol,
-
-        end:
-          "latest",
-
-        count:
-          HISTORY_COUNT,
-
-        style:
-          "ticks",
-
-        req_id:
-          historyRequestId
-
-      })
-    );
-
-
-    /*
-     * -----------------------------------------------------
-     * CONTRACT INFORMATION
-     * -----------------------------------------------------
-     */
-
-    const contractsRequestId =
-      ++requestCounter;
-
-
-    socket.send(
-      JSON.stringify({
-
-        contracts_for:
-          symbol,
-
-        req_id:
-          contractsRequestId
-
-      })
-    );
-
-
-    /*
-     * -----------------------------------------------------
-     * LIVE STREAM
-     * -----------------------------------------------------
-     */
-
-    socket.send(
-      JSON.stringify({
-
-        ticks:
-          symbol,
-
-        subscribe:
-          1,
-
-        req_id:
-          ++requestCounter
-
-      })
-    );
-
-
-    liveStreamStarted =
-      true;
-
-  }
-
-
-  /*
-   * =========================================================
-   * HISTORICAL RESPONSE
-   * =========================================================
-   */
-
-  function handleHistory(
-    data
-  ) {
-
-    const history =
-      data.history;
-
-
-    /*
-     * Confirm which request produced this response.
-     */
-
-    if (
-      data.req_id &&
-      data.req_id !==
-      currentHistoryRequestId
-    ) {
-
-      setHistoryDiagnostic(
-        "Received history for another request. Ignored."
-      );
-
-      return;
-
-    }
-
-
-    if (!history) {
-
-      setHistoryDiagnostic(
-        "Deriv returned a history message, but no history object was present."
-      );
-
-      resultMain.textContent =
-        "WAIT";
-
-      resultScore.textContent =
-        "---";
-
-      resultDetail.textContent =
-        "History response contained no history object.";
-
-      return;
-
-    }
-
-
-    const prices =
-      history.prices;
-
-    const times =
-      history.times;
-
-
-    /*
-     * Show the actual structure received.
-     */
-
-    if (
-      !Array.isArray(prices) ||
-      !Array.isArray(times)
-    ) {
-
-      setHistoryDiagnostic(
-        "History received, but prices/times were not arrays. prices=" +
-        typeof prices +
-        ", times=" +
-        typeof times
-      );
-
-      resultMain.textContent =
-        "WAIT";
-
-      resultScore.textContent =
-        "---";
-
-      resultDetail.textContent =
-        "Deriv returned history, but the tick arrays were not usable.";
-
-      return;
-
-    }
-
-
-    const length =
-      Math.min(
-        prices.length,
-        times.length
-      );
-
-
-    if (
-      length === 0
-    ) {
-
-      setHistoryDiagnostic(
-        "History response received with 0 usable price/time entries."
-      );
-
-      resultMain.textContent =
-        "WAIT";
-
-      resultScore.textContent =
-        "---";
-
-      resultDetail.textContent =
-        "Deriv returned an empty history set.";
-
-      return;
-
-    }
-
-
-    recentTicks = [];
-
-
-    for (
-      let i = 0;
-      i < length;
-      i++
-    ) {
-
-      const tick =
-        createTick(
-          prices[i],
-          times[i]
-        );
-
-
-      if (tick) {
-
-        recentTicks.push(
-          tick
-        );
-
-      }
-
-    }
-
-
-    recentTicks =
-      recentTicks.slice(
-        -MAX_TICKS
-      );
-
-
-    historyLoaded =
-      recentTicks.length > 0;
-
-
-    if (
-      historyLoaded
-    ) {
-
-      const last =
-        recentTicks[
-          recentTicks.length - 1
-        ];
-
-
-      latestPrice =
-        last.price;
-
-
-      updateLiveDisplay(
-        last
-      );
-
-
-      setStatus(
-        "Historical data loaded — receiving live ticks",
-        true
-      );
-
-
-      marketInfo.textContent =
-        recentTicks.length +
-        " historical ticks + live stream";
-
-
-      setHistoryDiagnostic(
-        "SUCCESS — Deriv returned " +
-        length +
-        " history entries. " +
-        recentTicks.length +
-        " usable ticks loaded."
-      );
-
-
-      resultMain.textContent =
-        "READY";
-
-
-      resultScore.textContent =
-        recentTicks.length +
-        " ticks available";
-
-
-      resultDetail.textContent =
-        "Press ANALYZE. The selected market already has historical data.";
-
-    }
-
-    else {
-
-      setHistoryDiagnostic(
-        "History response arrived, but no usable ticks could be created."
-      );
-
-    }
-
-  }
-
-
-  /*
-   * =========================================================
-   * LIVE RESPONSE
-   * =========================================================
-   */
-
-  function handleLiveTick(
-    tickData
-  ) {
-
-    if (!tickData) {
-      return;
-    }
-
-
-    if (
-      tickData.symbol &&
-      currentSymbol &&
-      tickData.symbol !==
-      currentSymbol
-    ) {
-
-      return;
-
-    }
-
-
-    const tick =
-      createTick(
-        tickData.quote,
-        tickData.epoch
-      );
-
-
-    if (!tick) {
-      return;
-    }
-
-
-    addTick(
-      tick
-    );
-
-
-    updateLiveDisplay(
-      tick
-    );
-
-
-    setStatus(
-      "Receiving live ticks",
-      true
-    );
-
-
-    if (
-      historyLoaded &&
-      recentTicks.length >= 20
-    ) {
-
-      resultDetail.textContent =
-        "Live data updating. Press ANALYZE for the current result.";
-
-    }
-
-  }
-
-
-  /*
-   * =========================================================
-   * CONTRACT INFORMATION
-   * =========================================================
-   */
-
-  function handleContracts(
-    data
-  ) {
-
-    const contractData =
-      data.contracts_for;
-
-
-    if (
-      !contractData
-    ) {
-
-      marketContracts = [];
-
-      return;
-
-    }
-
-
-    marketContracts =
-      Array.isArray(
-        contractData.available
-      )
-        ? contractData.available
-        : [];
-
-
-    const availableTypes =
-      marketContracts
-        .map(
-          contract =>
-            contract.contract_type
-        )
-        .filter(Boolean);
-
-
-    if (
-      availableTypes.length
-    ) {
-
-      marketInfo.textContent =
-        recentTicks.length +
-        " ticks loaded • " +
-        availableTypes.length +
-        " contract types available";
-
-    }
-
-  }
-
-
-  /*
-   * =========================================================
-   * DATA ACCESS HELPERS
-   * =========================================================
-   */
-
-  function getLastDigits(
-    count
-  ) {
-
-    return recentTicks
-      .slice(-count)
-      .map(
-        tick =>
-          tick.digit
-      )
-      .filter(
-        digit =>
-          Number.isInteger(
-            digit
-          )
-      );
-
-  }
-
-
-  function getRecentPrices(
-    count
-  ) {
-
-    return recentTicks
-      .slice(-count)
-      .map(
-        tick =>
-          tick.price
-      );
-
-  }
-
-
-  function average(
-    values
-  ) {
-
-    if (
-      !values.length
-    ) {
-
-      return 0;
-
-    }
-
-
-    return values.reduce(
-      (
-        total,
-        value
-      ) =>
-        total + value,
-      0
-    ) / values.length;
-
-  }
-
-
-  /*
-   * =========================================================
-   * ANALYSIS
-   * =========================================================
-   */
-
-  function analyzeEvenOdd() {
-
-    const digits =
-      getLastDigits(160);
-
-
-    if (
-      digits.length < 20
-    ) {
-
-      return {
-        signal:
-          "WAIT",
-
-        strength:
-          0,
-
-        detail:
-          "Not enough usable digit data."
-      };
-
-    }
-
-
-    let even = 0;
-
-    let odd = 0;
-
-
-    digits.forEach(
-      digit => {
-
-        if (
-          digit % 2 === 0
-        ) {
-
-          even++;
-
-        }
-
-        else {
-
-          odd++;
-
-        }
-
-      }
-    );
-
-
-    const total =
-      even + odd;
-
-
-    const evenRate =
-      even / total;
-
-    const oddRate =
-      odd / total;
-
-
-    const edge =
-      Math.abs(
-        evenRate -
-        oddRate
-      );
-
-
-    const strength =
-      Math.round(
-        50 +
-        Math.min(
-          35,
-          edge * 180
-        )
-      );
-
-
-    if (
-      edge < 0.05
-    ) {
-
-      return {
-        signal:
-          "WAIT",
-
-        strength:
-          strength,
-
-        detail:
-          "Even and Odd are too close."
-      };
-
-    }
-
-
+  let even = 0;
+  let odd = 0;
+
+  digits.forEach(digit => {
+    if (digit % 2 === 0) even++;
+    else odd++;
+  });
+
+  const total = even + odd;
+  const evenRate = even / total;
+  const oddRate = odd / total;
+  const edge = Math.abs(evenRate - oddRate);
+
+  if (edge < 0.08) {
     return {
-
-      signal:
-        evenRate >
-        oddRate
-          ? "EVEN"
-          : "ODD",
-
-      strength:
-        strength,
-
-      detail:
-        "Based on " +
-        total +
-        " recent usable digits from " +
-        currentSymbol +
-        "."
-
+      signal: "WAIT",
+      score: "Even/Odd difference: " + (edge * 100).toFixed(1) + " percentage points",
+      detail: "The recent sample does not show a sufficiently clear difference."
     };
-
   }
 
+  return {
+    signal: evenRate > oddRate ? "EVEN" : "ODD",
+    score: "Observed frequency: " +
+      (Math.max(evenRate, oddRate) * 100).toFixed(1) + "%",
+    detail: "Observed in " + total + " recent digits from " + currentSymbol +
+      ". This is historical frequency, not a guaranteed next-tick probability."
+  };
+}
 
-  function runAnalysis() {
+function analyzeMatches() {
+  const digits = getLastDigits(160);
 
-    if (
-      !currentSymbol
-    ) {
-
-      resultMain.textContent =
-        "WAIT";
-
-      resultScore.textContent =
-        "---";
-
-      resultDetail.textContent =
-        "Select a market.";
-
-      return;
-
-    }
-
-
-    if (
-      !historyLoaded ||
-      recentTicks.length < 20
-    ) {
-
-      resultMain.textContent =
-        "WAIT";
-
-      resultScore.textContent =
-        "---";
-
-      resultDetail.textContent =
-        "Historical data has not loaded yet.";
-
-      return;
-
-    }
-
-
-    const type =
-      tradeTypeSelect.value;
-
-
-    let result;
-
-
-    if (
-      type ===
-      "EVEN_ODD"
-    ) {
-
-      result =
-        analyzeEvenOdd();
-
-    }
-
-    else {
-
-      result = {
-
-        signal:
-          "DATA READY",
-
-        strength:
-          0,
-
-        detail:
-          recentTicks.length +
-          " historical/live ticks are available for " +
-          currentSymbol +
-          ". This trade type's dedicated model will use this data."
-
-      };
-
-    }
-
-
-    resultMain.textContent =
-      result.signal;
-
-
-    if (
-      result.signal ===
-      "WAIT"
-    ) {
-
-      resultScore.textContent =
-        result.strength > 0
-          ? "Strength: " +
-            result.strength +
-            "%"
-          : "No strong signal";
-
-    }
-
-    else if (
-      result.strength > 0
-    ) {
-
-      resultScore.textContent =
-        "Strength: " +
-        result.strength +
-        "%";
-
-    }
-
-    else {
-
-      resultScore.textContent =
-        "Historical data ready";
-
-    }
-
-
-    resultDetail.textContent =
-      result.detail;
-
+  if (digits.length < 100) {
+    return {
+      signal: "WAIT",
+      score: "---",
+      detail: "Matches needs at least 100 usable last digits."
+    };
   }
 
+  const counts = Array(10).fill(0);
 
-  /*
-   * =========================================================
-   * EVENTS
-   * =========================================================
-   */
-
-  marketSelect.addEventListener(
-    "change",
-    function() {
-
-      subscribeToMarket(
-        marketSelect.value
-      );
-
+  digits.forEach(digit => {
+    if (Number.isInteger(digit) && digit >= 0 && digit <= 9) {
+      counts[digit]++;
     }
+  });
+
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  if (!total) {
+    return {
+      signal: "WAIT",
+      score: "---",
+      detail: "No usable digits were found in the selected market."
+    };
+  }
+
+  const ranked = counts
+    .map((count, digit) => ({
+      digit,
+      count,
+      rate: count / total
+    }))
+    .sort((a, b) => b.rate - a.rate);
+
+  const best = ranked[0];
+  const second = ranked[1];
+  const baseline = 0.10;
+  const advantage = best.rate - baseline;
+  const separation = best.rate - second.rate;
+
+  // Conservative screen: do not treat a small random lead as a signal.
+  if (best.rate < 0.13 || separation < 0.025) {
+    return {
+      signal: "WAIT",
+      score: "Leading digit: " + best.digit +
+        " (" + (best.rate * 100).toFixed(1) + "% observed)",
+      detail: "No digit has a sufficiently clear lead in " + total +
+        " recent digits from " + currentSymbol +
+        ". A past frequency difference does not guarantee the next digit."
+    };
+  }
+
+  const heuristicStrength = Math.min(
+    95,
+    Math.round(50 + advantage * 250 + separation * 200)
   );
 
+  return {
+    signal: "MATCHES " + best.digit,
+    score: "Heuristic strength: " + heuristicStrength + "/100",
+    detail: "Digit " + best.digit + " appeared " + best.count +
+      " times in " + total + " recent digits (" +
+      (best.rate * 100).toFixed(1) + "% observed). This score is a screening measure, not a win probability."
+  };
+}
 
-  analyzeButton.addEventListener(
-    "click",
-    function() {
+function runAnalysis() {
+  if (!currentSymbol) {
+    showWait("Select a market.");
+    return;
+  }
 
-      runAnalysis();
+  if (!historyLoaded || recentTicks.length < 100) {
+    showWait("Waiting for enough historical and live data.");
+    return;
+  }
 
-    }
-  );
+  const type = tradeTypeSelect.value;
+  let result;
 
+  if (type === "MATCHES") {
+    result = analyzeMatches();
+  } else if (type === "EVEN_ODD") {
+    result = analyzeEvenOdd();
+  } else {
+    result = {
+      signal: "NOT IMPLEMENTED",
+      score: "---",
+      detail: "This trade type does not have its analysis model yet. Matches and Even/Odd are the only implemented models in this version."
+    };
+  }
 
-  tradeTypeSelect.addEventListener(
-    "change",
-    function() {
+  resultMain.textContent = result.signal;
+  resultScore.textContent = result.score;
+  resultDetail.textContent = result.detail;
+}
 
-      resultMain.textContent =
-        historyLoaded
-          ? "READY"
-          : "LOADING DATA";
+marketSelect.addEventListener("change", function() {
+  subscribeToMarket(marketSelect.value);
+});
 
+analyzeButton.addEventListener("click", runAnalysis);
 
-      resultScore.textContent =
-        historyLoaded
-          ? recentTicks.length +
-            " ticks available"
-          : "---";
+tradeTypeSelect.addEventListener("change", function() {
+  resultMain.textContent = historyLoaded ? "READY" : "LOADING DATA";
+  resultScore.textContent = historyLoaded ? recentTicks.length + " ticks available" : "---";
+  resultDetail.textContent = historyLoaded
+    ? "Press ANALYZE for " +
+      tradeTypeSelect.options[tradeTypeSelect.selectedIndex].text + "."
+    : "Waiting for historical data.";
+});
 
-
-      resultDetail.textContent =
-        historyLoaded
-          ? "Press ANALYZE for " +
-            tradeTypeSelect
-              .options[
-                tradeTypeSelect
-                  .selectedIndex
-              ]
-              .text +
-            "."
-          : "Waiting for historical data.";
-
-    }
-  );
-
-
-  /*
-   * =========================================================
-   * START
-   * =========================================================
-   */
-
-  connect();
-
+connect();
 </script>
-
 </body>
 </html>
