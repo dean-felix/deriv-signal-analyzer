@@ -158,7 +158,6 @@
     Live market analysis
   </div>
 
-
   <section class="card">
 
     <label for="market">
@@ -184,7 +183,6 @@
     </div>
 
   </section>
-
 
   <section class="card">
 
@@ -228,13 +226,11 @@
 
     </select>
 
-
     <button id="analyzeButton">
       ANALYZE
     </button>
 
   </section>
-
 
   <section class="card">
 
@@ -251,13 +247,11 @@
 
     </div>
 
-
     <div
       class="price"
       id="price">
       ---
     </div>
-
 
     <div
       class="digit"
@@ -267,13 +261,11 @@
 
   </section>
 
-
   <section class="card result">
 
     <div class="result-title">
       ANALYZER RESULT
     </div>
-
 
     <div
       class="result-main"
@@ -281,13 +273,11 @@
       WAITING FOR DATA
     </div>
 
-
     <div
       class="result-score"
       id="resultScore">
       ---
     </div>
-
 
     <div
       class="result-detail"
@@ -298,7 +288,6 @@
   </section>
 
 </main>
-
 
 <script>
 
@@ -470,7 +459,6 @@
 
     }
 
-
     return {
 
       price:
@@ -497,12 +485,10 @@
       return;
     }
 
-
     const last =
       recentTicks[
         recentTicks.length - 1
       ];
-
 
     if (
       last &&
@@ -514,11 +500,9 @@
 
     }
 
-
     recentTicks.push(
       tick
     );
-
 
     if (
       recentTicks.length >
@@ -543,16 +527,13 @@
       return;
     }
 
-
     latestPrice =
       tick.price;
-
 
     priceElement.textContent =
       String(
         tick.price
       );
-
 
     digitElement.textContent =
       "Last digit: " +
@@ -561,7 +542,6 @@
           ? "-"
           : tick.digit
       );
-
 
     marketInfo.textContent =
       "Historical + live ticks: " +
@@ -583,12 +563,10 @@
       false
     );
 
-
     socket =
       new WebSocket(
         "wss://api.derivws.com/trading/v1/options/ws/public"
       );
-
 
     socket.onopen =
       function() {
@@ -597,7 +575,6 @@
           "Connected — loading markets...",
           true
         );
-
 
         socket.send(
           JSON.stringify({
@@ -608,12 +585,10 @@
 
       };
 
-
     socket.onmessage =
       function(event) {
 
         let data;
-
 
         try {
 
@@ -653,17 +628,11 @@
             data.error
           );
 
-
           const errorMessage =
             data.error.message ||
             data.error.code ||
             "Unknown Deriv error";
 
-
-          /*
-           * If this error belongs to the current
-           * history request, show it specifically.
-           */
 
           if (
             data.req_id ===
@@ -688,13 +657,11 @@
 
           }
 
-
           setStatus(
             "Deriv error: " +
             errorMessage,
             false
           );
-
 
           return;
 
@@ -746,7 +713,7 @@
          * -----------------------------------------------------
          * LIVE TICK
          * -----------------------------------------------------
- */
+         */
 
         if (
           data.msg_type ===
@@ -766,7 +733,7 @@
          * -----------------------------------------------------
          * CONTRACT INFORMATION
          * -----------------------------------------------------
- */
+         */
 
         if (
           data.msg_type ===
@@ -786,7 +753,7 @@
          * -----------------------------------------------------
          * UNKNOWN MESSAGE
          * -----------------------------------------------------
- */
+         */
 
         if (
           data.req_id ===
@@ -847,7 +814,6 @@
     marketSelect.innerHTML =
       "";
 
-
     const usable =
       markets
         .filter(
@@ -882,15 +848,12 @@
             "option"
           );
 
-
         option.value =
           market.underlying_symbol;
-
 
         option.textContent =
           market.underlying_symbol_name ||
           market.underlying_symbol;
-
 
         marketSelect.appendChild(
           option
@@ -908,10 +871,8 @@
         usable[0]
           .underlying_symbol;
 
-
       marketSelect.value =
         currentSymbol;
-
 
       subscribeToMarket(
         currentSymbol
@@ -976,10 +937,8 @@
     priceElement.textContent =
       "---";
 
-
     digitElement.textContent =
       "Last digit: -";
-
 
     marketInfo.textContent =
       "Loading historical data...";
@@ -995,10 +954,8 @@
     resultMain.textContent =
       "LOADING DATA";
 
-
     resultScore.textContent =
       "---";
-
 
     resultDetail.textContent =
       "Loading recent ticks for " +
@@ -1034,7 +991,6 @@
     const historyRequestId =
       ++requestCounter;
 
-
     currentHistoryRequestId =
       historyRequestId;
 
@@ -1045,6 +1001,18 @@
       ", waiting for Deriv..."
     );
 
+
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT send subscribe: 0 here.
+     *
+     * The public Deriv Options WebSocket endpoint
+     * rejects subscribe: 0 for this request.
+     *
+     * The history request is therefore one-time
+     * simply by omitting subscribe.
+     */
 
     socket.send(
       JSON.stringify({
@@ -1061,9 +1029,6 @@
         style:
           "ticks",
 
-        subscribe:
-          0,
-
         req_id:
           historyRequestId
 
@@ -1075,7 +1040,7 @@
      * -----------------------------------------------------
      * CONTRACT INFORMATION
      * -----------------------------------------------------
- */
+     */
 
     const contractsRequestId =
       ++requestCounter;
@@ -1098,7 +1063,7 @@
      * -----------------------------------------------------
      * LIVE STREAM
      * -----------------------------------------------------
- */
+     */
 
     socket.send(
       JSON.stringify({
