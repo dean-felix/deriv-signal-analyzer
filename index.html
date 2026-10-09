@@ -203,6 +203,7 @@ let currentSymbol = "";
 let recentTicks = [];
 let marketContracts = [];
 let historyLoaded = false;
+let analysisActive = false;
 let requestCounter = 0;
 let currentHistoryRequestId = null;
 let currentContractsRequestId = null;
@@ -255,15 +256,16 @@ function createTick(price, epoch) {
 }
 
 function addTick(tick) {
-  if (!tick) return;
+  if (!tick) return false;
 
   const last = recentTicks[recentTicks.length - 1];
-  if (last && last.time === tick.time && last.price === tick.price) return;
+  if (last && last.time === tick.time && last.price === tick.price) return false;
 
   recentTicks.push(tick);
   if (recentTicks.length > MAX_TICKS) {
     recentTicks = recentTicks.slice(-MAX_TICKS);
   }
+  return true;
 }
 
 function updateLiveDisplay(tick) {
@@ -410,6 +412,7 @@ function subscribeToMarket(symbol) {
   if (!socket || socket.readyState !== WebSocket.OPEN || !symbol) return;
 
   currentSymbol = symbol;
+  analysisActive = false;
   recentTicks = [];
   marketContracts = [];
   historyLoaded = false;
@@ -504,13 +507,12 @@ function handleLiveTick(tickData) {
   const tick = createTick(tickData.quote, tickData.epoch);
   if (!tick) return;
 
-  addTick(tick);
+  const isNewTick = addTick(tick);
   updateLiveDisplay(tick);
   setStatus("Receiving live ticks", true);
 
-  if (historyLoaded) {
-    resultDetail.textContent =
-      "Live data updating. Press ANALYZE for a fresh result.";
+  if (historyLoaded && analysisActive && isNewTick) {
+    runAnalysis();
   }
 }
 
@@ -940,6 +942,7 @@ function runAnalysis() {
     return;
   }
 
+  analysisActive = true;
   const type = tradeTypeSelect.value;
   let result;
 
@@ -996,6 +999,10 @@ analyzeButton.addEventListener("click", runAnalysis);
 
 tradeTypeSelect.addEventListener("change", function() {
   updateBarrierVisibility();
+  if (analysisActive && historyLoaded && recentTicks.length >= 100) {
+    runAnalysis();
+    return;
+  }
   resultMain.textContent = historyLoaded ? "READY" : "LOADING DATA";
   resultScore.textContent = historyLoaded
     ? recentTicks.length + " ticks available"
