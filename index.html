@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f14">
   <title>Deriv Signal Analyzer</title>
   <style>
     * { box-sizing: border-box; }
@@ -38,19 +39,24 @@
       color: #9da8b5;
       margin-bottom: 8px;
     }
-    select, button {
+    select, button, input {
       width: 100%;
       border: 0;
       border-radius: 12px;
       padding: 14px;
       font-size: 16px;
     }
-    select { background: #202832; color: white; }
+    select, input {
+      background: #202832;
+      color: white;
+    }
+    input { margin-bottom: 12px; }
     button {
       margin-top: 14px;
       background: #16a34a;
       color: white;
       font-weight: bold;
+      cursor: pointer;
     }
     button:active { transform: scale(0.98); }
     .status {
@@ -82,16 +88,43 @@
     }
     .diagnostic { color: #aeb8c5; font-size: 11px; }
     .result { text-align: center; padding: 26px 10px; }
-    .result-title { color: #9da8b5; font-size: 13px; margin-bottom: 10px; }
-    .result-main { font-size: 30px; font-weight: bold; overflow-wrap: anywhere; }
-    .result-score { font-size: 16px; margin-top: 8px; color: #9da8b5; }
-    .result-detail { font-size: 13px; color: #7f8a97; margin-top: 10px; line-height: 1.5; }
+    .result-title {
+      color: #9da8b5;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .result-main {
+      font-size: 30px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+    .result-score {
+      font-size: 16px;
+      margin-top: 8px;
+      color: #9da8b5;
+      overflow-wrap: anywhere;
+    }
+    .result-detail {
+      font-size: 13px;
+      color: #7f8a97;
+      margin-top: 10px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .hint {
+      color: #7f8a97;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 8px 0 0;
+    }
+    .hidden { display: none; }
+    button:disabled { opacity: .6; }
   </style>
 </head>
 <body>
 <main class="app">
   <h1>Deriv Signal Analyzer</h1>
-  <div class="subtitle">Live market analysis</div>
+  <div class="subtitle">Live market analysis · Signals only · No trades executed</div>
 
   <section class="card">
     <label for="market">Market</label>
@@ -114,6 +147,17 @@
       <option value="DIFFERS">Differs</option>
       <option value="ONLY_UPS_DOWNS">Only Ups / Only Downs</option>
     </select>
+
+    <div id="barrierArea" class="hidden" style="margin-top:14px">
+      <label for="barrierPrice">Higher / Lower target price</label>
+      <input id="barrierPrice" type="number" step="any"
+        placeholder="Enter the actual target price">
+      <p class="hint">
+        Enter the barrier you intend to evaluate. The analyzer will not invent one.
+        This is an analysis only; it does not submit a trade.
+      </p>
+    </div>
+
     <button id="analyzeButton">ANALYZE</button>
   </section>
 
@@ -130,7 +174,9 @@
     <div class="result-title">ANALYZER RESULT</div>
     <div class="result-main" id="resultMain">WAITING FOR DATA</div>
     <div class="result-score" id="resultScore">---</div>
-    <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
+    <div class="result-detail" id="resultDetail">
+      Waiting for historical market data
+    </div>
   </section>
 </main>
 
@@ -140,6 +186,8 @@
 const marketSelect = document.getElementById("market");
 const tradeTypeSelect = document.getElementById("tradeType");
 const analyzeButton = document.getElementById("analyzeButton");
+const barrierArea = document.getElementById("barrierArea");
+const barrierPriceInput = document.getElementById("barrierPrice");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const priceElement = document.getElementById("price");
@@ -152,16 +200,18 @@ const resultDetail = document.getElementById("resultDetail");
 
 let socket = null;
 let currentSymbol = "";
-let latestPrice = null;
 let recentTicks = [];
 let marketContracts = [];
 let historyLoaded = false;
 let requestCounter = 0;
 let currentHistoryRequestId = null;
 let currentContractsRequestId = null;
+let reconnectTimer = null;
+let manuallyClosed = false;
 
 const HISTORY_COUNT = 200;
 const MAX_TICKS = 500;
+const SAMPLE_SIZE = 160;
 
 function setStatus(text, connected) {
   statusText.textContent = text;
@@ -172,16 +222,25 @@ function setHistoryDiagnostic(text) {
   historyDiagnostic.textContent = "History diagnostic: " + text;
 }
 
+function showWait(detail, score) {
+  resultMain.textContent = "WAIT";
+  resultScore.textContent = score || "No reliable edge established";
+  resultDetail.textContent = detail;
+}
+
 function extractLastDigit(quote) {
-  const text = String(quote);
+  // Use the original quote representation when available.
+  const text = String(quote).trim();
   const decimalPoint = text.indexOf(".");
-  if (decimalPoint === -1) {
-    const digits = text.replace(/\D/g, "");
-    return digits.length ? Number(digits.slice(-1)) : null;
+  let digits;
+
+  if (decimalPoint >= 0) {
+    digits = text.slice(decimalPoint + 1).replace(/\D/g, "");
+  } else {
+    digits = text.replace(/\D/g, "");
   }
 
-  const decimals = text.slice(decimalPoint + 1).replace(/\D/g, "");
-  return decimals.length ? Number(decimals.slice(-1)) : null;
+  return digits.length ? Number(digits.slice(-1)) : null;
 }
 
 function createTick(price, epoch) {
@@ -210,25 +269,26 @@ function addTick(tick) {
 function updateLiveDisplay(tick) {
   if (!tick) return;
 
-  latestPrice = tick.price;
   priceElement.textContent = String(tick.price);
   digitElement.textContent = "Last digit: " +
     (tick.digit === null ? "-" : tick.digit);
   marketInfo.textContent = "Historical + live ticks: " + recentTicks.length;
 }
 
-function showWait(detail) {
-  resultMain.textContent = "WAIT";
-  resultScore.textContent = "No reliable edge established";
-  resultDetail.textContent = detail;
-}
-
 function connect() {
+  clearTimeout(reconnectTimer);
   setStatus("Connecting to Deriv...", false);
 
-  socket = new WebSocket(
-    "wss://api.derivws.com/trading/v1/options/ws/public"
-  );
+  try {
+    socket = new WebSocket(
+      "wss://api.derivws.com/trading/v1/options/ws/public"
+    );
+  } catch (error) {
+    setStatus("Could not create WebSocket", false);
+    setHistoryDiagnostic("Connection could not be created.");
+    scheduleReconnect();
+    return;
+  }
 
   socket.onopen = function() {
     setStatus("Connected — loading markets...", true);
@@ -247,7 +307,8 @@ function connect() {
     }
 
     if (data.error) {
-      const message = data.error.message || data.error.code || "Unknown Deriv error";
+      const message =
+        data.error.message || data.error.code || "Unknown Deriv error";
       console.error("Deriv error:", data.error);
 
       if (data.req_id === currentHistoryRequestId) {
@@ -258,7 +319,6 @@ function connect() {
 
       if (data.req_id === currentContractsRequestId) {
         marketContracts = [];
-        marketInfo.textContent = "Tick data is available; contract information could not be loaded.";
       }
 
       setStatus("Deriv error: " + message, false);
@@ -291,11 +351,21 @@ function connect() {
   };
 
   socket.onclose = function() {
-    setStatus("Disconnected — refresh the page to reconnect", false);
+    setStatus("Disconnected — attempting to reconnect...", false);
+    if (!manuallyClosed) scheduleReconnect();
   };
 }
 
+function scheduleReconnect() {
+  clearTimeout(reconnectTimer);
+  reconnectTimer = setTimeout(function() {
+    if (!manuallyClosed) connect();
+  }, 3000);
+}
+
 function loadMarkets(markets) {
+  const previousSymbol = currentSymbol;
+
   const usable = markets
     .filter(market => market && market.underlying_symbol)
     .sort((a, b) =>
@@ -308,15 +378,31 @@ function loadMarkets(markets) {
   usable.forEach(market => {
     const option = document.createElement("option");
     option.value = market.underlying_symbol;
-    option.textContent = market.underlying_symbol_name || market.underlying_symbol;
+    option.textContent =
+      market.underlying_symbol_name || market.underlying_symbol;
     marketSelect.appendChild(option);
   });
 
-  if (usable.length) {
-    marketSelect.value = usable[0].underlying_symbol;
-    subscribeToMarket(marketSelect.value);
-  } else {
+  if (!usable.length) {
     setStatus("No active markets returned", false);
+    marketSelect.innerHTML = '<option value="">No markets available</option>';
+    return;
+  }
+
+  const previousStillAvailable = usable.some(
+    market => market.underlying_symbol === previousSymbol
+  );
+
+  if (previousStillAvailable) {
+    marketSelect.value = previousSymbol;
+    subscribeToMarket(previousSymbol);
+  } else {
+    const preferred = usable.find(m =>
+      /Volatility 75 Index/i.test(m.underlying_symbol_name || "")
+    ) || usable[0];
+
+    marketSelect.value = preferred.underlying_symbol;
+    subscribeToMarket(marketSelect.value);
   }
 }
 
@@ -327,7 +413,6 @@ function subscribeToMarket(symbol) {
   recentTicks = [];
   marketContracts = [];
   historyLoaded = false;
-  latestPrice = null;
   currentHistoryRequestId = null;
   currentContractsRequestId = null;
 
@@ -363,7 +448,7 @@ function subscribeToMarket(symbol) {
     req_id: contractsRequestId
   }));
 
-  // Keep the live tick subscription enabled.
+  // Continue receiving live prices.
   socket.send(JSON.stringify({
     ticks: symbol,
     subscribe: 1,
@@ -375,8 +460,10 @@ function handleHistory(data) {
   if (data.req_id && data.req_id !== currentHistoryRequestId) return;
 
   const history = data.history;
-  if (!history || !Array.isArray(history.prices) || !Array.isArray(history.times)) {
-    setHistoryDiagnostic("History response did not contain usable price/time arrays.");
+  if (!history ||
+      !Array.isArray(history.prices) ||
+      !Array.isArray(history.times)) {
+    setHistoryDiagnostic("History response did not contain usable arrays.");
     showWait("Historical ticks could not be read.");
     return;
   }
@@ -398,8 +485,7 @@ function handleHistory(data) {
     return;
   }
 
-  const last = recentTicks[recentTicks.length - 1];
-  updateLiveDisplay(last);
+  updateLiveDisplay(recentTicks[recentTicks.length - 1]);
   setStatus("Historical data loaded — receiving live ticks", true);
   setHistoryDiagnostic(
     "SUCCESS — Deriv returned " + length +
@@ -412,7 +498,8 @@ function handleHistory(data) {
 }
 
 function handleLiveTick(tickData) {
-  if (!tickData || (tickData.symbol && tickData.symbol !== currentSymbol)) return;
+  if (!tickData ||
+      (tickData.symbol && tickData.symbol !== currentSymbol)) return;
 
   const tick = createTick(tickData.quote, tickData.epoch);
   if (!tick) return;
@@ -422,7 +509,8 @@ function handleLiveTick(tickData) {
   setStatus("Receiving live ticks", true);
 
   if (historyLoaded) {
-    resultDetail.textContent = "Live data updating. Press ANALYZE for a fresh result.";
+    resultDetail.textContent =
+      "Live data updating. Press ANALYZE for a fresh result.";
   }
 }
 
@@ -430,31 +518,52 @@ function handleContracts(data) {
   if (data.req_id && data.req_id !== currentContractsRequestId) return;
 
   const contractData = data.contracts_for;
-  marketContracts = contractData && Array.isArray(contractData.available)
-    ? contractData.available
-    : [];
+  marketContracts =
+    contractData && Array.isArray(contractData.available)
+      ? contractData.available
+      : [];
 
-  if (marketContracts.length) {
-    marketInfo.textContent = recentTicks.length +
-      " ticks loaded • " + marketContracts.length + " contract types available";
-  }
+  marketInfo.textContent = "Historical + live ticks: " + recentTicks.length +
+    (marketContracts.length
+      ? " • " + marketContracts.length + " contract types returned"
+      : "");
+}
+
+function getValidTicks(count) {
+  return recentTicks.slice(-count).filter(tick =>
+    tick && Number.isFinite(tick.price)
+  );
 }
 
 function getLastDigits(count) {
   return recentTicks
     .slice(-count)
     .map(tick => tick.digit)
-    .filter(Number.isInteger);
+    .filter(digit => Number.isInteger(digit) && digit >= 0 && digit <= 9);
+}
+
+function needTicks(count, label) {
+  const ticks = getValidTicks(count);
+
+  if (ticks.length < count) {
+    return {
+      signal: "WAIT",
+      score: ticks.length + " of " + count + " required ticks",
+      detail: label + " needs more usable data from " + currentSymbol + "."
+    };
+  }
+
+  return null;
 }
 
 function analyzeEvenOdd() {
-  const digits = getLastDigits(160);
+  const digits = getLastDigits(SAMPLE_SIZE);
 
   if (digits.length < 100) {
     return {
       signal: "WAIT",
-      score: "---",
-      detail: "Need at least 100 usable digits for this analysis."
+      score: digits.length + " usable digits",
+      detail: "Even/Odd needs at least 100 usable digits."
     };
   }
 
@@ -474,85 +583,349 @@ function analyzeEvenOdd() {
   if (edge < 0.08) {
     return {
       signal: "WAIT",
-      score: "Even/Odd difference: " + (edge * 100).toFixed(1) + " percentage points",
-      detail: "The recent sample does not show a sufficiently clear difference."
+      score: "Observed difference: " + (edge * 100).toFixed(1) + " points",
+      detail: "Even and Odd do not show a sufficiently clear difference in " +
+        total + " recent digits. Historical frequency does not guarantee the next digit."
     };
   }
 
+  const signal = evenRate > oddRate ? "EVEN" : "ODD";
+  const rate = Math.max(evenRate, oddRate);
+
   return {
-    signal: evenRate > oddRate ? "EVEN" : "ODD",
-    score: "Observed frequency: " +
-      (Math.max(evenRate, oddRate) * 100).toFixed(1) + "%",
-    detail: "Observed in " + total + " recent digits from " + currentSymbol +
-      ". This is historical frequency, not a guaranteed next-tick probability."
+    signal,
+    score: "Observed frequency: " + (rate * 100).toFixed(1) + "%",
+    detail: signal + " occurred " + (rate * 100).toFixed(1) +
+      "% of the recent sample from " + currentSymbol +
+      ". This is not a guaranteed next-tick probability."
+  };
+}
+
+function countDigits() {
+  const digits = getLastDigits(SAMPLE_SIZE);
+  const counts = Array(10).fill(0);
+
+  digits.forEach(digit => counts[digit]++);
+
+  return {
+    digits,
+    counts,
+    total: digits.length
   };
 }
 
 function analyzeMatches() {
-  const digits = getLastDigits(160);
+  const data = countDigits();
 
-  if (digits.length < 100) {
+  if (data.total < 100) {
     return {
       signal: "WAIT",
-      score: "---",
-      detail: "Matches needs at least 100 usable last digits."
+      score: data.total + " usable digits",
+      detail: "Matches needs at least 100 usable digits."
     };
   }
 
-  const counts = Array(10).fill(0);
-
-  digits.forEach(digit => {
-    if (Number.isInteger(digit) && digit >= 0 && digit <= 9) {
-      counts[digit]++;
-    }
-  });
-
-  const total = counts.reduce((sum, count) => sum + count, 0);
-  if (!total) {
-    return {
-      signal: "WAIT",
-      score: "---",
-      detail: "No usable digits were found in the selected market."
-    };
-  }
-
-  const ranked = counts
-    .map((count, digit) => ({
-      digit,
-      count,
-      rate: count / total
-    }))
+  const ranked = data.counts
+    .map((count, digit) => ({ digit, count, rate: count / data.total }))
     .sort((a, b) => b.rate - a.rate);
 
   const best = ranked[0];
   const second = ranked[1];
-  const baseline = 0.10;
-  const advantage = best.rate - baseline;
   const separation = best.rate - second.rate;
 
-  // Conservative screen: do not treat a small random lead as a signal.
   if (best.rate < 0.13 || separation < 0.025) {
     return {
       signal: "WAIT",
       score: "Leading digit: " + best.digit +
         " (" + (best.rate * 100).toFixed(1) + "% observed)",
-      detail: "No digit has a sufficiently clear lead in " + total +
+      detail: "No digit has a sufficiently clear lead in " + data.total +
         " recent digits from " + currentSymbol +
         ". A past frequency difference does not guarantee the next digit."
     };
   }
 
-  const heuristicStrength = Math.min(
-    95,
-    Math.round(50 + advantage * 250 + separation * 200)
-  );
-
   return {
     signal: "MATCHES " + best.digit,
-    score: "Heuristic strength: " + heuristicStrength + "/100",
+    score: "Observed frequency: " + (best.rate * 100).toFixed(1) + "%",
     detail: "Digit " + best.digit + " appeared " + best.count +
-      " times in " + total + " recent digits (" +
-      (best.rate * 100).toFixed(1) + "% observed). This score is a screening measure, not a win probability."
+      " times in " + data.total + " recent digits. This is a historical screen, not a win probability."
+  };
+}
+
+function analyzeDiffers() {
+  const data = countDigits();
+
+  if (data.total < 100) {
+    return {
+      signal: "WAIT",
+      score: data.total + " usable digits",
+      detail: "Differs needs at least 100 usable digits."
+    };
+  }
+
+  const ranked = data.counts
+    .map((count, digit) => ({ digit, count, rate: count / data.total }))
+    .sort((a, b) => a.rate - b.rate);
+
+  const rarest = ranked[0];
+  const secondRarest = ranked[1];
+  const separation = secondRarest.rate - rarest.rate;
+
+  if (rarest.rate > 0.075 || separation < 0.025) {
+    return {
+      signal: "WAIT",
+      score: "Least frequent digit: " + rarest.digit +
+        " (" + (rarest.rate * 100).toFixed(1) + "% observed)",
+      detail: "No digit has a sufficiently clear low-frequency lead in " +
+        data.total + " recent digits from " + currentSymbol +
+        ". Differs may win on many digits, but the payout and future outcome still matter."
+    };
+  }
+
+  return {
+    signal: "DIFFERS " + rarest.digit,
+    score: "Historical non-match frequency: " +
+      ((1 - rarest.rate) * 100).toFixed(1) + "%",
+    detail: "Digit " + rarest.digit + " appeared " + rarest.count +
+      " times in " + data.total + " recent digits. The non-match frequency is historical, not a guaranteed future probability or a profitability estimate."
+  };
+}
+
+function analyzeOverUnder() {
+  const data = countDigits();
+
+  if (data.total < 100) {
+    return {
+      signal: "WAIT",
+      score: data.total + " usable digits",
+      detail: "Over/Under needs at least 100 usable digits."
+    };
+  }
+
+  let best = null;
+
+  // Evaluate every integer barrier from 0 through 9.
+  for (let barrier = 0; barrier <= 9; barrier++) {
+    const overCount = data.counts.reduce(
+      (sum, count, digit) => sum + (digit > barrier ? count : 0), 0
+    );
+    const underCount = data.counts.reduce(
+      (sum, count, digit) => sum + (digit < barrier ? count : 0), 0
+    );
+
+    const overRate = overCount / data.total;
+    const underRate = underCount / data.total;
+
+    // A 0 or 9 barrier leaves one side impossible; skip it.
+    if (barrier === 0 || barrier === 9) continue;
+
+    const difference = Math.abs(overRate - underRate);
+    const candidate = {
+      barrier,
+      overRate,
+      underRate,
+      difference,
+      overCount,
+      underCount
+    };
+
+    if (!best || candidate.difference > best.difference) best = candidate;
+  }
+
+  if (!best || best.difference < 0.10) {
+    return {
+      signal: "WAIT",
+      score: "No clear Over/Under separation",
+      detail: "No tested barrier from 1 to 8 produced a sufficiently clear difference in the recent sample."
+    };
+  }
+
+  const chooseOver = best.overRate > best.underRate;
+  const chosenRate = chooseOver ? best.overRate : best.underRate;
+  const chosenCount = chooseOver ? best.overCount : best.underCount;
+
+  return {
+    signal: (chooseOver ? "OVER " : "UNDER ") + best.barrier,
+    score: "Observed frequency: " + (chosenRate * 100).toFixed(1) + "%",
+    detail: "At barrier " + best.barrier + ", " +
+      (chooseOver ? "digits above" : "digits below") +
+      " the barrier occurred " + chosenCount + " times in " +
+      data.total + " recent digits. The barrier is selected from historical frequencies; this does not prove an advantage or account for payout."
+  };
+}
+
+function analyzeRiseFall() {
+  const missing = needTicks(40, "Rise/Fall");
+  if (missing) return missing;
+
+  const ticks = getValidTicks(40);
+  let rises = 0;
+  let falls = 0;
+  let unchanged = 0;
+
+  for (let i = 1; i < ticks.length; i++) {
+    if (ticks[i].price > ticks[i - 1].price) rises++;
+    else if (ticks[i].price < ticks[i - 1].price) falls++;
+    else unchanged++;
+  }
+
+  const moves = rises + falls;
+  if (moves < 20) {
+    return {
+      signal: "WAIT",
+      score: "Too few price changes",
+      detail: "The sample does not contain enough non-equal consecutive prices."
+    };
+  }
+
+  const riseRate = rises / moves;
+  const fallRate = falls / moves;
+  const first = ticks[0].price;
+  const last = ticks[ticks.length - 1].price;
+  const netDirection = last > first ? "RISE" : last < first ? "FALL" : "FLAT";
+  const leading = riseRate > fallRate ? "RISE" : "FALL";
+  const leadingRate = Math.max(riseRate, fallRate);
+
+  if (leadingRate < 0.65 || leading !== netDirection) {
+    return {
+      signal: "WAIT",
+      score: "Up moves: " + (riseRate * 100).toFixed(1) +
+        "% · Down moves: " + (fallRate * 100).toFixed(1) + "%",
+      detail: "Recent tick direction and overall movement do not give a sufficiently consistent Rise/Fall reading."
+    };
+  }
+
+  return {
+    signal: leading,
+    score: "Matching directional moves: " + (leadingRate * 100).toFixed(1) + "%",
+    detail: leading + " is the stronger recent direction in " + currentSymbol +
+      ". This measures past tick movement, not the guaranteed result of a future contract."
+  };
+}
+
+function analyzeHigherLower() {
+  const barrierText = barrierPriceInput.value.trim();
+  const barrier = Number(barrierText);
+
+  if (!barrierText || !Number.isFinite(barrier)) {
+    return {
+      signal: "WAIT",
+      score: "Target price required",
+      detail: "Enter the actual Higher/Lower target price. The analyzer will not invent a barrier."
+    };
+  }
+
+  const missing = needTicks(80, "Higher/Lower");
+  if (missing) return missing;
+
+  const ticks = getValidTicks(80);
+  const above = ticks.filter(tick => tick.price > barrier).length;
+  const below = ticks.filter(tick => tick.price < barrier).length;
+  const equal = ticks.length - above - below;
+  const total = ticks.length;
+  const aboveRate = above / total;
+  const belowRate = below / total;
+  const difference = Math.abs(aboveRate - belowRate);
+
+  if (difference < 0.20) {
+    return {
+      signal: "WAIT",
+      score: "Historical barrier separation: " + (difference * 100).toFixed(1) + " points",
+      detail: "The sample does not clearly favor prices above or below " +
+        barrier + ". Equal-price observations: " + equal + "."
+    };
+  }
+
+  const chooseHigher = aboveRate > belowRate;
+  const chosenRate = Math.max(aboveRate, belowRate);
+
+  return {
+    signal: chooseHigher ? "HIGHER" : "LOWER",
+    score: "Observed relative to target: " + (chosenRate * 100).toFixed(1) + "%",
+    detail: above + " of " + total + " recent prices were above the entered target; " +
+      below + " were below it and " + equal + " were equal. This is not a forecast of the contract's expiry price."
+  };
+}
+
+function analyzeAsianUpDown() {
+  const missing = needTicks(40, "Asian Up/Down");
+  if (missing) return missing;
+
+  const ticks = getValidTicks(40);
+  const average = ticks.reduce((sum, tick) => sum + tick.price, 0) / ticks.length;
+  const last = ticks[ticks.length - 1].price;
+  const difference = last - average;
+  const spread = Math.abs(difference);
+
+  const changes = [];
+  for (let i = 1; i < ticks.length; i++) {
+    changes.push(ticks[i].price - ticks[i - 1].price);
+  }
+
+  const absChanges = changes.map(Math.abs).filter(value => value > 0);
+  const typicalMove = absChanges.length
+    ? absChanges.reduce((sum, value) => sum + value, 0) / absChanges.length
+    : 0;
+
+  if (!typicalMove || spread < typicalMove * 0.5) {
+    return {
+      signal: "WAIT",
+      score: "Price is near the recent average",
+      detail: "The latest price is not sufficiently separated from the average of the recent sample."
+    };
+  }
+
+  return {
+    signal: difference > 0 ? "ASIAN UP" : "ASIAN DOWN",
+    score: "Current price is " + spread.toPrecision(5) + " from sample average",
+    detail: "Latest price: " + last + "; recent sample average: " +
+      average.toPrecision(10) + ". This is a snapshot comparison, not the average-price outcome of a future Asian contract."
+  };
+}
+
+function analyzeOnlyUpsDowns() {
+  const missing = needTicks(40, "Only Ups/Only Downs");
+  if (missing) return missing;
+
+  const ticks = getValidTicks(40);
+  let up = 0;
+  let down = 0;
+  let flat = 0;
+
+  for (let i = 1; i < ticks.length; i++) {
+    if (ticks[i].price > ticks[i - 1].price) up++;
+    else if (ticks[i].price < ticks[i - 1].price) down++;
+    else flat++;
+  }
+
+  const moves = up + down;
+  if (moves < 20) {
+    return {
+      signal: "WAIT",
+      score: "Too few non-equal moves",
+      detail: "There are not enough directional changes to evaluate recent movement."
+    };
+  }
+
+  const upRate = up / moves;
+  const downRate = down / moves;
+  const strongest = Math.max(upRate, downRate);
+
+  // Only Ups/Only Downs contracts require every relevant tick to move
+  // in the chosen direction. Recent directional bias alone is insufficient.
+  if (strongest < 0.80) {
+    return {
+      signal: "WAIT",
+      score: "Up moves: " + (upRate * 100).toFixed(1) +
+        "% · Down moves: " + (downRate * 100).toFixed(1) + "%",
+      detail: "Recent ticks are not directionally consistent enough for an Only Ups/Only Downs candidate. A past run cannot establish that every future contract tick will move one way."
+    };
+  }
+
+  return {
+    signal: upRate > downRate ? "ONLY UPS" : "ONLY DOWNS",
+    score: "Directional consistency in sample: " + (strongest * 100).toFixed(1) + "%",
+    detail: "The recent sample is strongly one-sided, but this contract requires every relevant tick to meet its condition. The historical pattern does not establish a reliable win probability."
   };
 }
 
@@ -570,21 +943,49 @@ function runAnalysis() {
   const type = tradeTypeSelect.value;
   let result;
 
-  if (type === "MATCHES") {
-    result = analyzeMatches();
-  } else if (type === "EVEN_ODD") {
-    result = analyzeEvenOdd();
-  } else {
-    result = {
-      signal: "NOT IMPLEMENTED",
-      score: "---",
-      detail: "This trade type does not have its analysis model yet. Matches and Even/Odd are the only implemented models in this version."
-    };
+  switch (type) {
+    case "RISE_FALL":
+      result = analyzeRiseFall();
+      break;
+    case "HIGHER_LOWER":
+      result = analyzeHigherLower();
+      break;
+    case "ASIAN_UP_DOWN":
+      result = analyzeAsianUpDown();
+      break;
+    case "EVEN_ODD":
+      result = analyzeEvenOdd();
+      break;
+    case "OVER_UNDER":
+      result = analyzeOverUnder();
+      break;
+    case "MATCHES":
+      result = analyzeMatches();
+      break;
+    case "DIFFERS":
+      result = analyzeDiffers();
+      break;
+    case "ONLY_UPS_DOWNS":
+      result = analyzeOnlyUpsDowns();
+      break;
+    default:
+      result = {
+        signal: "WAIT",
+        score: "---",
+        detail: "Unknown trade type."
+      };
   }
 
   resultMain.textContent = result.signal;
   resultScore.textContent = result.score;
   resultDetail.textContent = result.detail;
+}
+
+function updateBarrierVisibility() {
+  barrierArea.classList.toggle(
+    "hidden",
+    tradeTypeSelect.value !== "HIGHER_LOWER"
+  );
 }
 
 marketSelect.addEventListener("change", function() {
@@ -594,14 +995,22 @@ marketSelect.addEventListener("change", function() {
 analyzeButton.addEventListener("click", runAnalysis);
 
 tradeTypeSelect.addEventListener("change", function() {
+  updateBarrierVisibility();
   resultMain.textContent = historyLoaded ? "READY" : "LOADING DATA";
-  resultScore.textContent = historyLoaded ? recentTicks.length + " ticks available" : "---";
+  resultScore.textContent = historyLoaded
+    ? recentTicks.length + " ticks available"
+    : "---";
   resultDetail.textContent = historyLoaded
     ? "Press ANALYZE for " +
       tradeTypeSelect.options[tradeTypeSelect.selectedIndex].text + "."
     : "Waiting for historical data.";
 });
 
+barrierPriceInput.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") runAnalysis();
+});
+
+updateBarrierVisibility();
 connect();
 </script>
 </body>
