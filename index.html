@@ -507,11 +507,13 @@ function handleLiveTick(tickData) {
   const tick = createTick(tickData.quote, tickData.epoch);
   if (!tick) return;
 
-  const isNewTick = addTick(tick);
+  addTick(tick);
   updateLiveDisplay(tick);
   setStatus("Receiving live ticks", true);
 
-  if (historyLoaded && analysisActive && isNewTick) {
+  // Recalculate on every incoming live tick while analysis is active.
+  // addTick still prevents duplicate entries in the rolling history.
+  if (historyLoaded && analysisActive) {
     runAnalysis();
   }
 }
