@@ -384,8 +384,8 @@ function classifyMarket(market) {
     market.symbol_name || market.underlying_symbol || ""
   );
 
-  if (/\\bbull\\b/i.test(name)) return "BULL";
-  if (/\\bbear\\b/i.test(name)) return "BEAR";
+  if (/bull/i.test(name)) return "BULL";
+  if (/bear/i.test(name)) return "BEAR";
   if (/volatility/i.test(name)) return "VOLATILITY";
   return null;
 }
