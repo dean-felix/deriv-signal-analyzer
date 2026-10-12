@@ -2,7 +2,7 @@
 
 const fs = require("node:fs");
 const html = fs.readFileSync("index.html", "utf8");
-const match = html.match(/<script>([\\s\\S]*?)<\\/script>/i);
+const match = html.match(/<script>([\s\S]*?)<\/script>/i);
 
 if (!match) {
   console.error("No inline application script found in index.html.");
