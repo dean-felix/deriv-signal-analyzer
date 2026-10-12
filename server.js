@@ -83,10 +83,20 @@ function sendError(client, request, code, message) {
 
 function getOperation(request) {
   if (!request || typeof request !== "object" || Array.isArray(request)) return null;
-  const keys = Object.keys(request).filter(key => key !== "req_id");
-  if (keys.length !== 1) return null;
-  const operation = keys[0];
-  if (!ALLOWED_OPERATIONS.has(operation)) return null;
+  const keys = Object.keys(request);
+  const operations = keys.filter(key => ALLOWED_OPERATIONS.has(key));
+  if (operations.length !== 1) return null;
+
+  const operation = operations[0];
+  const allowedFields = {
+    active_symbols: new Set(["active_symbols", "req_id"]),
+    ticks_history: new Set(["ticks_history", "end", "count", "style", "req_id"]),
+    ticks: new Set(["ticks", "subscribe", "req_id"]),
+    contracts_for: new Set(["contracts_for", "req_id"]),
+    forget_all: new Set(["forget_all", "req_id"])
+  }[operation];
+
+  if (keys.some(key => !allowedFields.has(key))) return null;
   return operation;
 }
 
@@ -215,6 +225,19 @@ wss.on("connection", (client, request) => {
       const symbol = requestMessage[operation];
       if (typeof symbol !== "string" || !symbol.trim()) {
         sendError(client, requestMessage, "INVALID_SYMBOL", "A market symbol is required.");
+        return;
+      }
+      if (operation === "ticks_history") {
+        const count = requestMessage.count;
+        if (requestMessage.end !== "latest" ||
+            requestMessage.style !== "ticks" ||
+            !Number.isInteger(count) || count < 1 || count > 500) {
+          sendError(client, requestMessage, "INVALID_HISTORY_REQUEST", "History must request 1–500 recent ticks.");
+          return;
+        }
+      }
+      if (operation === "ticks" && requestMessage.subscribe !== 1) {
+        sendError(client, requestMessage, "INVALID_TICK_REQUEST", "Only a live tick subscription is allowed.");
         return;
       }
       if (!activeSymbols.has(symbol)) {
