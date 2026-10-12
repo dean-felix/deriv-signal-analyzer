@@ -5,7 +5,8 @@
   "description": "Mobile-first Deriv market analyzer with a server-side market-data WebSocket proxy",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node scripts/check-inline-script.js"
   },
   "engines": {
     "node": ">=20"
