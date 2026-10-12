@@ -127,25 +127,32 @@
   <div class="subtitle">Live market analysis · Signals only · No trades executed</div>
 
   <section class="card">
-    <label for="market">Market</label>
-    <select id="market">
-      <option value="">Loading markets...</option>
+    <label for="marketCategory">Market category</label>
+    <select id="marketCategory">
+      <option value="BULL">Bullish markets (Bull indices)</option>
+      <option value="BEAR">Bearish markets (Bear indices)</option>
+      <option value="VOLATILITY" selected>Volatility indices</option>
     </select>
-    <div class="market-info" id="marketInfo">Loading market data...</div>
+    <label for="market" style="margin-top:14px">Available market</label>
+    <select id="market">
+      <option value="">Waiting for verified Deriv markets...</option>
+    </select>
+    <div class="market-info" id="marketInfo">Waiting for backend market data...</div>
     <div class="diagnostic" id="historyDiagnostic">History diagnostic: waiting...</div>
   </section>
 
   <section class="card">
     <label for="tradeType">Trade Type</label>
     <select id="tradeType">
-      <option value="RISE_FALL">Rise / Fall</option>
-      <option value="HIGHER_LOWER">Higher / Lower</option>
-      <option value="ASIAN_UP_DOWN">Asian Up / Down</option>
+      <option value="ONLY_UP">Only UP</option>
+      <option value="ONLY_DOWN">Only DOWN</option>
       <option value="EVEN_ODD">Even / Odd</option>
       <option value="OVER_UNDER">Over / Under</option>
       <option value="MATCHES">Matches</option>
       <option value="DIFFERS">Differs</option>
-      <option value="ONLY_UPS_DOWNS">Only Ups / Only Downs</option>
+      <option value="RISE_FALL">Rise / Fall</option>
+      <option value="TOUCH_NO_TOUCH">Touch / No Touch</option>
+      <option value="ASIAN_UP_DOWN">Asian Up / Asian Down</option>
     </select>
 
     <div id="barrierArea" class="hidden" style="margin-top:14px">
@@ -184,6 +191,7 @@
 "use strict";
 
 const marketSelect = document.getElementById("market");
+const marketCategorySelect = document.getElementById("marketCategory");
 const tradeTypeSelect = document.getElementById("tradeType");
 const analyzeButton = document.getElementById("analyzeButton");
 const barrierArea = document.getElementById("barrierArea");
@@ -200,6 +208,7 @@ const resultDetail = document.getElementById("resultDetail");
 
 let socket = null;
 let currentSymbol = "";
+let allAvailableMarkets = [];
 let recentTicks = [];
 let marketContracts = [];
 let historyLoaded = false;
@@ -282,9 +291,13 @@ function connect() {
   setStatus("Connecting to Deriv...", false);
 
   try {
-    socket = new WebSocket(
-      "wss://api.derivws.com/trading/v1/options/ws/public"
-    );
+    // Browser connects only to this app's backend. The backend proxies
+    // approved public market-data requests to Deriv and blocks trade requests.
+    const configuredBackend = window.DERIV_BACKEND_URL;
+    const backendUrl = configuredBackend ||
+      ((location.protocol === "https:" ? "wss://" : "ws://") +
+        location.host + "/deriv");
+    socket = new WebSocket(backendUrl);
   } catch (error) {
     setStatus("Could not create WebSocket", false);
     setHistoryDiagnostic("Connection could not be created.");
@@ -365,11 +378,22 @@ function scheduleReconnect() {
   }, 3000);
 }
 
-function loadMarkets(markets) {
-  const previousSymbol = currentSymbol;
+function classifyMarket(market) {
+  const name = String(
+    market.underlying_symbol_name || market.display_name ||
+    market.symbol_name || market.underlying_symbol || ""
+  );
 
-  const usable = markets
-    .filter(market => market && market.underlying_symbol)
+  if (/\\bbull\\b/i.test(name)) return "BULL";
+  if (/\\bbear\\b/i.test(name)) return "BEAR";
+  if (/volatility/i.test(name)) return "VOLATILITY";
+  return null;
+}
+
+function renderMarketsForCategory(preferredSymbol) {
+  const category = marketCategorySelect.value;
+  const usable = allAvailableMarkets
+    .filter(market => classifyMarket(market) === category)
     .sort((a, b) =>
       (a.underlying_symbol_name || a.underlying_symbol)
         .localeCompare(b.underlying_symbol_name || b.underlying_symbol)
@@ -377,35 +401,58 @@ function loadMarkets(markets) {
 
   marketSelect.innerHTML = "";
 
-  usable.forEach(market => {
-    const option = document.createElement("option");
-    option.value = market.underlying_symbol;
-    option.textContent =
-      market.underlying_symbol_name || market.underlying_symbol;
-    marketSelect.appendChild(option);
-  });
-
   if (!usable.length) {
-    setStatus("No active markets returned", false);
-    marketSelect.innerHTML = '<option value="">No markets available</option>';
+    marketSelect.innerHTML = '<option value="">No verified markets in this category</option>';
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ forget_all: "ticks" }));
+    }
+    currentSymbol = "";
+    historyLoaded = false;
+    analysisActive = false;
+    recentTicks = [];
+    priceElement.textContent = "---";
+    digitElement.textContent = "Last digit: -";
+    marketInfo.textContent = "Deriv has not returned an available market for this category.";
+    setHistoryDiagnostic("No market was selected; no symbol or price has been invented.");
+    showWait("Choose a category with markets returned by Deriv.");
     return;
   }
 
+  usable.forEach(market => {
+    const option = document.createElement("option");
+    option.value = market.underlying_symbol;
+    option.textContent = market.underlying_symbol_name || market.underlying_symbol;
+    marketSelect.appendChild(option);
+  });
+
   const previousStillAvailable = usable.some(
-    market => market.underlying_symbol === previousSymbol
+    market => market.underlying_symbol === preferredSymbol
   );
+  const preferred = previousStillAvailable
+    ? usable.find(market => market.underlying_symbol === preferredSymbol)
+    : usable[0];
 
-  if (previousStillAvailable) {
-    marketSelect.value = previousSymbol;
-    subscribeToMarket(previousSymbol);
-  } else {
-    const preferred = usable.find(m =>
-      /Volatility 75 Index/i.test(m.underlying_symbol_name || "")
-    ) || usable[0];
+  marketSelect.value = preferred.underlying_symbol;
+  subscribeToMarket(marketSelect.value);
+}
 
-    marketSelect.value = preferred.underlying_symbol;
-    subscribeToMarket(marketSelect.value);
+function loadMarkets(markets) {
+  // Only use symbols actually returned by Deriv and supported by this API.
+  allAvailableMarkets = markets
+    .filter(market => market && market.underlying_symbol)
+    .filter(market => classifyMarket(market));
+
+  if (!allAvailableMarkets.length) {
+    setStatus("No matching active markets returned by Deriv", false);
+    marketSelect.innerHTML = '<option value="">No verified markets available</option>';
+    currentSymbol = "";
+    historyLoaded = false;
+    showWait("Deriv did not return a market in the three requested categories.");
+    return;
   }
+
+  setStatus("Deriv markets received — verifying selected category", true);
+  renderMarketsForCategory(currentSymbol);
 }
 
 function subscribeToMarket(symbol) {
@@ -931,8 +978,24 @@ function runAnalysis() {
     case "RISE_FALL":
       result = analyzeRiseFall();
       break;
-    case "HIGHER_LOWER":
-      result = analyzeHigherLower();
+    case "ONLY_UP":
+      result = analyzeOnlyUpsDowns();
+      if (result.signal === "ONLY DOWNS") {
+        result = { signal: "WAIT", score: result.score, detail: "The recent sample did not favor Only UP. " + result.detail };
+      }
+      break;
+    case "ONLY_DOWN":
+      result = analyzeOnlyUpsDowns();
+      if (result.signal === "ONLY UPS") {
+        result = { signal: "WAIT", score: result.score, detail: "The recent sample did not favor Only DOWN. " + result.detail };
+      }
+      break;
+    case "TOUCH_NO_TOUCH":
+      result = {
+        signal: "WAIT",
+        score: "Not implemented in this stage",
+        detail: "Touch / No Touch is listed for the planned analyzer, but a verified barrier and contract-specific analysis are not implemented. No barrier or signal will be invented."
+      };
       break;
     case "ASIAN_UP_DOWN":
       result = analyzeAsianUpDown();
@@ -966,14 +1029,15 @@ function runAnalysis() {
 }
 
 function updateBarrierVisibility() {
-  barrierArea.classList.toggle(
-    "hidden",
-    tradeTypeSelect.value !== "HIGHER_LOWER"
-  );
+  barrierArea.classList.add("hidden");
 }
 
 marketSelect.addEventListener("change", function() {
   subscribeToMarket(marketSelect.value);
+});
+
+marketCategorySelect.addEventListener("change", function() {
+  renderMarketsForCategory(currentSymbol);
 });
 
 analyzeButton.addEventListener("click", runAnalysis);
