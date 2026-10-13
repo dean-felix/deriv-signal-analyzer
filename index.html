@@ -8,18 +8,33 @@
   <title>Deriv Signal Analyzer</title>
   <style>
     * { box-sizing: border-box; }
+    :root { color-scheme: dark; --bg:#080d16; --panel:#111a29; --line:#26354b; --muted:#9aaac0; --accent:#7c5cff; --mint:#49e2b1; }
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b0f14;
-      color: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(ellipse at top, #17223a 0%, var(--bg) 46%, #070a11 100%);
+      color: #f6f8ff;
+      min-height: 100vh;
     }
     .app {
-      max-width: 520px;
+      max-width: 560px;
       margin: auto;
       min-height: 100vh;
-      padding: 18px;
+      padding: 22px 16px 36px;
     }
+    .brand-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:15px; background:linear-gradient(145deg,#8a72ff,#4b36c9); box-shadow:0 8px 28px #6448ff40; font-size:23px; font-weight:900; }
+    .eyebrow { color:var(--mint); text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:800; margin-bottom:4px; }
+    h1 { letter-spacing:-.7px; }
+    .top-pill { display:inline-flex; align-items:center; gap:7px; border:1px solid #2d4a53; background:#102a2c; color:#86f4d1; border-radius:999px; padding:7px 10px; font-size:11px; font-weight:700; margin:7px 0 14px; }
+    .top-pill .dot { width:7px; height:7px; background:currentColor; }
+    .section-heading { font-size:13px; color:#d8e2f2; font-weight:750; margin:0 0 12px; }
+    .trade-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:4px; }
+    .trade-option { min-height:74px; display:flex; align-items:center; gap:10px; text-align:left; padding:12px; border:1px solid #29364c; border-radius:14px; background:linear-gradient(145deg,#182338,#111827); color:#e7edfa; font-size:12px; font-weight:750; line-height:1.3; cursor:pointer; transition:border-color .15s,transform .15s,background .15s; }
+    .trade-option .trade-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:11px; flex-shrink:0; background:#26314b; color:#b9adff; font-size:16px; }
+    .trade-option.active { border-color:#8b79ff; background:linear-gradient(145deg,#30275a,#191b36); box-shadow:inset 0 0 0 1px #8b79ff35,0 5px 20px #5f4bff12; }
+    .trade-option.active .trade-icon { background:#5c49bd; color:#fff; }
+    .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     h1 { margin: 0; font-size: 24px; }
     .subtitle {
       color: #8d98a6;
@@ -27,11 +42,12 @@
       font-size: 14px;
     }
     .card {
-      background: #151b23;
-      border: 1px solid #27303b;
-      border-radius: 16px;
-      padding: 16px;
+      background: linear-gradient(145deg, #141e2e, #101724);
+      border: 1px solid var(--line);
+      border-radius: 19px;
+      padding: 17px;
       margin-bottom: 14px;
+      box-shadow: 0 12px 32px #00000017;
     }
     label {
       display: block;
@@ -47,16 +63,20 @@
       font-size: 16px;
     }
     select, input {
-      background: #202832;
+      background: #202b3d;
       color: white;
+      border:1px solid #34445c;
+      outline-color:var(--accent);
     }
     input { margin-bottom: 12px; }
     button {
       margin-top: 14px;
-      background: #16a34a;
+      background: linear-gradient(100deg, #8a70ff, #6551e8);
       color: white;
-      font-weight: bold;
+      font-weight: 850;
+      letter-spacing: .8px;
       cursor: pointer;
+      box-shadow: 0 8px 24px #725cff35;
     }
     button:active { transform: scale(0.98); }
     .status {
@@ -73,10 +93,12 @@
       flex-shrink: 0;
     }
     .price {
-      font-size: 28px;
-      font-weight: bold;
+      font-size: clamp(27px, 7vw, 36px);
+      letter-spacing:-1px;
+      font-weight: 800;
       margin-top: 10px;
       word-break: break-all;
+      font-variant-numeric:tabular-nums;
     }
     .digit { color: #9da8b5; margin-top: 5px; }
     .market-info, .diagnostic {
@@ -87,7 +109,11 @@
       overflow-wrap: anywhere;
     }
     .diagnostic { color: #aeb8c5; font-size: 11px; }
-    .result { text-align: center; padding: 26px 10px; }
+    .result { text-align: center; padding: 27px 16px; border-color:#3a3a64; background:radial-gradient(ellipse at top,#252348 0%,#121a29 72%); }
+    .result-main { color:var(--mint); letter-spacing:-.6px; }
+    .result-title { letter-spacing:2px; font-weight:800; font-size:10px; }
+    .status { color:#c7d5e9; }
+    @media (max-width:360px) { .app { padding:16px 11px 28px; } .card { padding:14px; } .trade-option { padding:10px 8px; gap:7px; font-size:11px; } .trade-option .trade-icon { width:29px; height:29px; } }
     .result-title {
       color: #9da8b5;
       font-size: 13px;
@@ -123,8 +149,17 @@
 </head>
 <body>
 <main class="app">
-  <h1>Deriv Signal Analyzer</h1>
-  <div class="subtitle">Live market analysis · Signals only · No trades executed</div>
+  <header>
+    <div class="brand-row">
+      <div class="brand-mark" aria-hidden="true">↗</div>
+      <div>
+        <div class="eyebrow">Market intelligence</div>
+        <h1>Deriv Analyzer</h1>
+      </div>
+    </div>
+    <div class="subtitle">Live market insights · Built for your phone</div>
+    <div class="top-pill"><span class="dot"></span> ANALYSIS MODE · TRADING NOT ENABLED</div>
+  </header>
 
   <section class="card">
     <label for="market">Market</label>
@@ -136,8 +171,8 @@
   </section>
 
   <section class="card">
-    <label for="tradeType">Trade Type</label>
-    <select id="tradeType">
+    <div class="section-heading">Choose a contract type</div>
+    <select id="tradeType" class="visually-hidden" aria-hidden="true" tabindex="-1">
       <option value="RISE_FALL">Rise / Fall</option>
       <option value="HIGHER_LOWER">Higher / Lower</option>
       <option value="ASIAN_UP_DOWN">Asian Up / Down</option>
@@ -147,6 +182,16 @@
       <option value="DIFFERS">Differs</option>
       <option value="ONLY_UPS_DOWNS">Only Ups / Only Downs</option>
     </select>
+    <div class="trade-grid" id="tradeTypeCards" role="group" aria-label="Choose contract type">
+      <button type="button" class="trade-option active" data-type="RISE_FALL"><span class="trade-icon">↗</span><span>Rise / Fall</span></button>
+      <button type="button" class="trade-option" data-type="HIGHER_LOWER"><span class="trade-icon">⇅</span><span>Higher / Lower</span></button>
+      <button type="button" class="trade-option" data-type="ASIAN_UP_DOWN"><span class="trade-icon">⌁</span><span>Asian Up / Down</span></button>
+      <button type="button" class="trade-option" data-type="EVEN_ODD"><span class="trade-icon">½</span><span>Even / Odd</span></button>
+      <button type="button" class="trade-option" data-type="OVER_UNDER"><span class="trade-icon">⇵</span><span>Over / Under</span></button>
+      <button type="button" class="trade-option" data-type="MATCHES"><span class="trade-icon">◎</span><span>Matches</span></button>
+      <button type="button" class="trade-option" data-type="DIFFERS"><span class="trade-icon">◉</span><span>Differs</span></button>
+      <button type="button" class="trade-option" data-type="ONLY_UPS_DOWNS"><span class="trade-icon">⇈</span><span>Only Ups / Downs</span></button>
+    </div>
 
     <div id="barrierArea" class="hidden" style="margin-top:14px">
       <label for="barrierPrice">Higher / Lower target price</label>
@@ -185,6 +230,7 @@
 
 const marketSelect = document.getElementById("market");
 const tradeTypeSelect = document.getElementById("tradeType");
+const tradeTypeCards = document.getElementById("tradeTypeCards");
 const analyzeButton = document.getElementById("analyzeButton");
 const barrierArea = document.getElementById("barrierArea");
 const barrierPriceInput = document.getElementById("barrierPrice");
@@ -978,6 +1024,18 @@ marketSelect.addEventListener("change", function() {
 
 analyzeButton.addEventListener("click", runAnalysis);
 
+tradeTypeCards.addEventListener("click", function(event) {
+  const card = event.target.closest("[data-type]");
+  if (!card) return;
+  tradeTypeSelect.value = card.dataset.type;
+  tradeTypeCards.querySelectorAll(".trade-option").forEach(option => {
+    const active = option === card;
+    option.classList.toggle("active", active);
+    option.setAttribute("aria-pressed", String(active));
+  });
+  tradeTypeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+});
+
 tradeTypeSelect.addEventListener("change", function() {
   updateBarrierVisibility();
   if (analysisActive && historyLoaded && recentTicks.length >= 100) {
@@ -999,6 +1057,9 @@ barrierPriceInput.addEventListener("keydown", function(event) {
 });
 
 updateBarrierVisibility();
+tradeTypeCards.querySelectorAll(".trade-option").forEach(option => {
+  option.setAttribute("aria-pressed", String(option.dataset.type === tradeTypeSelect.value));
+});
 connect();
 </script>
 </body>
