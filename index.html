@@ -5,6 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b0f14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <title>Deriv Signal Analyzer</title>
   <style>
     * { box-sizing: border-box; }
@@ -1089,6 +1093,16 @@ updateBarrierVisibility();
 tradeTypeCards.querySelectorAll(".trade-option").forEach(option => {
   option.setAttribute("aria-pressed", String(option.dataset.type === tradeTypeSelect.value));
 });
+
+// Register the installable app shell when hosted on HTTPS (such as GitHub Pages).
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("./sw.js").catch(function(error) {
+      console.warn("App shell registration failed:", error);
+    });
+  });
+}
+
 connect();
 </script>
 </body>
