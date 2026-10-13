@@ -197,10 +197,28 @@
       <label for="barrierPrice">Higher / Lower target price</label>
       <input id="barrierPrice" type="number" step="any"
         placeholder="Enter the actual target price">
-      <p class="hint">
-        Enter the barrier you intend to evaluate. The analyzer will not invent one.
-        This is an analysis only; it does not submit a trade.
-      </p>
+      <p class="hint">Enter the actual target price. The analyzer will not invent a barrier.</p>
+    </div>
+    <div id="digitArea" class="hidden" style="margin-top:14px">
+      <label for="targetDigit">Target digit (0–9)</label>
+      <select id="targetDigit">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option>
+        <option value="4" selected>4</option><option value="5">5</option>
+        <option value="6">6</option><option value="7">7</option>
+        <option value="8">8</option><option value="9">9</option>
+      </select>
+      <p class="hint" id="digitHint">Choose the digit you want to evaluate.</p>
+    </div>
+    <div id="overUnderArea" class="hidden" style="margin-top:14px">
+      <label for="overUnderBarrier">Over / Under barrier digit</label>
+      <select id="overUnderBarrier">
+        <option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="4" selected>4</option>
+        <option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option>
+      </select>
+      <p class="hint">Over means strictly greater than the barrier; Under means strictly less. Equal digits are neither.</p>
     </div>
 
     <button id="analyzeButton">ANALYZE</button>
@@ -234,6 +252,11 @@ const tradeTypeCards = document.getElementById("tradeTypeCards");
 const analyzeButton = document.getElementById("analyzeButton");
 const barrierArea = document.getElementById("barrierArea");
 const barrierPriceInput = document.getElementById("barrierPrice");
+const digitArea = document.getElementById("digitArea");
+const targetDigitSelect = document.getElementById("targetDigit");
+const digitHint = document.getElementById("digitHint");
+const overUnderArea = document.getElementById("overUnderArea");
+const overUnderBarrierSelect = document.getElementById("overUnderBarrier");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const priceElement = document.getElementById("price");
@@ -666,6 +689,7 @@ function countDigits() {
 
 function analyzeMatches() {
   const data = countDigits();
+  const targetDigit = Number(targetDigitSelect.value);
 
   if (data.total === 0) {
     return {
@@ -675,25 +699,21 @@ function analyzeMatches() {
     };
   }
 
-  const ranked = data.counts
-    .map((count, digit) => ({ digit, count, rate: count / data.total }))
-    .sort((a, b) => b.rate - a.rate);
-
-  const best = ranked[0];
+  const count = data.counts[targetDigit];
+  const rate = count / data.total;
 
   return {
-    signal: "MATCHES " + best.digit,
-    score: "This digit's own observed rate: " +
-      (best.rate * 100).toFixed(1) + "%",
-    detail: "Digit " + best.digit + " appeared " + best.count +
-      " times out of " + data.total + " usable recent digits from " +
-      currentSymbol + ". Matches selects the most frequent digit in this sample; " +
-      "no default-percentage threshold is used. This historical rate is not a guaranteed next-tick probability."
+    signal: "MATCHES " + targetDigit,
+    score: "Observed match frequency: " + (rate * 100).toFixed(1) + "%",
+    detail: "Digit " + targetDigit + " appeared " + count + " times out of " +
+      data.total + " usable recent digits from " + currentSymbol +
+      ". This is the selected digit's historical frequency, not a guaranteed next-tick probability or a profitability estimate."
   };
 }
 
 function analyzeDiffers() {
   const data = countDigits();
+  const targetDigit = Number(targetDigitSelect.value);
 
   if (data.total === 0) {
     return {
@@ -703,25 +723,22 @@ function analyzeDiffers() {
     };
   }
 
-  const ranked = data.counts
-    .map((count, digit) => ({ digit, count, rate: count / data.total }))
-    .sort((a, b) => a.rate - b.rate);
-
-  const rarest = ranked[0];
+  const count = data.counts[targetDigit];
+  const rate = count / data.total;
 
   return {
-    signal: "DIFFERS " + rarest.digit,
-    score: "Own historical non-match rate: " +
-      ((1 - rarest.rate) * 100).toFixed(1) + "%",
-    detail: "Digit " + rarest.digit + " appeared " + rarest.count +
-      " times out of " + data.total + " usable recent digits from " +
-      currentSymbol + ". Differs selects the least frequent digit in this sample; " +
-      "no default-percentage threshold is used. This historical rate is not a guaranteed next-tick probability or profitability estimate."
+    signal: "DIFFERS " + targetDigit,
+    score: "Observed non-match frequency: " + ((1 - rate) * 100).toFixed(1) + "%",
+    detail: "Digit " + targetDigit + " appeared " + count + " times out of " +
+      data.total + " usable recent digits from " + currentSymbol +
+      ". Differs wins only when the next relevant digit is not " + targetDigit +
+      ". The historical non-match frequency is not a guaranteed next-tick probability."
   };
 }
 
 function analyzeOverUnder() {
   const data = countDigits();
+  const barrier = Number(overUnderBarrierSelect.value);
 
   if (data.total < 100) {
     return {
@@ -731,55 +748,38 @@ function analyzeOverUnder() {
     };
   }
 
-  let best = null;
-
-  // Evaluate every integer barrier from 0 through 9.
-  for (let barrier = 0; barrier <= 9; barrier++) {
-    const overCount = data.counts.reduce(
-      (sum, count, digit) => sum + (digit > barrier ? count : 0), 0
-    );
-    const underCount = data.counts.reduce(
-      (sum, count, digit) => sum + (digit < barrier ? count : 0), 0
-    );
-
-    const overRate = overCount / data.total;
-    const underRate = underCount / data.total;
-
-    // A 0 or 9 barrier leaves one side impossible; skip it.
-    if (barrier === 0 || barrier === 9) continue;
-
-    const difference = Math.abs(overRate - underRate);
-    const candidate = {
-      barrier,
-      overRate,
-      underRate,
-      difference,
-      overCount,
-      underCount
-    };
-
-    if (!best || candidate.difference > best.difference) best = candidate;
+  const overCount = data.counts.reduce(
+    (sum, count, digit) => sum + (digit > barrier ? count : 0), 0
+  );
+  const underCount = data.counts.reduce(
+    (sum, count, digit) => sum + (digit < barrier ? count : 0), 0
+  );
+  const eligible = overCount + underCount;
+  if (!eligible) {
+    return { signal:"WAIT", score:"No eligible digits", detail:"No recent digits were above or below this barrier." };
   }
 
-  if (!best || best.difference < 0.10) {
+  const overRate = overCount / eligible;
+  const underRate = underCount / eligible;
+  const difference = Math.abs(overRate - underRate);
+  if (difference < 0.10) {
     return {
       signal: "WAIT",
-      score: "No clear Over/Under separation",
-      detail: "No tested barrier from 1 to 8 produced a sufficiently clear difference in the recent sample."
+      score: "Observed separation: " + (difference * 100).toFixed(1) + " points",
+      detail: "The selected barrier " + barrier + " does not show a clear historical difference between Over and Under in " + eligible + " non-equal digits."
     };
   }
 
-  const chooseOver = best.overRate > best.underRate;
-  const chosenRate = chooseOver ? best.overRate : best.underRate;
-  const chosenCount = chooseOver ? best.overCount : best.underCount;
+  const chooseOver = overRate > underRate;
+  const chosenRate = Math.max(overRate, underRate);
+  const chosenCount = chooseOver ? overCount : underCount;
 
   return {
-    signal: (chooseOver ? "OVER " : "UNDER ") + best.barrier,
-    score: "Observed frequency: " + (chosenRate * 100).toFixed(1) + "%",
-    detail: "At barrier " + best.barrier + ", " +
-      (chooseOver ? "digits above" : "digits below") +
-      " the barrier occurred " + chosenCount + " times in " +
-      data.total + " recent digits. The barrier is selected from historical frequencies; this does not prove an advantage or account for payout."
+    signal: (chooseOver ? "OVER " : "UNDER ") + barrier,
+    score: "Observed eligible-digit frequency: " + (chosenRate * 100).toFixed(1) + "%",
+    detail: chosenCount + " of " + eligible + " non-equal digits were " +
+      (chooseOver ? "above" : "below") + " barrier " + barrier +
+      " in the recent sample. Equal digits are excluded. Historical frequency does not establish the next outcome or profitability."
   };
 }
 
@@ -1012,10 +1012,13 @@ function runAnalysis() {
 }
 
 function updateBarrierVisibility() {
-  barrierArea.classList.toggle(
-    "hidden",
-    tradeTypeSelect.value !== "HIGHER_LOWER"
-  );
+  const type = tradeTypeSelect.value;
+  barrierArea.classList.toggle("hidden", type !== "HIGHER_LOWER");
+  digitArea.classList.toggle("hidden", type !== "MATCHES" && type !== "DIFFERS");
+  overUnderArea.classList.toggle("hidden", type !== "OVER_UNDER");
+  digitHint.textContent = type === "MATCHES"
+    ? "Matches wins only if the next relevant digit equals your selected digit."
+    : "Differs wins only if the next relevant digit is different from your selected digit.";
 }
 
 marketSelect.addEventListener("change", function() {
