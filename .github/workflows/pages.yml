@@ -38,7 +38,7 @@ jobs:
           new vm.Script(scripts[0][1], { filename: 'index.html:inline-script' });
           if (!manifest.name || !manifest.start_url || !manifest.icons?.length) throw new Error('Manifest is missing required install metadata');
           if (!worker.includes('addEventListener("install"') || !worker.includes('addEventListener("fetch"')) throw new Error('Service worker is missing install/fetch handlers');
-          const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map(match => match[1]);
+          const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
           const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
           if (duplicates.length) throw new Error('Duplicate HTML IDs: ' + [...new Set(duplicates)].join(', '));
           for (const name of ['analyzeRiseFall','analyzeHigherLower','analyzeAsianUpDown','analyzeEvenOdd','analyzeOverUnder','analyzeMatches','analyzeDiffers','analyzeOnlyUpsDowns']) {
