@@ -25,6 +25,27 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
+      - name: Validate app files and JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
+          const worker = fs.readFileSync('sw.js', 'utf8');
+          const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+          if (scripts.length !== 1) throw new Error(`Expected one inline app script, found ${scripts.length}`);
+          new vm.Script(scripts[0][1], { filename: 'index.html:inline-script' });
+          if (!manifest.name || !manifest.start_url || !manifest.icons?.length) throw new Error('Manifest is missing required install metadata');
+          if (!worker.includes('addEventListener("install"') || !worker.includes('addEventListener("fetch"')) throw new Error('Service worker is missing install/fetch handlers');
+          const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map(match => match[1]);
+          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+          if (duplicates.length) throw new Error('Duplicate HTML IDs: ' + [...new Set(duplicates)].join(', '));
+          for (const name of ['analyzeRiseFall','analyzeHigherLower','analyzeAsianUpDown','analyzeEvenOdd','analyzeOverUnder','analyzeMatches','analyzeDiffers','analyzeOnlyUpsDowns']) {
+            if (!scripts[0][1].includes('function ' + name)) throw new Error('Missing analysis function: ' + name);
+          }
+          console.log('App validation passed: inline JavaScript parses, manifest is valid, service worker handlers exist, IDs are unique.');
+          NODE
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
