@@ -8,18 +8,33 @@
   <title>Deriv Signal Analyzer</title>
   <style>
     * { box-sizing: border-box; }
+    :root { color-scheme: dark; --bg:#080d16; --panel:#111a29; --line:#26354b; --muted:#9aaac0; --accent:#7c5cff; --mint:#49e2b1; }
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b0f14;
-      color: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(ellipse at top, #17223a 0%, var(--bg) 46%, #070a11 100%);
+      color: #f6f8ff;
+      min-height: 100vh;
     }
     .app {
-      max-width: 520px;
+      max-width: 560px;
       margin: auto;
       min-height: 100vh;
-      padding: 18px;
+      padding: 22px 16px 36px;
     }
+    .brand-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:15px; background:linear-gradient(145deg,#8a72ff,#4b36c9); box-shadow:0 8px 28px #6448ff40; font-size:23px; font-weight:900; }
+    .eyebrow { color:var(--mint); text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:800; margin-bottom:4px; }
+    h1 { letter-spacing:-.7px; }
+    .top-pill { display:inline-flex; align-items:center; gap:7px; border:1px solid #2d4a53; background:#102a2c; color:#86f4d1; border-radius:999px; padding:7px 10px; font-size:11px; font-weight:700; margin:7px 0 14px; }
+    .top-pill .dot { width:7px; height:7px; background:currentColor; }
+    .section-heading { font-size:13px; color:#d8e2f2; font-weight:750; margin:0 0 12px; }
+    .trade-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:4px; }
+    .trade-option { width:auto; margin-top:0; min-height:74px; display:flex; align-items:center; gap:10px; text-align:left; padding:12px; border:1px solid #29364c; border-radius:14px; background:linear-gradient(145deg,#182338,#111827); color:#e7edfa; font-size:12px; font-weight:750; line-height:1.3; cursor:pointer; transition:border-color .15s,transform .15s,background .15s; }
+    .trade-option .trade-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:11px; flex-shrink:0; background:#26314b; color:#b9adff; font-size:16px; }
+    .trade-option.active { border-color:#8b79ff; background:linear-gradient(145deg,#30275a,#191b36); box-shadow:inset 0 0 0 1px #8b79ff35,0 5px 20px #5f4bff12; }
+    .trade-option.active .trade-icon { background:#5c49bd; color:#fff; }
+    .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     h1 { margin: 0; font-size: 24px; }
     .subtitle {
       color: #8d98a6;
@@ -27,11 +42,12 @@
       font-size: 14px;
     }
     .card {
-      background: #151b23;
-      border: 1px solid #27303b;
-      border-radius: 16px;
-      padding: 16px;
+      background: linear-gradient(145deg, #141e2e, #101724);
+      border: 1px solid var(--line);
+      border-radius: 19px;
+      padding: 17px;
       margin-bottom: 14px;
+      box-shadow: 0 12px 32px #00000017;
     }
     label {
       display: block;
@@ -47,16 +63,20 @@
       font-size: 16px;
     }
     select, input {
-      background: #202832;
+      background: #202b3d;
       color: white;
+      border:1px solid #34445c;
+      outline-color:var(--accent);
     }
     input { margin-bottom: 12px; }
     button {
       margin-top: 14px;
-      background: #16a34a;
+      background: linear-gradient(100deg, #8a70ff, #6551e8);
       color: white;
-      font-weight: bold;
+      font-weight: 850;
+      letter-spacing: .8px;
       cursor: pointer;
+      box-shadow: 0 8px 24px #725cff35;
     }
     button:active { transform: scale(0.98); }
     .status {
@@ -73,10 +93,12 @@
       flex-shrink: 0;
     }
     .price {
-      font-size: 28px;
-      font-weight: bold;
+      font-size: clamp(27px, 7vw, 36px);
+      letter-spacing:-1px;
+      font-weight: 800;
       margin-top: 10px;
       word-break: break-all;
+      font-variant-numeric:tabular-nums;
     }
     .digit { color: #9da8b5; margin-top: 5px; }
     .market-info, .diagnostic {
@@ -87,7 +109,11 @@
       overflow-wrap: anywhere;
     }
     .diagnostic { color: #aeb8c5; font-size: 11px; }
-    .result { text-align: center; padding: 26px 10px; }
+    .result { text-align: center; padding: 27px 16px; border-color:#3a3a64; background:radial-gradient(ellipse at top,#252348 0%,#121a29 72%); }
+    .result-main { color:var(--mint); letter-spacing:-.6px; }
+    .result-title { letter-spacing:2px; font-weight:800; font-size:10px; }
+    .status { color:#c7d5e9; }
+    @media (max-width:360px) { .app { padding:16px 11px 28px; } .card { padding:14px; } .trade-option { padding:10px 8px; gap:7px; font-size:11px; } .trade-option .trade-icon { width:29px; height:29px; } }
     .result-title {
       color: #9da8b5;
       font-size: 13px;
@@ -123,8 +149,17 @@
 </head>
 <body>
 <main class="app">
-  <h1>Deriv Signal Analyzer</h1>
-  <div class="subtitle">Live market analysis · Signals only · No trades executed</div>
+  <header>
+    <div class="brand-row">
+      <div class="brand-mark" aria-hidden="true">↗</div>
+      <div>
+        <div class="eyebrow">Market intelligence</div>
+        <h1>Deriv Analyzer</h1>
+      </div>
+    </div>
+    <div class="subtitle">Live market insights · Built for your phone</div>
+    <div class="top-pill"><span class="dot"></span> ANALYSIS MODE · TRADING NOT ENABLED</div>
+  </header>
 
   <section class="card">
     <label for="market">Market</label>
@@ -136,8 +171,8 @@
   </section>
 
   <section class="card">
-    <label for="tradeType">Trade Type</label>
-    <select id="tradeType">
+    <div class="section-heading">Choose a contract type</div>
+    <select id="tradeType" class="visually-hidden" aria-hidden="true" tabindex="-1">
       <option value="RISE_FALL">Rise / Fall</option>
       <option value="HIGHER_LOWER">Higher / Lower</option>
       <option value="ASIAN_UP_DOWN">Asian Up / Down</option>
@@ -147,15 +182,43 @@
       <option value="DIFFERS">Differs</option>
       <option value="ONLY_UPS_DOWNS">Only Ups / Only Downs</option>
     </select>
+    <div class="trade-grid" id="tradeTypeCards" role="group" aria-label="Choose contract type">
+      <button type="button" class="trade-option active" data-type="RISE_FALL"><span class="trade-icon">↗</span><span>Rise / Fall</span></button>
+      <button type="button" class="trade-option" data-type="HIGHER_LOWER"><span class="trade-icon">⇅</span><span>Higher / Lower</span></button>
+      <button type="button" class="trade-option" data-type="ASIAN_UP_DOWN"><span class="trade-icon">⌁</span><span>Asian Up / Down</span></button>
+      <button type="button" class="trade-option" data-type="EVEN_ODD"><span class="trade-icon">½</span><span>Even / Odd</span></button>
+      <button type="button" class="trade-option" data-type="OVER_UNDER"><span class="trade-icon">⇵</span><span>Over / Under</span></button>
+      <button type="button" class="trade-option" data-type="MATCHES"><span class="trade-icon">◎</span><span>Matches</span></button>
+      <button type="button" class="trade-option" data-type="DIFFERS"><span class="trade-icon">◉</span><span>Differs</span></button>
+      <button type="button" class="trade-option" data-type="ONLY_UPS_DOWNS"><span class="trade-icon">⇈</span><span>Only Ups / Downs</span></button>
+    </div>
 
     <div id="barrierArea" class="hidden" style="margin-top:14px">
       <label for="barrierPrice">Higher / Lower target price</label>
       <input id="barrierPrice" type="number" step="any"
         placeholder="Enter the actual target price">
-      <p class="hint">
-        Enter the barrier you intend to evaluate. The analyzer will not invent one.
-        This is an analysis only; it does not submit a trade.
-      </p>
+      <p class="hint">Enter the actual target price. The analyzer will not invent a barrier.</p>
+    </div>
+    <div id="digitArea" class="hidden" style="margin-top:14px">
+      <label for="targetDigit">Target digit (0–9)</label>
+      <select id="targetDigit">
+        <option value="0">0</option><option value="1">1</option>
+        <option value="2">2</option><option value="3">3</option>
+        <option value="4" selected>4</option><option value="5">5</option>
+        <option value="6">6</option><option value="7">7</option>
+        <option value="8">8</option><option value="9">9</option>
+      </select>
+      <p class="hint" id="digitHint">Choose the digit you want to evaluate.</p>
+    </div>
+    <div id="overUnderArea" class="hidden" style="margin-top:14px">
+      <label for="overUnderBarrier">Over / Under barrier digit</label>
+      <select id="overUnderBarrier">
+        <option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="4" selected>4</option>
+        <option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option>
+      </select>
+      <p class="hint">Over means strictly greater than the barrier; Under means strictly less. Equal digits are neither.</p>
     </div>
 
     <button id="analyzeButton">ANALYZE</button>
@@ -185,9 +248,15 @@
 
 const marketSelect = document.getElementById("market");
 const tradeTypeSelect = document.getElementById("tradeType");
+const tradeTypeCards = document.getElementById("tradeTypeCards");
 const analyzeButton = document.getElementById("analyzeButton");
 const barrierArea = document.getElementById("barrierArea");
 const barrierPriceInput = document.getElementById("barrierPrice");
+const digitArea = document.getElementById("digitArea");
+const targetDigitSelect = document.getElementById("targetDigit");
+const digitHint = document.getElementById("digitHint");
+const overUnderArea = document.getElementById("overUnderArea");
+const overUnderBarrierSelect = document.getElementById("overUnderBarrier");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const priceElement = document.getElementById("price");
@@ -200,6 +269,7 @@ const resultDetail = document.getElementById("resultDetail");
 
 let socket = null;
 let currentSymbol = "";
+let currentPrecision = null;
 let recentTicks = [];
 let marketContracts = [];
 let historyLoaded = false;
@@ -229,17 +299,36 @@ function showWait(detail, score) {
   resultDetail.textContent = detail;
 }
 
-function extractLastDigit(quote) {
-  // Use the original quote representation when available.
-  const text = String(quote).trim();
-  const decimalPoint = text.indexOf(".");
-  let digits;
-
-  if (decimalPoint >= 0) {
-    digits = text.slice(decimalPoint + 1).replace(/\D/g, "");
-  } else {
-    digits = text.replace(/\D/g, "");
+function precisionFromPip(pip) {
+  const value = Number(pip);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const text = value.toString().toLowerCase();
+  if (text.includes("e-")) {
+    const exponent = Number(text.split("e-")[1]);
+    return Number.isInteger(exponent) ? exponent : null;
   }
+  const decimal = text.indexOf(".");
+  return decimal < 0 ? 0 : text.length - decimal - 1;
+}
+
+function extractLastDigit(quote) {
+  // Prefer the source quote's decimal formatting. If the API sends a number
+  // (which can lose trailing zeroes), use the selected market's pip precision.
+  let text;
+  if (typeof quote === "string") {
+    text = quote.trim();
+  } else {
+    const numeric = Number(quote);
+    if (!Number.isFinite(numeric)) return null;
+    text = Number.isInteger(currentPrecision)
+      ? numeric.toFixed(currentPrecision)
+      : String(quote).trim();
+  }
+
+  const decimalPoint = text.indexOf(".");
+  const digits = decimalPoint >= 0
+    ? text.slice(decimalPoint + 1).replace(/\D/g, "")
+    : text.replace(/\D/g, "");
 
   return digits.length ? Number(digits.slice(-1)) : null;
 }
@@ -382,6 +471,7 @@ function loadMarkets(markets) {
     option.value = market.underlying_symbol;
     option.textContent =
       market.underlying_symbol_name || market.underlying_symbol;
+    option._marketMetadata = market;
     marketSelect.appendChild(option);
   });
 
@@ -412,6 +502,11 @@ function subscribeToMarket(symbol) {
   if (!socket || socket.readyState !== WebSocket.OPEN || !symbol) return;
 
   currentSymbol = symbol;
+  const selectedMarket = Array.from(marketSelect.options).find(option => option.value === symbol);
+  const selectedMetadata = selectedMarket && selectedMarket._marketMetadata;
+  currentPrecision = selectedMetadata
+    ? precisionFromPip(selectedMetadata.pip_size ?? selectedMetadata.pip)
+    : null;
   analysisActive = false;
   recentTicks = [];
   marketContracts = [];
@@ -620,6 +715,7 @@ function countDigits() {
 
 function analyzeMatches() {
   const data = countDigits();
+  const targetDigit = Number(targetDigitSelect.value);
 
   if (data.total === 0) {
     return {
@@ -629,25 +725,21 @@ function analyzeMatches() {
     };
   }
 
-  const ranked = data.counts
-    .map((count, digit) => ({ digit, count, rate: count / data.total }))
-    .sort((a, b) => b.rate - a.rate);
-
-  const best = ranked[0];
+  const count = data.counts[targetDigit];
+  const rate = count / data.total;
 
   return {
-    signal: "MATCHES " + best.digit,
-    score: "This digit's own observed rate: " +
-      (best.rate * 100).toFixed(1) + "%",
-    detail: "Digit " + best.digit + " appeared " + best.count +
-      " times out of " + data.total + " usable recent digits from " +
-      currentSymbol + ". Matches selects the most frequent digit in this sample; " +
-      "no default-percentage threshold is used. This historical rate is not a guaranteed next-tick probability."
+    signal: "MATCHES " + targetDigit,
+    score: "Observed match frequency: " + (rate * 100).toFixed(1) + "%",
+    detail: "Digit " + targetDigit + " appeared " + count + " times out of " +
+      data.total + " usable recent digits from " + currentSymbol +
+      ". This is the selected digit's historical frequency, not a guaranteed next-tick probability or a profitability estimate."
   };
 }
 
 function analyzeDiffers() {
   const data = countDigits();
+  const targetDigit = Number(targetDigitSelect.value);
 
   if (data.total === 0) {
     return {
@@ -657,25 +749,22 @@ function analyzeDiffers() {
     };
   }
 
-  const ranked = data.counts
-    .map((count, digit) => ({ digit, count, rate: count / data.total }))
-    .sort((a, b) => a.rate - b.rate);
-
-  const rarest = ranked[0];
+  const count = data.counts[targetDigit];
+  const rate = count / data.total;
 
   return {
-    signal: "DIFFERS " + rarest.digit,
-    score: "Own historical non-match rate: " +
-      ((1 - rarest.rate) * 100).toFixed(1) + "%",
-    detail: "Digit " + rarest.digit + " appeared " + rarest.count +
-      " times out of " + data.total + " usable recent digits from " +
-      currentSymbol + ". Differs selects the least frequent digit in this sample; " +
-      "no default-percentage threshold is used. This historical rate is not a guaranteed next-tick probability or profitability estimate."
+    signal: "DIFFERS " + targetDigit,
+    score: "Observed non-match frequency: " + ((1 - rate) * 100).toFixed(1) + "%",
+    detail: "Digit " + targetDigit + " appeared " + count + " times out of " +
+      data.total + " usable recent digits from " + currentSymbol +
+      ". Differs wins only when the next relevant digit is not " + targetDigit +
+      ". The historical non-match frequency is not a guaranteed next-tick probability."
   };
 }
 
 function analyzeOverUnder() {
   const data = countDigits();
+  const barrier = Number(overUnderBarrierSelect.value);
 
   if (data.total < 100) {
     return {
@@ -685,55 +774,38 @@ function analyzeOverUnder() {
     };
   }
 
-  let best = null;
-
-  // Evaluate every integer barrier from 0 through 9.
-  for (let barrier = 0; barrier <= 9; barrier++) {
-    const overCount = data.counts.reduce(
-      (sum, count, digit) => sum + (digit > barrier ? count : 0), 0
-    );
-    const underCount = data.counts.reduce(
-      (sum, count, digit) => sum + (digit < barrier ? count : 0), 0
-    );
-
-    const overRate = overCount / data.total;
-    const underRate = underCount / data.total;
-
-    // A 0 or 9 barrier leaves one side impossible; skip it.
-    if (barrier === 0 || barrier === 9) continue;
-
-    const difference = Math.abs(overRate - underRate);
-    const candidate = {
-      barrier,
-      overRate,
-      underRate,
-      difference,
-      overCount,
-      underCount
-    };
-
-    if (!best || candidate.difference > best.difference) best = candidate;
+  const overCount = data.counts.reduce(
+    (sum, count, digit) => sum + (digit > barrier ? count : 0), 0
+  );
+  const underCount = data.counts.reduce(
+    (sum, count, digit) => sum + (digit < barrier ? count : 0), 0
+  );
+  const eligible = overCount + underCount;
+  if (!eligible) {
+    return { signal:"WAIT", score:"No eligible digits", detail:"No recent digits were above or below this barrier." };
   }
 
-  if (!best || best.difference < 0.10) {
+  const overRate = overCount / eligible;
+  const underRate = underCount / eligible;
+  const difference = Math.abs(overRate - underRate);
+  if (difference < 0.10) {
     return {
       signal: "WAIT",
-      score: "No clear Over/Under separation",
-      detail: "No tested barrier from 1 to 8 produced a sufficiently clear difference in the recent sample."
+      score: "Observed separation: " + (difference * 100).toFixed(1) + " points",
+      detail: "The selected barrier " + barrier + " does not show a clear historical difference between Over and Under in " + eligible + " non-equal digits."
     };
   }
 
-  const chooseOver = best.overRate > best.underRate;
-  const chosenRate = chooseOver ? best.overRate : best.underRate;
-  const chosenCount = chooseOver ? best.overCount : best.underCount;
+  const chooseOver = overRate > underRate;
+  const chosenRate = Math.max(overRate, underRate);
+  const chosenCount = chooseOver ? overCount : underCount;
 
   return {
-    signal: (chooseOver ? "OVER " : "UNDER ") + best.barrier,
-    score: "Observed frequency: " + (chosenRate * 100).toFixed(1) + "%",
-    detail: "At barrier " + best.barrier + ", " +
-      (chooseOver ? "digits above" : "digits below") +
-      " the barrier occurred " + chosenCount + " times in " +
-      data.total + " recent digits. The barrier is selected from historical frequencies; this does not prove an advantage or account for payout."
+    signal: (chooseOver ? "OVER " : "UNDER ") + barrier,
+    score: "Observed eligible-digit frequency: " + (chosenRate * 100).toFixed(1) + "%",
+    detail: chosenCount + " of " + eligible + " non-equal digits were " +
+      (chooseOver ? "above" : "below") + " barrier " + barrier +
+      " in the recent sample. Equal digits are excluded. Historical frequency does not establish the next outcome or profitability."
   };
 }
 
@@ -966,10 +1038,13 @@ function runAnalysis() {
 }
 
 function updateBarrierVisibility() {
-  barrierArea.classList.toggle(
-    "hidden",
-    tradeTypeSelect.value !== "HIGHER_LOWER"
-  );
+  const type = tradeTypeSelect.value;
+  barrierArea.classList.toggle("hidden", type !== "HIGHER_LOWER");
+  digitArea.classList.toggle("hidden", type !== "MATCHES" && type !== "DIFFERS");
+  overUnderArea.classList.toggle("hidden", type !== "OVER_UNDER");
+  digitHint.textContent = type === "MATCHES"
+    ? "Matches wins only if the next relevant digit equals your selected digit."
+    : "Differs wins only if the next relevant digit is different from your selected digit.";
 }
 
 marketSelect.addEventListener("change", function() {
@@ -977,6 +1052,18 @@ marketSelect.addEventListener("change", function() {
 });
 
 analyzeButton.addEventListener("click", runAnalysis);
+
+tradeTypeCards.addEventListener("click", function(event) {
+  const card = event.target.closest("[data-type]");
+  if (!card) return;
+  tradeTypeSelect.value = card.dataset.type;
+  tradeTypeCards.querySelectorAll(".trade-option").forEach(option => {
+    const active = option === card;
+    option.classList.toggle("active", active);
+    option.setAttribute("aria-pressed", String(active));
+  });
+  tradeTypeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+});
 
 tradeTypeSelect.addEventListener("change", function() {
   updateBarrierVisibility();
@@ -999,6 +1086,9 @@ barrierPriceInput.addEventListener("keydown", function(event) {
 });
 
 updateBarrierVisibility();
+tradeTypeCards.querySelectorAll(".trade-option").forEach(option => {
+  option.setAttribute("aria-pressed", String(option.dataset.type === tradeTypeSelect.value));
+});
 connect();
 </script>
 </body>
