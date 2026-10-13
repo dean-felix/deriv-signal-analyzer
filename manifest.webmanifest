@@ -1,0 +1,19 @@
+{
+  "name": "Deriv Signal Analyzer",
+  "short_name": "Deriv Analyzer",
+  "description": "Mobile-first Deriv market analysis using public market data. Signals only; no trades are executed.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080d16",
+  "theme_color": "#0b0f14",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
