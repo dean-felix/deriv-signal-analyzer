@@ -269,6 +269,7 @@ const resultDetail = document.getElementById("resultDetail");
 
 let socket = null;
 let currentSymbol = "";
+let currentPrecision = null;
 let recentTicks = [];
 let marketContracts = [];
 let historyLoaded = false;
@@ -298,17 +299,36 @@ function showWait(detail, score) {
   resultDetail.textContent = detail;
 }
 
-function extractLastDigit(quote) {
-  // Use the original quote representation when available.
-  const text = String(quote).trim();
-  const decimalPoint = text.indexOf(".");
-  let digits;
-
-  if (decimalPoint >= 0) {
-    digits = text.slice(decimalPoint + 1).replace(/\D/g, "");
-  } else {
-    digits = text.replace(/\D/g, "");
+function precisionFromPip(pip) {
+  const value = Number(pip);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const text = value.toString().toLowerCase();
+  if (text.includes("e-")) {
+    const exponent = Number(text.split("e-")[1]);
+    return Number.isInteger(exponent) ? exponent : null;
   }
+  const decimal = text.indexOf(".");
+  return decimal < 0 ? 0 : text.length - decimal - 1;
+}
+
+function extractLastDigit(quote) {
+  // Prefer the source quote's decimal formatting. If the API sends a number
+  // (which can lose trailing zeroes), use the selected market's pip precision.
+  let text;
+  if (typeof quote === "string") {
+    text = quote.trim();
+  } else {
+    const numeric = Number(quote);
+    if (!Number.isFinite(numeric)) return null;
+    text = Number.isInteger(currentPrecision)
+      ? numeric.toFixed(currentPrecision)
+      : String(quote).trim();
+  }
+
+  const decimalPoint = text.indexOf(".");
+  const digits = decimalPoint >= 0
+    ? text.slice(decimalPoint + 1).replace(/\D/g, "")
+    : text.replace(/\D/g, "");
 
   return digits.length ? Number(digits.slice(-1)) : null;
 }
@@ -451,6 +471,7 @@ function loadMarkets(markets) {
     option.value = market.underlying_symbol;
     option.textContent =
       market.underlying_symbol_name || market.underlying_symbol;
+    option._marketMetadata = market;
     marketSelect.appendChild(option);
   });
 
@@ -481,6 +502,11 @@ function subscribeToMarket(symbol) {
   if (!socket || socket.readyState !== WebSocket.OPEN || !symbol) return;
 
   currentSymbol = symbol;
+  const selectedMarket = Array.from(marketSelect.options).find(option => option.value === symbol);
+  const selectedMetadata = selectedMarket && selectedMarket._marketMetadata;
+  currentPrecision = selectedMetadata
+    ? precisionFromPip(selectedMetadata.pip_size ?? selectedMetadata.pip)
+    : null;
   analysisActive = false;
   recentTicks = [];
   marketContracts = [];
