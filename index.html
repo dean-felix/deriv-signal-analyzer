@@ -163,6 +163,16 @@
     </div>
     <div class="subtitle">Live market insights · Built for your phone</div>
     <div class="top-pill"><span class="dot"></span> ANALYSIS MODE · TRADING NOT ENABLED</div>
+    <section class="card" id="derivConnectionCard" aria-labelledby="derivConnectionTitle">
+      <div class="section-heading" id="derivConnectionTitle">Deriv account</div>
+      <div class="status" style="margin-bottom:10px">
+        <span class="dot" id="derivAuthDot"></span>
+        <span id="derivAuthStatus">Checking secure connection…</span>
+      </div>
+      <button type="button" id="derivConnectButton">CONNECT TO DERIV</button>
+      <button type="button" id="derivLogoutButton" class="hidden" style="background:#26354b;box-shadow:none">DISCONNECT</button>
+      <p class="hint" id="derivAuthHint">Connect securely through Deriv. This does not place trades.</p>
+    </section>
   </header>
 
   <section class="card">
@@ -1102,6 +1112,77 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
     });
   });
 }
+
+
+const DERIV_BACKEND_URL = "https://deriv-api-production.up.railway.app";
+const derivAuthStatus = document.getElementById("derivAuthStatus");
+const derivAuthDot = document.getElementById("derivAuthDot");
+const derivConnectButton = document.getElementById("derivConnectButton");
+const derivLogoutButton = document.getElementById("derivLogoutButton");
+const derivAuthHint = document.getElementById("derivAuthHint");
+
+function setDerivAuthStatus(message, connected) {
+  derivAuthStatus.textContent = message;
+  derivAuthDot.style.background = connected ? "#22c55e" : "#777";
+  derivConnectButton.classList.toggle("hidden", !!connected);
+  derivLogoutButton.classList.toggle("hidden", !connected);
+}
+
+async function checkDerivBackend() {
+  try {
+    const response = await fetch(DERIV_BACKEND_URL + "/api/status", { cache: "no-store" });
+    if (!response.ok) throw new Error("Backend status unavailable");
+    const data = await response.json();
+    if (data && (data.configured === false || data.oauthConfigured === false)) {
+      setDerivAuthStatus("Deriv login needs configuration", false);
+      derivAuthHint.textContent = "The secure backend is online, but its OAuth configuration needs checking.";
+      return;
+    }
+    setDerivAuthStatus("Ready to connect to Deriv", false);
+    derivAuthHint.textContent = "Sign in on Deriv's official page. No trade will be placed.";
+  } catch (error) {
+    setDerivAuthStatus("Could not reach secure backend", false);
+    derivAuthHint.textContent = "Try again later. Market analysis remains separate from account login.";
+  }
+}
+
+derivConnectButton.addEventListener("click", function() {
+  derivConnectButton.disabled = true;
+  derivAuthStatus.textContent = "Opening Deriv secure login…";
+  window.location.assign(DERIV_BACKEND_URL + "/oauth/start");
+});
+
+derivLogoutButton.addEventListener("click", async function() {
+  const session = sessionStorage.getItem("deriv_session");
+  try {
+    if (session) {
+      await fetch(DERIV_BACKEND_URL + "/api/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Deriv-Session": session }
+      });
+    }
+  } catch (error) {
+    console.warn("Deriv disconnect request failed.");
+  }
+  sessionStorage.removeItem("deriv_session");
+  setDerivAuthStatus("Disconnected", false);
+  derivAuthHint.textContent = "You can reconnect securely whenever you are ready.";
+});
+
+(function handleDerivReturn() {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  const session = hash.get("deriv_session");
+  if (session) {
+    sessionStorage.setItem("deriv_session", session);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setDerivAuthStatus("Deriv login returned — checking account…", true);
+    derivAuthHint.textContent = "Login returned securely. Account verification is the next check; trading remains disabled.";
+    derivConnectButton.classList.add("hidden");
+    derivLogoutButton.classList.remove("hidden");
+  } else {
+    checkDerivBackend();
+  }
+})();
 
 connect();
 </script>
