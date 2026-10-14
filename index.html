@@ -1176,7 +1176,8 @@ derivLogoutButton.addEventListener("click", async function() {
     sessionStorage.setItem("deriv_session", session);
     history.replaceState(null, "", window.location.pathname + window.location.search);
     setDerivAuthStatus("Deriv login returned — checking account…", true);
-    derivAuthHint.textContent = "Login returned securely. Account verification is the next check; trading remains disabled.";
+    derivAuthHint.textContent = "Checking your Deriv Demo account. Trading remains disabled.";
+    fetch(DERIV_BACKEND_URL + "/api/accounts", { cache: "no-store", headers: { "X-Deriv-Session": session } }).then(async function(r) { const d = await r.json(); if (!r.ok) throw new Error(d.error || "Account verification failed"); const a = (d.accounts || []).find(function(x) { return x.is_virtual === true || x.is_virtual === 1 || /demo|virtual/i.test(String(x.account_type || x.type || "")) || /^VRTC/i.test(String(x.account_id || "")); }); if (!a) throw new Error("No Demo account confirmed"); derivAuthStatus.textContent = "Deriv connected · Demo account verified"; derivAuthHint.textContent = "Demo account only. No trades are placed."; const wallet = document.createElement("div"); wallet.className = "market-info"; wallet.textContent = "Demo wallet: " + (a.balance == null ? "balance unavailable" : a.balance + " " + (a.currency || "")); derivAuthHint.before(wallet); }).catch(function(e) { derivAuthStatus.textContent = "Login returned — account check failed"; derivAuthHint.textContent = (e && e.message ? e.message : "Account check failed") + ". Trading remains disabled."; });
     derivConnectButton.classList.add("hidden");
     derivLogoutButton.classList.remove("hidden");
   } else {
