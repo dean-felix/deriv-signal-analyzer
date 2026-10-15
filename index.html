@@ -325,7 +325,6 @@
     .strip-current strong { color:#ff6973; font-size:12px; }
     .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
     .manual-history:not(.expanded) { max-height:0; overflow:hidden; }
-    #manualHistoryToggle { margin:7px 0 0; width:100%; padding:8px; font-size:10px; background:#24364d; box-shadow:none; }
     .manual-history.expanded { max-height:400px; overflow:auto; }
     .manual-panel .hint { font-size:10px; }
     @media(max-width:360px) { .compact-wallet { max-width:54%; } .trade-option { min-height:54px; } .digit-strip { gap:2px; } .digit-strip .wheel-digit { height:31px; font-size:11px; } }
@@ -1745,14 +1744,7 @@ digitWheel.addEventListener("click",function(event) {
   manualBarrier.value = button.dataset.digit;
   syncManualBarrierUI();
 });
-const tradeResultsToggle = document.getElementById("tradeResultsToggle");
-const tradeResultsPanel = document.getElementById("tradeResultsPanel");
-tradeResultsToggle.addEventListener("click",function(){
-  const opening = tradeResultsPanel.classList.contains("hidden");
-  tradeResultsPanel.classList.toggle("hidden",!opening);
-  tradeResultsToggle.setAttribute("aria-expanded",String(opening));
-  tradeResultsToggle.textContent = opening ? "− HIDE TRADE RESULTS · DEMO / LIVE" : "＋ TRADE RESULTS · DEMO / LIVE";
-});
+tradeResultsToggle.addEventListener("click",function(){ openTradeResults(); });
 resultDetailsToggle.addEventListener("click",function(){
   const opening = resultDetailsPanel.classList.contains("hidden");
   resultDetailsPanel.classList.toggle("hidden",!opening);
