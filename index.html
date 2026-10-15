@@ -1408,7 +1408,9 @@ function handleMarketScanResponse(data, error) {
 
 function runMarketScan() {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    showWait("Deriv market-data connection is not ready. Wait for it to reconnect.", "DATA UNAVAILABLE");
+    marketScanMain.textContent = "DATA UNAVAILABLE";
+    marketScanScore.textContent = "Deriv connection not ready";
+    marketScanDetail.textContent = "Wait for the Deriv market-data connection to reconnect, then scan again. The selected-market analysis above is unchanged.";
     return;
   }
   const options = Array.from(marketSelect.options).filter(option => option.value);
@@ -1416,7 +1418,9 @@ function runMarketScan() {
     (option._marketMetadata && option._marketMetadata.underlying_symbol_name) || option.textContent
   ));
   if (!markets.length) {
-    showWait("Deriv has not returned any active markets.", "DATA UNAVAILABLE");
+    marketScanMain.textContent = "DATA UNAVAILABLE";
+    marketScanScore.textContent = "No supported markets returned";
+    marketScanDetail.textContent = "Deriv has not returned any active Bull, Bear or Volatility markets. The selected-market analysis above is unchanged.";
     return;
   }
 
