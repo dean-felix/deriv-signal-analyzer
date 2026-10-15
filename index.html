@@ -321,7 +321,11 @@
     .manual-panel .hint { font-size:10px; }
     @media(max-width:360px) { .compact-wallet { max-width:54%; } .trade-option { min-height:54px; } .digit-strip { gap:2px; } .digit-strip .wheel-digit { height:31px; font-size:11px; } }
 
-  </style>
+      .brand-row { flex-wrap:nowrap; }
+    .brand-row > div:nth-child(2) { min-width:0; }
+    .compact-wallet { align-self:center; }
+    @media(max-width:380px) { .brand-mark { width:30px; height:30px; } h1 { font-size:18px; } .eyebrow { font-size:8px; } .compact-wallet { max-width:52%; padding:4px 5px; } .compact-wallet .wallet-balance { font-size:11px; } }
+</style>
 </head>
 <body>
 <main class="app">
@@ -332,10 +336,10 @@
         <div class="eyebrow">Market intelligence</div>
         <h1>Deriv Analyzer</h1>
       </div>
-    </div>
     <div class="wallet-card compact-wallet" id="walletCard" aria-live="polite">
       <div><div class="wallet-label">WALLET</div><div class="hint" id="walletState">Connect to load balance</div></div>
       <div class="compact-wallet-value"><div class="wallet-balance" id="walletBalance">—</div><div class="wallet-account" id="walletAccount">Not connected</div></div>
+    </div>
     </div>
     <div class="subtitle">Live market insights · Built for your phone</div>
     <div class="top-pill"><span class="dot"></span> LIVE MARKET · DEMO AUTO ONLY</div>
@@ -398,6 +402,14 @@
       <button type="button" class="trade-option" data-type="ONLY_UPS_DOWNS"><span class="trade-icon">⇈</span><span>Only Ups / Downs</span><span class="trade-signal-chip" data-signal-for="ONLY_UPS_DOWNS">WAIT</span></button>
     </div>
 
+  <div class="inline-result-controls"><button type="button" id="resultDetailsToggle" aria-expanded="false">＋ SIGNAL DETAILS</button></div>
+  <section class="card result hidden" id="resultDetailsPanel">
+    <div class="result-title">SIGNAL DETAILS</div>
+    <div class="result-main" id="resultMain">WAITING FOR DATA</div>
+    <div class="result-score" id="resultScore">---</div>
+    <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
+  </section>
+
     <div id="barrierArea" class="hidden" style="margin-top:14px">
       <label for="barrierPrice">Higher / Lower target price</label>
       <input id="barrierPrice" type="number" step="any"
@@ -442,13 +454,7 @@
     <div class="digit" id="digit">Last digit: -</div>
   </section>
 
-  <div class="inline-result-controls"><button type="button" id="resultDetailsToggle" aria-expanded="false">＋ SIGNAL DETAILS</button></div>
-  <section class="card result hidden" id="resultDetailsPanel">
-    <div class="result-title">SIGNAL DETAILS</div>
-    <div class="result-main" id="resultMain">WAITING FOR DATA</div>
-    <div class="result-score" id="resultScore">---</div>
-    <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
-  </section>
+
   </section>
   <section id="manualModePanel" class="mode-panel hidden" role="tabpanel" aria-labelledby="manualModeTab">
     <section class="card manual-panel" aria-labelledby="manualDigitsTitle">
