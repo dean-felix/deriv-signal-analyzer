@@ -651,7 +651,7 @@ function connect() {
   setStatus("Connecting to Deriv...", false);
 
   try {
-    // Use the established public WebSocket first; fall back to the newer endpoint if it fails.
+    // Keep each endpoint's request format compatible with that API version.
     const endpoint = useLegacyMarketEndpoint
       ? "wss://ws.derivws.com/websockets/v3?app_id=1089"
       : "wss://api.derivws.com/trading/v1/options/ws/public";
@@ -665,21 +665,18 @@ function connect() {
 
   socket.onopen = function() {
     setStatus("Connected — loading markets...", true);
-    socket.send(JSON.stringify({ active_symbols: "brief", product_type: "basic", req_id: ++requestCounter }));
+    const marketRequest = { active_symbols: "brief", req_id: ++requestCounter };
+    // The legacy API accepts product_type; the newer API removed that parameter.
+    if (useLegacyMarketEndpoint) marketRequest.product_type = "basic";
+    socket.send(JSON.stringify(marketRequest));
     activeSymbolsTimer = setTimeout(function() {
       if (!marketSelect.options.length ||
           marketSelect.options[0].textContent === "Loading markets...") {
-        if (useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN) {
-          useLegacyMarketEndpoint = false;
-          setStatus("Market list timed out — switching Deriv feed...", false);
-          setHistoryDiagnostic("Standard market feed did not return symbols; trying the alternate feed.");
-          socket.close();
-        } else {
-          setStatus("Deriv market list timed out — reconnecting...", false);
-          setHistoryDiagnostic("No active markets received. Check the connection and retry.");
-          if (socket && socket.readyState === WebSocket.OPEN) socket.close();
-          else scheduleReconnect();
-        }
+        useLegacyMarketEndpoint = !useLegacyMarketEndpoint;
+        setStatus("Market list timed out — switching Deriv feed...", false);
+        setHistoryDiagnostic("No active-symbol response from the last endpoint. Switching API version and retrying.");
+        if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+        else scheduleReconnect();
       }
     }, 9000);
   };
@@ -702,9 +699,9 @@ function connect() {
       console.error("Deriv errors:", data.errors);
       setStatus("Deriv market feed error: " + message, false);
       setHistoryDiagnostic(message);
-      if (useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN &&
+      if (socket && socket.readyState === WebSocket.OPEN &&
           marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
-        useLegacyMarketEndpoint = false;
+        useLegacyMarketEndpoint = !useLegacyMarketEndpoint;
         socket.close();
       }
       return;
@@ -730,10 +727,10 @@ function connect() {
         marketContracts = [];
       }
 
-      if (useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN &&
+      if (socket && socket.readyState === WebSocket.OPEN &&
           marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
-        useLegacyMarketEndpoint = false;
-        setHistoryDiagnostic("Standard market feed returned an error (" + message + "); switching to alternate feed.");
+        useLegacyMarketEndpoint = !useLegacyMarketEndpoint;
+        setHistoryDiagnostic("Market-list request was rejected (" + message + "); switching API version.");
         socket.close();
         return;
       }
