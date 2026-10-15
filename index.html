@@ -939,25 +939,31 @@ function handleHistory(data) {
   }
 
   recentTicks = recentTicks.slice(-MAX_TICKS);
-  historyLoaded = recentTicks.length > 0;
+  historyLoaded = recentTicks.length >= HISTORY_COUNT;
+
+  updateLiveDisplay(recentTicks.length ? recentTicks[recentTicks.length - 1] : null);
+  setStatus(historyLoaded
+    ? "200-tick history loaded — receiving live ticks"
+    : "Receiving live ticks — building 200-tick sample", true);
 
   if (!historyLoaded) {
-    setHistoryDiagnostic("History returned no usable ticks.");
-    showWait("No usable historical data is available.");
+    setHistoryDiagnostic(
+      "PARTIAL HISTORY — Deriv returned " + length + " entries; " +
+      recentTicks.length + " usable ticks. Waiting for 200 usable ticks before analysis."
+    );
+    showWait("Waiting for the complete latest-200-tick sample.", recentTicks.length + " / " + HISTORY_COUNT + " usable ticks");
     return;
   }
 
-  updateLiveDisplay(recentTicks[recentTicks.length - 1]);
-  setStatus("Historical data loaded — receiving live ticks", true);
   setHistoryDiagnostic(
     "SUCCESS — Deriv returned " + length +
-    " history entries. " + recentTicks.length + " usable ticks loaded."
+    " history entries. " + recentTicks.length + " usable ticks loaded; analysis window is the latest 200."
   );
 
   analysisActive = false;
   resultMain.textContent = "READY TO ANALYZE";
-  resultScore.textContent = recentTicks.length + " live/history ticks loaded";
-  resultDetail.textContent = "Market data is ready. Press ANALYZE NOW to scan the available Bull, Bear and Volatility markets for the strongest qualifying result."; 
+  resultScore.textContent = HISTORY_COUNT + " latest usable ticks loaded";
+  resultDetail.textContent = "The selected-market analyzer uses the latest 200 usable ticks. Press ANALYZE NOW when you are ready."; 
 }
 
 function handleLiveTick(tickData) {
@@ -968,8 +974,16 @@ function handleLiveTick(tickData) {
   if (!tick) return;
 
   addTick(tick);
+  const wasHistoryLoaded = historyLoaded;
+  historyLoaded = recentTicks.length >= HISTORY_COUNT;
   updateLiveDisplay(tick);
-  setStatus("Receiving live ticks", true);
+  setStatus(historyLoaded ? "Receiving live ticks — 200-tick window ready" : "Receiving live ticks — building 200-tick sample", true);
+  if (historyLoaded && !wasHistoryLoaded) {
+    setHistoryDiagnostic("READY — the latest " + HISTORY_COUNT + " usable ticks are now available for analysis.");
+    resultMain.textContent = "READY TO ANALYZE";
+    resultScore.textContent = HISTORY_COUNT + " latest usable ticks loaded";
+    resultDetail.textContent = "The selected-market analyzer uses the latest 200 usable ticks. Press ANALYZE NOW when you are ready.";
+  }
 
   // Keep analysis current automatically; only a new actionable signal can start a batch.
   if (historyLoaded && autoTradeEnabled.checked) {
