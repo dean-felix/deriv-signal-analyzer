@@ -68,16 +68,7 @@
     .digit-ticker { display:flex; gap:4px; overflow:hidden; white-space:nowrap; margin:9px 0; padding:6px; border-radius:9px; background:#0b1320; border:1px solid #24334a; min-height:32px; align-items:center; }
     .ticker-digit { flex:0 0 22px; text-align:center; padding:3px 0; border-radius:5px; font-size:12px; font-weight:800; background:#243449; color:#dce7f8; }
     .ticker-digit.latest { background:#23a879; color:#04150f; box-shadow:0 0 12px #23a87955; }
-    .digit-bars { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 6px; justify-items:center; }
-    .digit-stat { width:clamp(42px,13vw,56px); aspect-ratio:1; min-width:0; border-radius:50%; padding:3px; display:grid; place-items:center; background:conic-gradient(#20d99a var(--pct,0%),#263448 0); box-shadow:0 0 0 1px #293b52; }
-    .digit-stat.low { background:conic-gradient(#ff5265 var(--pct,0%),#263448 0); }
-    .digit-stat.high { box-shadow:0 0 0 1px #20d99a,0 0 10px #20d99a22; }
-    .digit-stat-inner { width:100%; height:100%; border-radius:50%; background:#101a29; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
-    .digit-stat-digit { font-size:14px; font-weight:900; color:#edf5ff; line-height:1.05; }
-    .digit-stat-pct { font-size:9px; font-weight:800; color:#9fb2cb; line-height:1.1; }
-    .digit-stat.high .digit-stat-pct { color:#5df0b2; }
-    .digit-stat.low .digit-stat-pct { color:#ff8790; }
-    .digit-stat.barrier { outline:2px solid #69a7ff; outline-offset:2px; }
+    .digit-bars { display:none !important; }
     .brand-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
     .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:15px; background:linear-gradient(145deg,#8a72ff,#4b36c9); box-shadow:0 8px 28px #6448ff40; font-size:23px; font-weight:900; }
     .eyebrow { color:var(--mint); text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:800; margin-bottom:4px; }
@@ -305,15 +296,31 @@
     .trade-signal-chip.wait { color:#aabbd2 !important; }
     .trade-signal-chip.ready { color:#8df5c5 !important; }
     .inline-result-controls { margin:5px 0 8px; }
-    #resultDetailsToggle, #tradeResultsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
-    #tradeResultsPanel { margin-top:8px; }
+    #resultDetailsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
     #resultDetailsPanel { margin-top:0; }
-    .digit-strip-wrap { position:relative; padding-top:0; padding-bottom:21px; margin:12px auto 9px; max-width:100%; }
-    .digit-strip { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:3px; width:100%; }
-    .digit-strip .wheel-digit { position:static; width:100%; height:35px; margin:0; padding:0; transform:none !important; border-radius:8px; font-size:12px; }
+    .floating-results-toggle { position:fixed; z-index:1001; top:8px; right:10px; width:auto; max-width:52vw; padding:9px 12px; border-radius:999px; font-size:11px; font-weight:900; background:#1764d8; color:#fff; border:1px solid #69a7ff; box-shadow:0 5px 18px #0008; }
+    .floating-results-panel { position:fixed; z-index:1000; top:53px; left:10px; right:10px; max-height:min(70vh,560px); overflow:hidden; display:flex; flex-direction:column; background:#101a29; border:1px solid #3b5270; border-radius:14px; box-shadow:0 16px 50px #000b; padding:12px; }
+    .floating-results-panel.hidden { display:none !important; }
+    .floating-results-head { display:flex; align-items:center; justify-content:space-between; color:#f2f7ff; margin-bottom:8px; }
+    .floating-results-head button { width:32px; height:30px; padding:0; margin:0; background:#29384c; box-shadow:none; font-size:20px; }
+    .floating-results-summary { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-radius:8px; background:#1b2a3d; padding:9px; margin-bottom:8px; font-size:10px; color:#c3d3e8; }
+    .floating-results-summary strong { color:#65edb5; font-size:13px; }
+    #unifiedTradeResults { overflow:auto; max-height:calc(min(70vh,560px) - 120px); }
+    .trade-result-source { font-size:9px; color:#94a8c3; text-transform:uppercase; font-weight:800; letter-spacing:.5px; }
+    .trade-result-meta { font-size:10px; color:#91a5bf; margin-top:3px; }
+    .trade-result-profit { font-size:11px; font-weight:900; white-space:nowrap; }
+    @media(max-width:380px) { .floating-results-toggle { top:6px; right:6px; padding:7px 9px; font-size:10px; } .floating-results-panel { top:46px; left:6px; right:6px; padding:9px; } }
+    .digit-strip-wrap { position:relative; padding-top:0; padding-bottom:18px; margin:12px auto 9px; max-width:100%; }
+    .digit-strip { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:3px; width:100%; align-items:stretch; }
+    .digit-strip .wheel-digit { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:2px; width:100%; height:53px; min-width:0; margin:0; padding:5px 1px 7px; transform:none !important; border-radius:6px; font-size:12px; overflow:hidden; }
+    .digit-strip .wheel-digit .digit-frequency { font-size:8px; line-height:10px; font-weight:800; opacity:.92; }
+    .digit-strip .wheel-digit .digit-frequency-track { position:absolute; height:4px; left:2px; right:2px; bottom:2px; background:#344155; border-radius:6px; overflow:hidden; }
+    .digit-strip .wheel-digit .digit-frequency-fill { height:100%; width:0; background:#708198; border-radius:6px; }
+    .digit-strip .wheel-digit.frequency-high .digit-frequency-fill { background:#20d99a; }
+    .digit-strip .wheel-digit.frequency-low .digit-frequency-fill { background:#ff5265; }
     .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
     .digit-strip .wheel-digit.latest-tick { border-color:#ff5c62; box-shadow:inset 0 -3px #ff5c62,0 0 0 1px #ff5c62; }
-    .live-tick-pointer { position:absolute; top:auto; bottom:17px; left:5%; color:#ff424f; font-size:16px; line-height:16px; transform:translateX(-50%); transition:left .18s ease; text-shadow:0 0 8px #ff424f77; pointer-events:none; }
+    .live-tick-pointer { position:absolute; top:auto; bottom:1px; left:5%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:9px solid #ff424f; transform:translateX(-50%); transition:left .18s ease; filter:drop-shadow(0 0 3px #ff424f77); pointer-events:none; }
     .strip-current { text-align:center; font-size:10px; color:#91a5bf; margin-top:7px; }
     .strip-current strong { color:#ff6973; font-size:12px; }
     .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
@@ -330,6 +337,12 @@
 </style>
 </head>
 <body>
+<button type="button" id="tradeResultsToggle" class="floating-results-toggle" aria-expanded="false">▼ TRADE RESULTS</button>
+<div id="tradeResultsPanel" class="floating-results-panel hidden" role="dialog" aria-label="Manual and automated trade results" aria-modal="false">
+  <div class="floating-results-head"><strong>TRADE RESULTS</strong><button type="button" id="tradeResultsClose" aria-label="Close trade results">×</button></div>
+  <div class="floating-results-summary"><span id="tradeResultsCount">0 trades</span><span>TOTAL PROFIT <strong id="tradeResultsTotal">0.00</strong> <span id="tradeResultsCurrency"></span></span></div>
+  <div id="unifiedTradeResults" class="manual-history"><div class="manual-history-empty">Manual and automated trades will appear here after Deriv confirms each purchase.</div></div>
+</div>
 <main class="app">
   <header>
     <div class="brand-row">
@@ -378,14 +391,7 @@
       <div class="run-settings"><div><label for="autoTradeDuration">Duration</label><select id="autoTradeDuration" disabled><option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option></select></div><div><label for="autoTradeRuns">Number of runs</label><input id="autoTradeRuns" type="number" min="1" max="20" step="1" value="1" disabled></div></div>
       <input id="autoTradeEnabled" type="checkbox" class="visually-hidden" aria-hidden="true" tabindex="-1" disabled>
       <p class="hint">When armed, the analyzer watches live ticks and can submit the selected number of Demo runs when a new actionable signal appears. Demo only; historical patterns are not guaranteed win probabilities.</p>
-      <button type="button" id="tradeResultsToggle" aria-expanded="false">＋ TRADE RESULTS · DEMO / LIVE</button>
-      <div id="tradeResultsPanel" class="hidden">
-        <div class="result-title">DEMO RESULTS</div>
-        <div class="market-info" id="autoTradeResult">No Demo trade submitted.</div>
-        <div class="manual-history" id="demoTradeResultHistory"><div class="manual-history-empty">Settled Demo trade results will be kept here during this page session.</div></div>
-        <div class="result-title" style="margin-top:10px">LIVE RESULTS</div>
-        <div class="market-info" id="liveTradeResult">Live execution is not enabled in this build. No Live trades will be placed.</div>
-      </div>
+      <div class="market-info" id="autoTradeResult">No Demo trade submitted. Live execution is not enabled.</div>
     </section>
 
   <section class="card">
@@ -483,7 +489,7 @@
       </div>
       <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
       <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
-      <p class="hint">The red pointer below the strip follows the latest live tick. Circle borders show recent frequency: green highest, red lowest. Percentages are historical frequency, not guaranteed chances.</p>
+      <p class="hint">The red downward triangle follows the latest live tick. Percentages and frequency bars are inside these same square digit buttons: green is most frequent, red is least frequent. Historical frequency is not a guaranteed chance.</p>
     </section>
     <section class="card" aria-labelledby="manualExecutionTitle">
       <div class="section-heading" id="manualExecutionTitle">MANUAL EXECUTION · DEMO ONLY</div>
@@ -497,11 +503,7 @@
       </div>
       <div class="market-info" id="manualTradeStatus">Connect and verify a Demo account to enable manual execution. Pressing OVER or UNDER submits a trade.</div>
     </section>
-    <section class="card" aria-labelledby="manualHistoryTitle">
-      <div class="manual-history-head"><div class="section-heading" id="manualHistoryTitle">TRANSACTIONS & RESULTS</div><span class="live-chip" id="manualHistoryCount">0 trades</span></div>
-      <button type="button" id="manualHistoryToggle" aria-expanded="false">＋ VIEW TRANSACTIONS</button>
-      <div id="manualTradeHistory" class="manual-history"><div class="hint">Your manual trades will appear here after Deriv confirms a purchase.</div></div>
-    </section>
+
   </section>
 </main>
 
@@ -1414,7 +1416,6 @@ const wheelPointer = document.getElementById("wheelPointer");
 const wheelLiveDigit = document.getElementById("wheelLiveDigit");
 const resultDetailsToggle = document.getElementById("resultDetailsToggle");
 const resultDetailsPanel = document.getElementById("resultDetailsPanel");
-const manualHistoryToggle = document.getElementById("manualHistoryToggle");
 const manualStake = document.getElementById("manualStake");
 const manualDuration = document.getElementById("manualDuration");
 const manualUnderButton = document.getElementById("manualUnderButton");
@@ -1422,9 +1423,15 @@ const manualOverButton = document.getElementById("manualOverButton");
 const underBarrierLabel = document.getElementById("underBarrierLabel");
 const overBarrierLabel = document.getElementById("overBarrierLabel");
 const manualTradeStatus = document.getElementById("manualTradeStatus");
-const manualTradeHistory = document.getElementById("manualTradeHistory");
-const manualHistoryCount = document.getElementById("manualHistoryCount");
 const manualTrades = new Map();
+const automatedTrades = new Map();
+const unifiedTradeResults = document.getElementById("unifiedTradeResults");
+const tradeResultsCount = document.getElementById("tradeResultsCount");
+const tradeResultsTotal = document.getElementById("tradeResultsTotal");
+const tradeResultsCurrency = document.getElementById("tradeResultsCurrency");
+const tradeResultsToggle = document.getElementById("tradeResultsToggle");
+const tradeResultsPanel = document.getElementById("tradeResultsPanel");
+const tradeResultsClose = document.getElementById("tradeResultsClose");
 let manualTradeBusy = false;
 const autoModeTab = document.getElementById("autoModeTab");
 const manualModeTab = document.getElementById("manualModeTab");
@@ -1631,36 +1638,72 @@ function syncManualBarrierUI() {
   });
 }
 function renderManualDigits() {
-  if (!digitBars || !digitTicker) return;
+  if (!digitWheel || !digitTicker) return;
   const ticks = recentTicks.filter(t => Number.isInteger(t.digit) && t.digit >= 0 && t.digit <= 9);
   const latest = ticks.length ? ticks[ticks.length - 1].digit : null;
   manualCurrentDigit.textContent = latest === null ? "—" : String(latest);
   wheelLiveDigit.textContent = latest === null ? "—" : String(latest);
-  digitWheel.querySelectorAll(".wheel-digit").forEach(button => button.classList.toggle("latest-tick", latest !== null && Number(button.dataset.digit) === latest));
   if (latest !== null) wheelPointer.style.left = ((latest + 0.5) * 10) + "%";
   const recent = ticks.slice(-24);
   digitTicker.innerHTML = recent.length ? recent.map((t,i) => '<span class="ticker-digit' + (i === recent.length - 1 ? ' latest' : '') + '">' + t.digit + '</span>').join("") : '<span class="hint">Waiting for live digits…</span>';
-  if (!ticks.length) { digitBars.innerHTML = '<div class="hint">Waiting for usable live digit data.</div>'; syncManualBarrierUI(); return; }
   const sample = ticks.slice(-SAMPLE_SIZE), counts = Array(10).fill(0);
   sample.forEach(t => counts[t.digit]++);
-  const max = Math.max(...counts), positive = counts.filter(n => n > 0), min = Math.min(...positive);
-  digitBars.innerHTML = counts.map((count,digit) => {
-    const pct = count / sample.length * 100, high = count === max && max > 0, low = count === min;
-    const barrier = Number(manualBarrier.value) === digit;
-    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + (barrier ? ' barrier' : '') + '" style="--pct:' + Math.max(0,Math.min(100,pct)) + '%" title="Digit ' + digit + ': ' + pct.toFixed(1) + '% of ' + sample.length + ' recent ticks"><div class="digit-stat-inner"><span class="digit-stat-digit">' + digit + '</span><span class="digit-stat-pct">' + pct.toFixed(1) + '%</span></div></div>';
-  }).join("");
+  const max = sample.length ? Math.max(...counts) : 0;
+  const positive = counts.filter(n => n > 0), min = positive.length ? Math.min(...positive) : 0;
+  digitWheel.querySelectorAll(".wheel-digit").forEach(button => {
+    const digit = Number(button.dataset.digit), count = counts[digit] || 0;
+    const pct = sample.length ? count / sample.length * 100 : 0;
+    const high = sample.length > 0 && count === max;
+    const low = sample.length > 0 && count === min;
+    button.classList.toggle("latest-tick", latest !== null && digit === latest);
+    button.classList.toggle("frequency-high", high);
+    button.classList.toggle("frequency-low", low && !high);
+    button.title = sample.length ? "Digit " + digit + ": " + pct.toFixed(1) + "% of " + sample.length + " recent ticks" : "Waiting for live tick history";
+    let percent = button.querySelector(".digit-frequency");
+    if (!percent) {
+      percent = document.createElement("span"); percent.className = "digit-frequency";
+      const track = document.createElement("span"); track.className = "digit-frequency-track";
+      const fill = document.createElement("span"); fill.className = "digit-frequency-fill";
+      track.appendChild(fill); button.appendChild(percent); button.appendChild(track);
+    }
+    percent.textContent = sample.length ? pct.toFixed(1) + "%" : "—";
+    const fill = button.querySelector(".digit-frequency-fill");
+    if (fill) fill.style.width = Math.max(0,Math.min(100,pct)) + "%";
+  });
   syncManualBarrierUI();
 }
-function renderManualTradeHistory() {
-  const rows = Array.from(manualTrades.values()).sort((a,b) => b.createdAt-a.createdAt);
-  manualHistoryCount.textContent = rows.length + (rows.length === 1 ? " trade" : " trades");
-  if (!rows.length) { manualTradeHistory.innerHTML = '<div class="manual-history-empty">Your manual trades will appear here after Deriv confirms a purchase.</div>'; return; }
-  manualTradeHistory.innerHTML = rows.map(t => {
-    const resultClass = t.status === "won" ? "won" : (t.status === "lost" ? "lost" : "open");
-    const resultText = t.status === "won" || t.status === "lost" ? (t.profit >= 0 ? "+" : "") + t.profit.toFixed(2) + " " + (verifiedDemoCurrency || "") : t.status.toUpperCase();
-    return '<div class="manual-history-row"><div><div class="manual-history-main">' + t.direction + ' ' + t.barrier + ' · ' + t.symbol + '</div><div class="manual-history-meta">Contract ' + t.contractId + ' · Stake ' + t.stake.toFixed(2) + ' · ' + t.duration + ' tick(s)</div><div class="manual-history-meta">' + t.updatedAt + '</div></div><div class="manual-history-result ' + resultClass + '">' + resultText + '</div></div>';
+function renderUnifiedTradeResults() {
+  const manual = Array.from(manualTrades.values()).map(t => ({...t, source:"MANUAL"}));
+  const automated = Array.from(automatedTrades.values()).map(t => ({...t, source:"AUTO"}));
+  const rows = manual.concat(automated).sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const settled = rows.filter(t => ["won","lost","sold","cancelled"].includes(String(t.status).toLowerCase()) && Number.isFinite(Number(t.profit)));
+  const total = settled.reduce((sum,t) => sum + Number(t.profit || 0), 0);
+  tradeResultsCount.textContent = rows.length + (rows.length === 1 ? " trade" : " trades");
+  tradeResultsTotal.textContent = (total >= 0 ? "+" : "") + total.toFixed(2);
+  tradeResultsCurrency.textContent = verifiedDemoCurrency || "";
+  if (!rows.length) {
+    unifiedTradeResults.innerHTML = '<div class="manual-history-empty">Manual and automated trades will appear here after Deriv confirms each purchase.</div>';
+    return;
+  }
+  unifiedTradeResults.innerHTML = rows.map(t => {
+    const status = String(t.status || "open").toLowerCase();
+    const settledTrade = ["won","lost","sold","cancelled"].includes(status);
+    const resultClass = status === "won" ? "won" : (status === "lost" ? "lost" : "open");
+    const profit = settledTrade && Number.isFinite(Number(t.profit)) ? ((Number(t.profit) >= 0 ? "+" : "") + Number(t.profit).toFixed(2) + " " + (verifiedDemoCurrency || "")) : status.toUpperCase();
+    const contractId = String(t.contractId || "");
+    const title = t.direction ? (t.direction + " " + (t.barrier ?? "") + " · " + (t.symbol || "")) : (t.signal || "Automated trade") + " · " + (t.symbol || currentSymbol || "");
+    return '<div class="manual-history-row"><div><div class="trade-result-source">' + t.source + ' · DEMO</div><div class="manual-history-main">' + title + '</div><div class="trade-result-meta">Contract ' + contractId + ' · Stake ' + Number(t.stake || 0).toFixed(2) + ' · ' + (t.duration || "—") + ' tick(s)</div><div class="trade-result-meta">' + (t.updatedAt || "") + '</div></div><div class="trade-result-profit manual-history-result ' + resultClass + '">' + profit + '</div></div>';
   }).join("");
 }
+function renderManualTradeHistory() { renderUnifiedTradeResults(); }
+function openTradeResults(open) {
+  const opening = typeof open === "boolean" ? open : tradeResultsPanel.classList.contains("hidden");
+  tradeResultsPanel.classList.toggle("hidden", !opening);
+  tradeResultsToggle.setAttribute("aria-expanded", String(opening));
+  tradeResultsToggle.textContent = opening ? "▲ CLOSE RESULTS" : "▼ TRADE RESULTS";
+}
+tradeResultsToggle.addEventListener("click", () => openTradeResults());
+tradeResultsClose.addEventListener("click", () => openTradeResults(false));
 async function executeManualDigitTrade(direction) {
   if (manualTradeBusy) return;
   if (!verifiedDemoAccountId) { manualTradeStatus.textContent = "Connect and verify a Deriv Demo account first. No trade placed."; return; }
@@ -1716,12 +1759,6 @@ resultDetailsToggle.addEventListener("click",function(){
   resultDetailsToggle.setAttribute("aria-expanded",String(opening));
   resultDetailsToggle.textContent = opening ? "− HIDE SIGNAL DETAILS" : "＋ SIGNAL DETAILS";
 });
-manualHistoryToggle.addEventListener("click",function(){
-  const opening = !manualTradeHistory.classList.contains("expanded");
-  manualTradeHistory.classList.toggle("expanded",opening);
-  manualHistoryToggle.setAttribute("aria-expanded",String(opening));
-  manualHistoryToggle.textContent = opening ? "− HIDE TRANSACTIONS" : "＋ VIEW TRANSACTIONS";
-});
 manualUnderButton.addEventListener("click",function(){executeManualDigitTrade("UNDER");});
 manualOverButton.addEventListener("click",function(){executeManualDigitTrade("OVER");});
 syncManualBarrierUI();
@@ -1770,18 +1807,16 @@ async function startDemoTradeConnection() {
         const c=message.proposal_open_contract, status=String(c.status||(c.is_sold?"sold":"open")).toLowerCase();
         if(c.is_sold||["won","lost","sold","cancelled"].includes(status)) {
           autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency;
-          const demoHistory = document.getElementById("demoTradeResultHistory");
-          if (demoHistory) {
-            if (demoHistory.querySelector(".manual-history-empty")) demoHistory.innerHTML = "";
-            const row = document.createElement("div");
-            row.className = "manual-history-row";
-            const profitText = c.profit == null ? "Profit not reported" : ((Number(c.profit) >= 0 ? "+" : "") + Number(c.profit).toFixed(2) + " " + verifiedDemoCurrency);
-            row.innerHTML = '<div><div class="manual-history-title">Demo · Contract ' + String(c.contract_id) + '</div><div class="manual-history-meta">' + new Date().toLocaleString() + '</div></div><div class="manual-history-result ' + (status === "won" ? "won" : (status === "lost" ? "lost" : "open")) + '">' + status.toUpperCase() + '<br>' + profitText + '</div>';
-            demoHistory.prepend(row);
-          }
           refreshDerivWallet();
         }
         else autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Buy price: "+(c.buy_price??"—")+" "+verifiedDemoCurrency;
+        const autoRecord = automatedTrades.get(String(c.contract_id));
+        if (autoRecord) {
+          autoRecord.status = status === "won" || status === "lost" ? status : (c.is_sold ? "sold" : status);
+          if (c.profit != null && Number.isFinite(Number(c.profit))) autoRecord.profit = Number(c.profit);
+          autoRecord.updatedAt = new Date().toLocaleString();
+          renderUnifiedTradeResults();
+        }
         const manualRecord = manualTrades.get(String(c.contract_id));
         if (manualRecord) {
           manualRecord.status = status === "won" || status === "lost" ? status : (c.is_sold ? "sold" : status);
@@ -1892,6 +1927,9 @@ async function maybeExecuteDemoTrade(result) {
       const buyResponse = await demoWsRequest({buy:String(proposal.id),price:Number(proposal.ask_price)}, "buy"), bought = buyResponse.buy;
       if (!bought || !bought.contract_id) throw new Error("Deriv did not confirm a contract ID for run " + run + ". Check Demo portfolio before retrying.");
       completed++;
+      const autoId = String(bought.contract_id);
+      automatedTrades.set(autoId, {contractId:autoId,signal:String(result.signal),symbol:currentSymbol,stake:Number(bought.buy_price ?? proposal.ask_price),duration:Number(autoTradeDuration.value),status:"open",profit:0,createdAt:Date.now(),updatedAt:new Date().toLocaleString()});
+      renderUnifiedTradeResults();
       demoTradeSocket.send(JSON.stringify({proposal_open_contract:1,contract_id:Number(bought.contract_id),subscribe:1,req_id:++demoRequestId}));
       autoTradeResult.textContent = "Confirmed " + completed + " of " + runs + " Demo runs · Latest contract " + bought.contract_id + " · Monitoring settlement.";
     }
