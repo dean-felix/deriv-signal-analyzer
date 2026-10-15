@@ -184,6 +184,60 @@
     }
     .hidden { display: none; }
     button:disabled { opacity: .6; }
+  
+    /* Final mobile-first polish: compact cards, vivid blocks, and compact manual digit scanner. */
+    .app { padding:12px 10px 22px; }
+    .card { padding:11px; margin-bottom:8px; border-radius:15px; }
+    .brand-row { gap:9px; margin-bottom:4px; }
+    .brand-mark { width:38px; height:38px; border-radius:12px; font-size:20px; }
+    h1 { font-size:21px; }
+    .subtitle { margin:4px 0 8px; font-size:12px; }
+    .top-pill { padding:5px 8px; margin:4px 0 8px; font-size:10px; }
+    .section-heading { margin-bottom:7px; font-size:12px; }
+    label { margin-bottom:5px; font-size:11px; }
+    select, button, input { border-radius:10px; padding:9px; font-size:13px; }
+    input { margin-bottom:7px; }
+    button { margin-top:7px; }
+    .trade-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+    .trade-option { min-height:47px; padding:6px 7px; gap:7px; border-radius:11px; font-size:11px; }
+    .trade-option .trade-icon { width:26px; height:26px; border-radius:8px; font-size:14px; }
+    .trade-option:nth-child(1) .trade-icon { background:#174a44; color:#72f3c1; }
+    .trade-option:nth-child(2) .trade-icon { background:#493519; color:#ffd477; }
+    .trade-option:nth-child(3) .trade-icon { background:#3c2d61; color:#c9adff; }
+    .trade-option:nth-child(4) .trade-icon { background:#163d65; color:#7cc6ff; }
+    .trade-option:nth-child(5) .trade-icon { background:#5a2636; color:#ff9cae; }
+    .trade-option:nth-child(6) .trade-icon { background:#214c38; color:#91f0a9; }
+    .trade-option:nth-child(7) .trade-icon { background:#4b2b55; color:#f0aaff; }
+    .trade-option:nth-child(8) .trade-icon { background:#5b401c; color:#ffd78c; }
+    .trade-option.active { border-color:#8b79ff; background:linear-gradient(135deg,#352a69,#182a40); box-shadow:inset 0 0 0 1px #8b79ff45,0 4px 14px #5f4bff18; }
+    .price { font-size:clamp(23px,6vw,30px); margin-top:5px; }
+    .result { padding:14px 10px; }
+    .result-title { margin-bottom:6px; font-size:10px; }
+    .result-main { font-size:25px; }
+    .result-score { font-size:13px; margin-top:4px; }
+    .result-detail { font-size:11px; margin-top:6px; }
+    .hint, .market-info { font-size:10px; margin-top:5px; }
+    #derivConnectionCard, #autoTradeCard { padding:9px; }
+    .run-settings { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .run-settings input { margin-bottom:0; }
+    .manual-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .manual-head .section-heading { margin:0; }
+    .live-chip { color:#73f2c3; font-size:9px; letter-spacing:1px; margin-left:5px; }
+    .manual-current { display:grid; place-items:center; width:31px; height:31px; border-radius:10px; background:#23344b; border:1px solid #3e5677; color:#fff; font-size:18px; font-weight:900; }
+    .digit-ticker { display:flex; gap:4px; overflow:hidden; white-space:nowrap; margin:8px 0; padding:5px; border-radius:9px; background:#0b1320; border:1px solid #24334a; min-height:30px; align-items:center; }
+    .ticker-digit { flex:0 0 21px; text-align:center; padding:3px 0; border-radius:5px; font-size:11px; font-weight:800; background:#243449; color:#dce7f8; }
+    .ticker-digit.latest { background:#23a879; color:#04150f; box-shadow:0 0 12px #23a87955; }
+    .digit-bars { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px 6px; }
+    .digit-stat { min-width:0; }
+    .digit-stat-head { display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#d9e5f7; }
+    .digit-track { height:7px; background:#5a2731; border-radius:99px; overflow:hidden; }
+    .digit-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#19a875,#55f0ae); transition:width .25s ease; }
+    .digit-stat.low .digit-fill { background:linear-gradient(90deg,#c23c50,#ff6b78); }
+    .digit-stat.high .digit-track { box-shadow:0 0 0 1px #3ee7a5; }
+    .digit-stat.high .digit-stat-head { color:#5df0b2; }
+    .digit-stat.low .digit-stat-head { color:#ff8790; }
+    @media (max-width:360px) { .app { padding:10px 8px 18px; } .card { padding:9px; } .trade-option { font-size:10px; } .digit-bars { gap:6px 4px; } }
+
   </style>
 </head>
 <body>
@@ -197,7 +251,7 @@
       </div>
     </div>
     <div class="subtitle">Live market insights · Built for your phone</div>
-    <div class="top-pill"><span class="dot"></span> ANALYSIS MODE · TRADING NOT ENABLED</div>
+    <div class="top-pill"><span class="dot"></span> LIVE MARKET · DEMO AUTO ONLY</div>
     <section class="card" id="derivConnectionCard" aria-labelledby="derivConnectionTitle">
       <div class="section-heading" id="derivConnectionTitle">Deriv account</div>
       <div class="status" style="margin-bottom:10px">
