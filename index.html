@@ -742,15 +742,26 @@ function connect() {
       return;
     }
 
-    if (data.msg_type === "active_symbols" || Array.isArray(data.active_symbols)) {
+    // Accept the classic API response and common wrapped response shapes.
+    const activeSymbols = Array.isArray(data.active_symbols)
+      ? data.active_symbols
+      : data.data && Array.isArray(data.data.active_symbols)
+        ? data.data.active_symbols
+        : data.result && Array.isArray(data.result.active_symbols)
+          ? data.result.active_symbols
+          : null;
+    if (data.msg_type === "active_symbols" || activeSymbols !== null ||
+        (data.data && data.data.msg_type === "active_symbols")) {
       clearTimeout(activeSymbolsTimer);
-      const returnedMarkets = data.active_symbols || (data.data && data.data.active_symbols) || [];
+      const returnedMarkets = activeSymbols || [];
       const normalizedMarkets = returnedMarkets.map(market => ({
         ...market,
-        underlying_symbol: market.underlying_symbol || market.symbol,
-        underlying_symbol_name: market.underlying_symbol_name || market.display_name || market.name,
+        underlying_symbol: market.underlying_symbol || market.symbol || market.underlying,
+        underlying_symbol_name: market.underlying_symbol_name || market.display_name ||
+          market.name || market.symbol,
         pip_size: market.pip_size ?? market.pip
       }));
+      setHistoryDiagnostic("Market-list response received (" + normalizedMarkets.length + " entries); filtering supported markets.");
       loadMarkets(normalizedMarkets);
       return;
     }
@@ -767,6 +778,17 @@ function connect() {
 
     if (data.msg_type === "contracts_for") {
       handleContracts(data);
+      return;
+    }
+
+    // Don't silently leave the selector on its permanent loading placeholder if
+    // the API replies in an unexpected format.
+    if (marketSelect.options[0] &&
+        marketSelect.options[0].textContent === "Loading markets...") {
+      const responseType = data.msg_type || data.action || data.type || "unlabelled response";
+      setHistoryDiagnostic("Connected, but the market-list reply was not recognized (" +
+        responseType + "). Waiting for active_symbols; see browser console for response details.");
+      console.warn("Unexpected Deriv response while loading market list:", data);
     }
   };
 
