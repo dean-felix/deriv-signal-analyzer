@@ -320,7 +320,7 @@
     .digit-strip .wheel-digit.frequency-low .digit-frequency-fill { background:#ff5265 !important; }
     .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
     .digit-strip .wheel-digit.latest-tick { border-color:#ff5c62; box-shadow:inset 0 -3px #ff5c62,0 0 0 1px #ff5c62; }
-    .live-tick-pointer { position:absolute; top:55px; bottom:auto; left:5%; width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid #ff424f; border-top:0; transform:translateX(-50%); transition:left .12s linear; filter:drop-shadow(0 0 3px #ff424f99); pointer-events:none; z-index:3; }
+    .live-tick-pointer { position:absolute; top:55px; bottom:auto; left:5%; width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid #ff424f; border-top:0; transform:translateX(-50%); transition:left .12s linear,top .12s linear; filter:drop-shadow(0 0 3px #ff424f99); pointer-events:none; z-index:3; }
     .strip-current { text-align:center; font-size:10px; color:#91a5bf; margin-top:7px; }
     .strip-current strong { color:#ff6973; font-size:12px; }
     .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
@@ -1645,7 +1645,15 @@ function renderManualDigits() {
   const latest = ticks.length ? ticks[ticks.length - 1].digit : null;
   manualCurrentDigit.textContent = latest === null ? "—" : String(latest);
   wheelLiveDigit.textContent = latest === null ? "—" : String(latest);
-  if (latest !== null) wheelPointer.style.left = ((latest + 0.5) * 10) + "%";
+  if (latest !== null) {
+    const targetBox = digitWheel.querySelector('.wheel-digit[data-digit="' + latest + '"]');
+    const wrapRect = digitWheel.parentElement.getBoundingClientRect();
+    const boxRect = targetBox ? targetBox.getBoundingClientRect() : null;
+    if (boxRect && wrapRect.width > 0) {
+      wheelPointer.style.left = (boxRect.left + boxRect.width / 2 - wrapRect.left) + "px";
+      wheelPointer.style.top = (boxRect.bottom - wrapRect.top + 2) + "px";
+    }
+  }
   const recent = ticks.slice(-24);
   digitTicker.innerHTML = recent.length ? recent.map((t,i) => '<span class="ticker-digit' + (i === recent.length - 1 ? ' latest' : '') + '">' + t.digit + '</span>').join("") : '<span class="hint">Waiting for live digits…</span>';
   const sample = ticks.slice(-SAMPLE_SIZE), counts = Array(10).fill(0);
