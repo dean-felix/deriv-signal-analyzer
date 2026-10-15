@@ -320,7 +320,7 @@
     .digit-strip .wheel-digit.frequency-low .digit-frequency-fill { background:#ff5265; }
     .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
     .digit-strip .wheel-digit.latest-tick { border-color:#ff5c62; box-shadow:inset 0 -3px #ff5c62,0 0 0 1px #ff5c62; }
-    .live-tick-pointer { position:absolute; top:auto; bottom:1px; left:5%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:9px solid #ff424f; transform:translateX(-50%); transition:left .18s ease; filter:drop-shadow(0 0 3px #ff424f77); pointer-events:none; }
+    .live-tick-pointer { position:absolute; top:54px; bottom:auto; left:5%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:9px solid #ff424f; transform:translateX(-50%); transition:left .18s ease; filter:drop-shadow(0 0 3px #ff424f77); pointer-events:none; }
     .strip-current { text-align:center; font-size:10px; color:#91a5bf; margin-top:7px; }
     .strip-current strong { color:#ff6973; font-size:12px; }
     .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
@@ -1648,7 +1648,7 @@ function renderManualDigits() {
   const sample = ticks.slice(-SAMPLE_SIZE), counts = Array(10).fill(0);
   sample.forEach(t => counts[t.digit]++);
   const max = sample.length ? Math.max(...counts) : 0;
-  const positive = counts.filter(n => n > 0), min = positive.length ? Math.min(...positive) : 0;
+  const min = sample.length ? Math.min(...counts) : 0;
   digitWheel.querySelectorAll(".wheel-digit").forEach(button => {
     const digit = Number(button.dataset.digit), count = counts[digit] || 0;
     const pct = sample.length ? count / sample.length * 100 : 0;
