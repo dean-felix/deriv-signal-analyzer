@@ -728,7 +728,7 @@ function loadMarkets(markets) {
   const previousSymbol = currentSymbol;
 
   const usable = markets
-    .filter(market => market && market.underlying_symbol)
+    .filter(market => market && market.underlying_symbol && /volatility|bull|bear/i.test(market.underlying_symbol_name || market.underlying_symbol))
     .sort((a, b) =>
       (a.underlying_symbol_name || a.underlying_symbol)
         .localeCompare(b.underlying_symbol_name || b.underlying_symbol)
@@ -868,11 +868,10 @@ function handleHistory(data) {
     " history entries. " + recentTicks.length + " usable ticks loaded."
   );
 
-  analysisActive = true;
-  resultMain.textContent = "ANALYZING";
-  resultScore.textContent = recentTicks.length + " ticks loaded · live refresh ON";
-  resultDetail.textContent = "Automatically analyzing the selected market and contract on incoming ticks.";
-  runAnalysis();
+  analysisActive = false;
+  resultMain.textContent = "READY TO ANALYZE";
+  resultScore.textContent = recentTicks.length + " live/history ticks loaded";
+  resultDetail.textContent = "Market data is ready. Press ANALYZE NOW to scan the available Bull, Bear and Volatility markets for the strongest qualifying result."; 
 }
 
 function handleLiveTick(tickData) {
@@ -887,7 +886,7 @@ function handleLiveTick(tickData) {
   setStatus("Receiving live ticks", true);
 
   // Keep analysis current automatically; only a new actionable signal can start a batch.
-  if (historyLoaded) {
+  if (historyLoaded && autoTradeEnabled.checked) {
     analysisActive = true;
     const result = runAnalysis();
     const signal = String(result && result.signal || "").toUpperCase();
@@ -1397,10 +1396,9 @@ function runMarketScan() {
     return;
   }
   const options = Array.from(marketSelect.options).filter(option => option.value);
-  const eligible = options.filter(option => /volatility|bull|bear/i.test(
+  const markets = options.filter(option => /volatility|bull|bear/i.test(
     (option._marketMetadata && option._marketMetadata.underlying_symbol_name) || option.textContent
   ));
-  const markets = eligible.length ? eligible : options;
   if (!markets.length) {
     showWait("Deriv has not returned any active markets.", "DATA UNAVAILABLE");
     return;
