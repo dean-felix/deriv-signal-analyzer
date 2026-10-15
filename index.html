@@ -541,6 +541,8 @@ let analysisActive = false;
 let requestCounter = 0;
 let currentHistoryRequestId = null;
 let currentContractsRequestId = null;
+let marketScanRequests = new Map();
+let marketScanState = null;
 let reconnectTimer = null;
 let manuallyClosed = false;
 
@@ -664,6 +666,11 @@ function connect() {
       const message =
         data.error.message || data.error.code || "Unknown Deriv error";
       console.error("Deriv error:", data.error);
+
+      if (data.req_id && marketScanRequests.has(data.req_id)) {
+        handleMarketScanResponse(data, data.error);
+        return;
+      }
 
       if (data.req_id === currentHistoryRequestId) {
         historyLoaded = false;
@@ -822,6 +829,10 @@ function subscribeToMarket(symbol) {
 }
 
 function handleHistory(data) {
+  if (data.req_id && marketScanRequests.has(data.req_id)) {
+    handleMarketScanResponse(data, null);
+    return;
+  }
   if (data.req_id && data.req_id !== currentHistoryRequestId) return;
 
   const history = data.history;
@@ -1267,6 +1278,151 @@ function analyzeOnlyUpsDowns() {
   };
 }
 
+function scorePercent(result) {
+  const match = String(result && result.score || "").match(/(\d+(?:\.\d+)?)%/);
+  return match ? Number(match[1]) : null;
+}
+
+function evaluateScanCandidate(symbol, metadata, ticks) {
+  const saved = {
+    symbol: currentSymbol, precision: currentPrecision, ticks: recentTicks,
+    loaded: historyLoaded, overBarrier: overUnderBarrierSelect.value,
+    targetDigit: targetDigitSelect.value, barrierPrice: barrierPriceInput.value
+  };
+  try {
+    currentSymbol = symbol;
+    currentPrecision = precisionFromPip(metadata && (metadata.pip_size ?? metadata.pip));
+    recentTicks = ticks;
+    historyLoaded = ticks.length >= 100;
+    if (!historyLoaded) return null;
+
+    const type = tradeTypeSelect.value;
+    let best = null;
+    const evaluate = () => {
+      let result;
+      switch (type) {
+        case "RISE_FALL": result = analyzeRiseFall(); break;
+        case "HIGHER_LOWER": result = analyzeHigherLower(); break;
+        case "ASIAN_UP_DOWN": result = analyzeAsianUpDown(); break;
+        case "EVEN_ODD": result = analyzeEvenOdd(); break;
+        case "OVER_UNDER": result = analyzeOverUnder(); break;
+        case "MATCHES": result = analyzeMatches(); break;
+        case "DIFFERS": result = analyzeDiffers(); break;
+        case "ONLY_UPS_DOWNS": result = analyzeOnlyUpsDowns(); break;
+        default: result = {signal:"WAIT",score:"Unsupported type",detail:"No strategy is configured."};
+      }
+      const pct = scorePercent(result);
+      if (result && result.signal !== "WAIT" && pct !== null && (!best || pct > best.pct)) {
+        best = {symbol, name:(metadata && metadata.underlying_symbol_name) || symbol, signal:result.signal, score:result.score, detail:result.detail, pct, ticks:ticks.length};
+      }
+    };
+
+    if (type === "OVER_UNDER") {
+      for (let barrier = 1; barrier <= 8; barrier++) {
+        overUnderBarrierSelect.value = String(barrier);
+        evaluate();
+      }
+    } else if (type === "MATCHES" || type === "DIFFERS") {
+      for (let digit = 0; digit <= 9; digit++) {
+        targetDigitSelect.value = String(digit);
+        evaluate();
+      }
+    } else {
+      evaluate();
+    }
+    return best;
+  } finally {
+    currentSymbol = saved.symbol;
+    currentPrecision = saved.precision;
+    recentTicks = saved.ticks;
+    historyLoaded = saved.loaded;
+    overUnderBarrierSelect.value = saved.overBarrier;
+    targetDigitSelect.value = saved.targetDigit;
+    barrierPriceInput.value = saved.barrierPrice;
+  }
+}
+
+function finishMarketScan() {
+  const state = marketScanState;
+  if (!state || state.pending.size) return;
+  marketScanState = null;
+  analyzeButton.disabled = false;
+  if (!state.results.length) {
+    showWait("No market produced a sufficiently strong, comparable signal from verified recent ticks. Try again after more data arrives.", "WAIT · No qualifying result");
+    return;
+  }
+  state.results.sort((a,b) => b.pct - a.pct);
+  const best = state.results[0];
+  resultMain.textContent = best.signal;
+  resultScore.textContent = best.pct.toFixed(1) + "% observed historical frequency · " + best.name;
+  resultDetail.textContent = "Strongest qualifying " + tradeTypeSelect.options[tradeTypeSelect.selectedIndex].text +
+    " candidate across " + state.checked + " live Deriv markets: " + best.name + " (" + best.symbol + "). " +
+    best.detail + " This percentage is a historical sample measure, not a guaranteed win probability. Trade types without a comparable percentage or requiring a contract-specific barrier are not forced into a prediction.";
+  const chip = tradeTypeCards.querySelector('[data-signal-for="' + tradeTypeSelect.value + '"]');
+  if (chip) {
+    chip.textContent = best.signal + " · " + best.pct.toFixed(1) + "%";
+    chip.classList.remove("wait"); chip.classList.add("ready");
+    chip.title = resultDetail.textContent;
+  }
+  setHistoryDiagnostic("Market scan complete: " + state.checked + " markets checked; " + state.results.length + " qualifying candidates.");
+  renderManualDigits();
+}
+
+function handleMarketScanResponse(data, error) {
+  const reqId = data && data.req_id;
+  const item = marketScanRequests.get(reqId);
+  if (!item || !marketScanState) return;
+  marketScanRequests.delete(reqId);
+  marketScanState.pending.delete(reqId);
+  marketScanState.checked++;
+  const history = data && data.history;
+  if (!error && history && Array.isArray(history.prices) && Array.isArray(history.times)) {
+    const ticks = [];
+    const savedPrecision = currentPrecision;
+    currentPrecision = precisionFromPip(item.metadata && (item.metadata.pip_size ?? item.metadata.pip));
+    for (let i = 0; i < Math.min(history.prices.length, history.times.length); i++) {
+      const tick = createTick(history.prices[i], history.times[i]);
+      if (tick) ticks.push(tick);
+    }
+    currentPrecision = savedPrecision;
+    const candidate = evaluateScanCandidate(item.symbol, item.metadata, ticks.slice(-MAX_TICKS));
+    if (candidate) marketScanState.results.push(candidate);
+  }
+  if (!marketScanState.pending.size) finishMarketScan();
+}
+
+function runMarketScan() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    showWait("Deriv market-data connection is not ready. Wait for it to reconnect.", "DATA UNAVAILABLE");
+    return;
+  }
+  const options = Array.from(marketSelect.options).filter(option => option.value);
+  const eligible = options.filter(option => /volatility|bull|bear/i.test(
+    (option._marketMetadata && option._marketMetadata.underlying_symbol_name) || option.textContent
+  ));
+  const markets = eligible.length ? eligible : options;
+  if (!markets.length) {
+    showWait("Deriv has not returned any active markets.", "DATA UNAVAILABLE");
+    return;
+  }
+
+  marketScanRequests.clear();
+  marketScanState = {pending:new Set(), results:[], checked:0, total:markets.length};
+  analyzeButton.disabled = true;
+  resultMain.textContent = "SCANNING MARKETS";
+  resultScore.textContent = "0 / " + markets.length + " markets checked";
+  resultDetail.textContent = "Checking recent live Deriv history for the selected trade type. Over/Under and Matches/Differs will test candidate barriers/digits automatically. No trade is placed.";
+  setHistoryDiagnostic("Scanning " + markets.length + " active Bull, Bear and Volatility markets…");
+
+  markets.forEach(option => {
+    const reqId = ++requestCounter;
+    const item = {symbol:option.value, metadata:option._marketMetadata || null};
+    marketScanRequests.set(reqId, item);
+    marketScanState.pending.add(reqId);
+    socket.send(JSON.stringify({ticks_history:option.value,end:"latest",count:HISTORY_COUNT,style:"ticks",req_id:reqId}));
+  });
+}
+
 function runAnalysis(allowExecution = false) {
   if (!currentSymbol) {
     showWait("Select a market.");
@@ -1348,7 +1504,7 @@ marketSelect.addEventListener("change", function() {
   subscribeToMarket(marketSelect.value);
 });
 
-analyzeButton.addEventListener("click", function() { runAnalysis(); });
+analyzeButton.addEventListener("click", function() { runMarketScan(); });
 
 tradeTypeCards.addEventListener("click", function(event) {
   const card = event.target.closest("[data-type]");
