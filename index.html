@@ -556,6 +556,8 @@ let currentContractsRequestId = null;
 let marketScanRequests = new Map();
 let marketScanState = null;
 let reconnectTimer = null;
+let activeSymbolsTimer = null;
+let useLegacyMarketEndpoint = false;
 let manuallyClosed = false;
 
 const HISTORY_COUNT = 200;
@@ -645,12 +647,14 @@ function updateLiveDisplay(tick) {
 
 function connect() {
   clearTimeout(reconnectTimer);
+  clearTimeout(activeSymbolsTimer);
   setStatus("Connecting to Deriv...", false);
 
   try {
-    socket = new WebSocket(
-      "wss://api.derivws.com/trading/v1/options/ws/public"
-    );
+    const endpoint = useLegacyMarketEndpoint
+      ? "wss://ws.derivws.com/websockets/v3?app_id=1089"
+      : "wss://api.derivws.com/trading/v1/options/ws/public";
+    socket = new WebSocket(endpoint);
   } catch (error) {
     setStatus("Could not create WebSocket", false);
     setHistoryDiagnostic("Connection could not be created.");
@@ -660,7 +664,23 @@ function connect() {
 
   socket.onopen = function() {
     setStatus("Connected — loading markets...", true);
-    socket.send(JSON.stringify({ active_symbols: "brief" }));
+    socket.send(JSON.stringify({ active_symbols: "brief", req_id: ++requestCounter }));
+    activeSymbolsTimer = setTimeout(function() {
+      if (!marketSelect.options.length ||
+          marketSelect.options[0].textContent === "Loading markets...") {
+        if (!useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN) {
+          useLegacyMarketEndpoint = true;
+          setStatus("Market list timed out — switching Deriv feed...", false);
+          setHistoryDiagnostic("Primary market feed did not return symbols; trying compatibility feed.");
+          socket.close();
+        } else {
+          setStatus("Deriv market list timed out — reconnecting...", false);
+          setHistoryDiagnostic("No active markets received. Check the connection and retry.");
+          if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+          else scheduleReconnect();
+        }
+      }
+    }, 9000);
   };
 
   socket.onmessage = function(event) {
@@ -671,6 +691,20 @@ function connect() {
     } catch (error) {
       console.error("Invalid Deriv message:", event.data);
       setHistoryDiagnostic("Received a non-JSON WebSocket message.");
+      return;
+    }
+
+    if (data.errors && !data.error) {
+      const message = Array.isArray(data.errors)
+        ? data.errors.map(item => item.message || item.code || "Deriv API error").join("; ")
+        : "Deriv API returned an error";
+      console.error("Deriv errors:", data.errors);
+      setStatus("Deriv market feed error: " + message, false);
+      setHistoryDiagnostic(message);
+      if (!useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN) {
+        useLegacyMarketEndpoint = true;
+        socket.close();
+      }
       return;
     }
 
@@ -698,8 +732,16 @@ function connect() {
       return;
     }
 
-    if (data.msg_type === "active_symbols") {
-      loadMarkets(data.active_symbols || []);
+    if (data.msg_type === "active_symbols" || Array.isArray(data.active_symbols)) {
+      clearTimeout(activeSymbolsTimer);
+      const returnedMarkets = data.active_symbols || (data.data && data.data.active_symbols) || [];
+      const normalizedMarkets = returnedMarkets.map(market => ({
+        ...market,
+        underlying_symbol: market.underlying_symbol || market.symbol,
+        underlying_symbol_name: market.underlying_symbol_name || market.display_name || market.name,
+        pip_size: market.pip_size ?? market.pip
+      }));
+      loadMarkets(normalizedMarkets);
       return;
     }
 
@@ -724,6 +766,7 @@ function connect() {
   };
 
   socket.onclose = function() {
+    clearTimeout(activeSymbolsTimer);
     setStatus("Disconnected — attempting to reconnect...", false);
     if (marketScanState) clearMarketScan("Deriv connection dropped during the scan. The scan was stopped safely; reconnecting now. Press SCAN ALL MARKETS again after the connection returns.");
     if (!manuallyClosed) scheduleReconnect();
