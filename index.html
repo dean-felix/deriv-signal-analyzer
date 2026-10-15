@@ -303,10 +303,6 @@
       <input id="autoTradeStake" type="number" min="0.35" step="0.01" value="1.00" disabled>
       <div class="run-settings"><div><label for="autoTradeDuration">Duration</label><select id="autoTradeDuration" disabled><option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option></select></div><div><label for="autoTradeRuns">Number of runs</label><input id="autoTradeRuns" type="number" min="1" max="20" step="1" value="1" disabled></div></div>
       <input id="autoTradeEnabled" type="checkbox" class="visually-hidden" aria-hidden="true" tabindex="-1" disabled>
-      <div class="start-row">
-        <button type="button" id="startAutoButton" class="start-auto" disabled>▶ START AUTO</button>
-        <button type="button" id="stopAutoButton" class="stop-auto" disabled>■ STOP</button>
-      </div>
       <p class="hint">When armed, the analyzer watches live ticks and can submit the selected number of Demo runs when a new actionable signal appears. Demo only; historical patterns are not guaranteed win probabilities.</p>
       <div class="market-info" id="autoTradeResult">No trade submitted.</div>
     </section>
@@ -362,7 +358,11 @@
       <p class="hint">Over means strictly greater than the barrier; Under means strictly less. Equal digits are neither.</p>
     </div>
 
-    <button id="analyzeButton">ANALYZE</button>
+    <div class="start-row">
+      <button type="button" id="startAutoButton" class="start-auto" disabled>▶ START AUTO</button>
+      <button type="button" id="stopAutoButton" class="stop-auto" disabled>■ STOP</button>
+    </div>
+    <button id="analyzeButton">ANALYZE NOW (NO TRADE)</button>
   </section>
 
   <section class="card">
