@@ -49,6 +49,22 @@
     .manual-head .section-heading { margin:0; }
     .live-chip { color:#73f2c3; font-size:9px; letter-spacing:1px; margin-left:5px; }
     .manual-current { display:grid; place-items:center; width:31px; height:31px; border-radius:10px; background:#23344b; border:1px solid #3e5677; color:#fff; font-size:18px; font-weight:900; }
+    .mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:5px; border:1px solid #26354b; border-radius:14px; background:#0b1320; margin:0 0 9px; }
+    .mode-tab { margin:0; padding:11px 8px; font-size:12px; border-radius:10px; background:transparent; box-shadow:none; color:#9aaac0; letter-spacing:.4px; }
+    .mode-tab.active { color:#fff; background:linear-gradient(110deg,#7c5cff,#287b91); box-shadow:0 4px 15px #635bff33; }
+    .mode-panel { min-width:0; }
+    .wallet-card { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 11px; margin:8px 0; border-radius:12px; background:linear-gradient(110deg,#12372f,#152c3b); border:1px solid #286650; }
+    .wallet-label { font-size:10px; color:#8ce9c4; letter-spacing:1px; font-weight:800; }
+    .wallet-balance { font-size:17px; font-weight:900; color:#eafff5; overflow-wrap:anywhere; text-align:right; }
+    .wallet-account { font-size:9px; color:#9cb5c9; text-align:right; margin-top:2px; }
+    .start-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
+    .start-row button { margin:0; }
+    .start-auto { background:linear-gradient(100deg,#1ca978,#147c8a); box-shadow:0 6px 18px #1ca97830; }
+    .stop-auto { background:linear-gradient(100deg,#b9364f,#7e263c); box-shadow:none; }
+    .digit-stat.barrier { outline:1px solid #e8c35e; outline-offset:2px; border-radius:4px; }
+    .manual-barrier-row { display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:8px; margin:8px 0; }
+    .manual-barrier-row label { margin:0; color:#d8e2f2; }
+    .manual-barrier-row select { padding:7px; }
     .digit-ticker { display:flex; gap:4px; overflow:hidden; white-space:nowrap; margin:9px 0; padding:6px; border-radius:9px; background:#0b1320; border:1px solid #24334a; min-height:32px; align-items:center; }
     .ticker-digit { flex:0 0 22px; text-align:center; padding:3px 0; border-radius:5px; font-size:12px; font-weight:800; background:#243449; color:#dce7f8; }
     .ticker-digit.latest { background:#23a879; color:#04150f; box-shadow:0 0 12px #23a87955; }
@@ -261,17 +277,28 @@
       <button type="button" id="derivConnectButton">CONNECT TO DERIV</button>
       <button type="button" id="derivLogoutButton" class="hidden" style="background:#26354b;box-shadow:none">DISCONNECT</button>
       <p class="hint" id="derivAuthHint">Connect securely through Deriv. This does not place trades.</p>
+      <div class="wallet-card" id="walletCard" aria-live="polite">
+        <div><div class="wallet-label">DERIV WALLET</div><div class="hint" id="walletState">Connect to load account balance</div></div>
+        <div><div class="wallet-balance" id="walletBalance">—</div><div class="wallet-account" id="walletAccount">Not connected</div></div>
+      </div>
     </section>
+  </header>
+  <div class="mode-tabs" role="tablist" aria-label="Trading mode">
+    <button type="button" class="mode-tab active" id="autoModeTab" role="tab" aria-selected="true" aria-controls="autoModePanel">⚡ AUTO TRADING</button>
+    <button type="button" class="mode-tab" id="manualModeTab" role="tab" aria-selected="false" aria-controls="manualModePanel">◉ MANUAL DIGITS</button>
+  </div>
+  <section id="autoModePanel" class="mode-panel" role="tabpanel" aria-labelledby="autoModeTab">
     <section class="card" id="autoTradeCard" aria-labelledby="autoTradeTitle">
       <div class="section-heading" id="autoTradeTitle">Demo auto-trading</div>
       <div class="status"><span class="dot" id="autoTradeDot"></span><span id="autoTradeStatus">Locked until a Demo account is verified</span></div>
       <label for="autoTradeStake" style="margin-top:12px">Stake per trade</label>
       <input id="autoTradeStake" type="number" min="0.35" step="0.01" value="1.00" disabled>
       <div class="run-settings"><div><label for="autoTradeDuration">Duration</label><select id="autoTradeDuration" disabled><option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option></select></div><div><label for="autoTradeRuns">Number of runs</label><input id="autoTradeRuns" type="number" min="1" max="20" step="1" value="1" disabled></div></div>
-      <label style="display:flex;align-items:center;gap:10px;margin-top:14px;color:#e7edfa">
-        <input id="autoTradeEnabled" type="checkbox" style="width:20px;height:20px;margin:0" disabled>
-        Arm Demo auto-trading
-      </label>
+      <input id="autoTradeEnabled" type="checkbox" class="visually-hidden" aria-hidden="true" tabindex="-1" disabled>
+      <div class="start-row">
+        <button type="button" id="startAutoButton" class="start-auto" disabled>▶ START AUTO</button>
+        <button type="button" id="stopAutoButton" class="stop-auto" disabled>■ STOP</button>
+      </div>
       <p class="hint">When armed, the analyzer watches live ticks and can submit the selected number of Demo runs when a new actionable signal appears. Demo only; historical patterns are not guaranteed win probabilities.</p>
       <div class="market-info" id="autoTradeResult">No trade submitted.</div>
     </section>
@@ -355,11 +382,20 @@
     <div class="result-score" id="resultScore">---</div>
     <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
   </section>
-  <section class="card manual-panel" aria-labelledby="manualDigitsTitle">
-    <div class="manual-head"><div class="section-heading" id="manualDigitsTitle">MANUAL DIGITS <span class="live-chip">LIVE TICKER</span></div><span class="manual-current" id="manualCurrentDigit">—</span></div>
-    <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
-    <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
-    <p class="hint">Bars show how often each digit appeared in the recent sample, not a prediction or guaranteed chance.</p>
+  </section>
+  <section id="manualModePanel" class="mode-panel hidden" role="tabpanel" aria-labelledby="manualModeTab">
+    <section class="card manual-panel" aria-labelledby="manualDigitsTitle">
+      <div class="manual-head"><div class="section-heading" id="manualDigitsTitle">MANUAL DIGITS <span class="live-chip">LIVE TICKER</span></div><span class="manual-current" id="manualCurrentDigit">—</span></div>
+      <div class="manual-barrier-row">
+        <label for="manualBarrier">Digit barrier</label>
+        <select id="manualBarrier" aria-label="Highlight digit barrier">
+          <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        </select>
+      </div>
+      <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
+      <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
+      <p class="hint">Green marks the most frequent digit in the recent sample; red marks the least frequent. The selected barrier is outlined in gold. These are historical frequencies, not guaranteed chances.</p>
+    </section>
   </section>
 </main>
 
@@ -1250,6 +1286,16 @@ const autoTradeRuns = document.getElementById("autoTradeRuns");
 const manualCurrentDigit = document.getElementById("manualCurrentDigit");
 const digitTicker = document.getElementById("digitTicker");
 const digitBars = document.getElementById("digitBars");
+const manualBarrier = document.getElementById("manualBarrier");
+const autoModeTab = document.getElementById("autoModeTab");
+const manualModeTab = document.getElementById("manualModeTab");
+const autoModePanel = document.getElementById("autoModePanel");
+const manualModePanel = document.getElementById("manualModePanel");
+const startAutoButton = document.getElementById("startAutoButton");
+const stopAutoButton = document.getElementById("stopAutoButton");
+const walletBalance = document.getElementById("walletBalance");
+const walletAccount = document.getElementById("walletAccount");
+const walletState = document.getElementById("walletState");
 const autoTradeResult = document.getElementById("autoTradeResult");
 let verifiedDemoAccountId = "";
 let verifiedDemoCurrency = "";
@@ -1310,11 +1356,16 @@ derivLogoutButton.addEventListener("click", async function() {
   autoTradeStake.disabled = true;
   autoTradeDuration.disabled = true;
   autoTradeRuns.disabled = true;
+  startAutoButton.disabled = true;
+  stopAutoButton.disabled = true;
   verifiedDemoAccountId = "";
   verifiedDemoCurrency = "";
   closeDemoTradeSocket();
-  const wallet = document.getElementById("verifiedDemoWallet");
-  if (wallet) wallet.remove();
+  walletBalance.textContent = "—";
+  walletAccount.textContent = "Not connected";
+  walletState.textContent = "Connect to load account balance";
+  startAutoButton.disabled = true;
+  stopAutoButton.disabled = true;
   setAutoTradeStatus("Locked until a Demo account is verified", false);
   setDerivAuthStatus("Disconnected", false);
   derivAuthHint.textContent = "You can reconnect securely whenever you are ready.";
@@ -1339,18 +1390,17 @@ async function verifyDerivSession(session) {
     autoTradeStake.disabled = false;
     autoTradeDuration.disabled = false;
     autoTradeRuns.disabled = false;
+    startAutoButton.disabled = false;
+    stopAutoButton.disabled = false;
     autoTradeStatus.textContent = "Demo verified · auto-trading is OFF";
     autoTradeDot.style.background = "#22c55e";
     setDerivAuthStatus("Deriv connected · Demo account verified", true);
     derivAuthHint.textContent = "Demo account verified. Live accounts are not eligible for automatic execution.";
-    let wallet = document.getElementById("verifiedDemoWallet");
-    if (!wallet) {
-      wallet = document.createElement("div");
-      wallet.id = "verifiedDemoWallet";
-      wallet.className = "market-info";
-      derivAuthHint.before(wallet);
-    }
-    wallet.textContent = "Demo wallet: " + (account.balance == null ? "balance unavailable" : account.balance + " " + verifiedDemoCurrency) + " · " + verifiedDemoAccountId;
+    walletState.textContent = "Verified Demo account";
+    walletBalance.textContent = account.balance == null ? "Balance unavailable" : Number(account.balance).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + " " + verifiedDemoCurrency;
+    walletAccount.textContent = "Demo · " + verifiedDemoAccountId;
+    startAutoButton.disabled = false;
+    stopAutoButton.disabled = false;
   } catch (error) {
     verifiedDemoAccountId = "";
     verifiedDemoCurrency = "";
@@ -1359,6 +1409,11 @@ async function verifyDerivSession(session) {
     autoTradeStake.disabled = true;
     autoTradeDuration.disabled = true;
     autoTradeRuns.disabled = true;
+    startAutoButton.disabled = true;
+    stopAutoButton.disabled = true;
+    walletBalance.textContent = "—";
+    walletAccount.textContent = "Not verified";
+    walletState.textContent = "Wallet unavailable";
     closeDemoTradeSocket();
     setDerivAuthStatus("Login returned — account check failed", false);
     derivAuthHint.textContent = (error && error.message ? error.message : "Account check failed") + ". Automatic trading remains locked.";
@@ -1408,7 +1463,8 @@ function renderManualDigits() {
   const max = Math.max(...counts), positive = counts.filter(n => n > 0), min = Math.min(...positive);
   digitBars.innerHTML = counts.map((count,digit) => {
     const pct = count / sample.length * 100, high = count === max && max > 0, low = count === min;
-    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + '"><div class="digit-stat-head"><span>' + digit + '</span><strong>' + pct.toFixed(1) + '%</strong></div><div class="digit-track"><div class="digit-fill" style="width:' + Math.max(0,Math.min(100,pct)) + '%"></div></div></div>';
+    const barrierClass = manualBarrier && Number(manualBarrier.value) === digit ? ' barrier' : '';
+    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + barrierClass + '"><div class="digit-stat-head"><span>' + digit + '</span><strong>' + pct.toFixed(1) + '%</strong></div><div class="digit-track"><div class="digit-fill" style="width:' + Math.max(0,Math.min(100,pct)) + '%"></div></div></div>';
   }).join("");
 }
 
@@ -1460,14 +1516,48 @@ async function startDemoTradeConnection() {
     };
   });
 }
-autoTradeEnabled.addEventListener("change", async function() {
-  if(!autoTradeEnabled.checked){closeDemoTradeSocket();setAutoTradeStatus("Demo auto-trading is OFF",false);return;}
-  if(!verifiedDemoAccountId){autoTradeEnabled.checked=false;setAutoTradeStatus("Verify a Demo account before arming",false);return;}
-  autoTradeEnabled.disabled=true;setAutoTradeStatus("Connecting to Deriv Demo trading…",false);
-  try{await startDemoTradeConnection();lastAutoSignalKey="";setAutoTradeStatus("ARMED · Demo only · live signal watcher ON",true);autoTradeResult.textContent="Watching live analysis. A new actionable signal can trigger the selected number of Demo runs.";}
-  catch(error){autoTradeEnabled.checked=false;closeDemoTradeSocket();setAutoTradeStatus(error.message||"Could not arm Demo trading",false);}
-  finally{autoTradeEnabled.disabled=false;}
-});
+async function startAutoTrading() {
+  if (autoTradeEnabled.checked) return;
+  if (!verifiedDemoAccountId) { setAutoTradeStatus("Verify a Demo account before starting",false); return; }
+  const runs = Number(autoTradeRuns.value), stake = Number(autoTradeStake.value);
+  if (!Number.isInteger(runs) || runs < 1 || runs > 20) { setAutoTradeStatus("Choose 1–20 runs",false); return; }
+  if (!Number.isFinite(stake) || stake <= 0 || stake > 100) { setAutoTradeStatus("Enter a valid Demo stake",false); return; }
+  autoTradeEnabled.checked = true;
+  startAutoButton.disabled = true;
+  setAutoTradeStatus("Connecting to Deriv Demo trading…",false);
+  try {
+    await startDemoTradeConnection();
+    lastAutoSignalKey = "";
+    setAutoTradeStatus("RUNNING · Demo only · " + runs + " runs per signal batch",true);
+    autoTradeResult.textContent = "Auto mode started. The live analyzer is watching the selected contract for a new actionable signal.";
+  } catch(error) {
+    autoTradeEnabled.checked = false;
+    closeDemoTradeSocket();
+    setAutoTradeStatus(error.message || "Could not start Demo auto-trading",false);
+  } finally { startAutoButton.disabled = false; }
+}
+function stopAutoTrading() {
+  autoTradeEnabled.checked = false;
+  startAutoButton.disabled = !verifiedDemoAccountId;
+  closeDemoTradeSocket();
+  setAutoTradeStatus("STOPPED · Demo auto-trading is OFF",false);
+  autoTradeResult.textContent = "Stopped. Any already-purchased contracts may still settle on Deriv.";
+}
+startAutoButton.addEventListener("click",startAutoTrading);
+stopAutoButton.addEventListener("click",stopAutoTrading);
+function setTradingMode(mode) {
+  const manual = mode === "manual";
+  autoModePanel.classList.toggle("hidden",manual);
+  manualModePanel.classList.toggle("hidden",!manual);
+  autoModeTab.classList.toggle("active",!manual);
+  manualModeTab.classList.toggle("active",manual);
+  autoModeTab.setAttribute("aria-selected",String(!manual));
+  manualModeTab.setAttribute("aria-selected",String(manual));
+  if(manual) renderManualDigits();
+}
+autoModeTab.addEventListener("click",function(){setTradingMode("auto");});
+manualModeTab.addEventListener("click",function(){setTradingMode("manual");});
+manualBarrier.addEventListener("change",renderManualDigits);
 function contractForSignal(result) {
   const type=tradeTypeSelect.value, signal=String(result.signal||"").toUpperCase();
   const amount=Number(autoTradeStake.value), duration=Number(autoTradeDuration.value);
