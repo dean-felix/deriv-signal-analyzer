@@ -68,15 +68,16 @@
     .digit-ticker { display:flex; gap:4px; overflow:hidden; white-space:nowrap; margin:9px 0; padding:6px; border-radius:9px; background:#0b1320; border:1px solid #24334a; min-height:32px; align-items:center; }
     .ticker-digit { flex:0 0 22px; text-align:center; padding:3px 0; border-radius:5px; font-size:12px; font-weight:800; background:#243449; color:#dce7f8; }
     .ticker-digit.latest { background:#23a879; color:#04150f; box-shadow:0 0 12px #23a87955; }
-    .digit-bars { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px 6px; }
-    .digit-stat { min-width:0; }
-    .digit-stat-head { display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#d9e5f7; }
-    .digit-track { height:7px; background:#5a2731; border-radius:99px; overflow:hidden; }
-    .digit-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#19a875,#55f0ae); transition:width .25s ease; }
-    .digit-stat.low .digit-fill { background:linear-gradient(90deg,#c23c50,#ff6b78); }
-    .digit-stat.high .digit-track { box-shadow:0 0 0 1px #3ee7a5; }
-    .digit-stat.high .digit-stat-head { color:#5df0b2; }
-    .digit-stat.low .digit-stat-head { color:#ff8790; }
+    .digit-bars { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 6px; justify-items:center; }
+    .digit-stat { width:clamp(42px,13vw,56px); aspect-ratio:1; min-width:0; border-radius:50%; padding:3px; display:grid; place-items:center; background:conic-gradient(#20d99a var(--pct,0%),#263448 0); box-shadow:0 0 0 1px #293b52; }
+    .digit-stat.low { background:conic-gradient(#ff5265 var(--pct,0%),#263448 0); }
+    .digit-stat.high { box-shadow:0 0 0 1px #20d99a,0 0 10px #20d99a22; }
+    .digit-stat-inner { width:100%; height:100%; border-radius:50%; background:#101a29; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+    .digit-stat-digit { font-size:14px; font-weight:900; color:#edf5ff; line-height:1.05; }
+    .digit-stat-pct { font-size:9px; font-weight:800; color:#9fb2cb; line-height:1.1; }
+    .digit-stat.high .digit-stat-pct { color:#5df0b2; }
+    .digit-stat.low .digit-stat-pct { color:#ff8790; }
+    .digit-stat.barrier { outline:2px solid #69a7ff; outline-offset:2px; }
     .brand-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
     .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:15px; background:linear-gradient(145deg,#8a72ff,#4b36c9); box-shadow:0 8px 28px #6448ff40; font-size:23px; font-weight:900; }
     .eyebrow { color:var(--mint); text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:800; margin-bottom:4px; }
@@ -304,14 +305,15 @@
     .trade-signal-chip.wait { color:#aabbd2 !important; }
     .trade-signal-chip.ready { color:#8df5c5 !important; }
     .inline-result-controls { margin:5px 0 8px; }
-    #resultDetailsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
+    #resultDetailsToggle, #tradeResultsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
+    #tradeResultsPanel { margin-top:8px; }
     #resultDetailsPanel { margin-top:0; }
-    .digit-strip-wrap { position:relative; padding-top:23px; margin:12px auto 9px; max-width:100%; }
+    .digit-strip-wrap { position:relative; padding-top:0; padding-bottom:21px; margin:12px auto 9px; max-width:100%; }
     .digit-strip { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:3px; width:100%; }
     .digit-strip .wheel-digit { position:static; width:100%; height:35px; margin:0; padding:0; transform:none !important; border-radius:8px; font-size:12px; }
     .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
     .digit-strip .wheel-digit.latest-tick { border-color:#ff5c62; box-shadow:inset 0 -3px #ff5c62,0 0 0 1px #ff5c62; }
-    .live-tick-pointer { position:absolute; top:0; left:5%; color:#ff424f; font-size:18px; line-height:18px; transform:translateX(-50%); transition:left .18s ease; text-shadow:0 0 8px #ff424f77; }
+    .live-tick-pointer { position:absolute; top:auto; bottom:17px; left:5%; color:#ff424f; font-size:16px; line-height:16px; transform:translateX(-50%); transition:left .18s ease; text-shadow:0 0 8px #ff424f77; pointer-events:none; }
     .strip-current { text-align:center; font-size:10px; color:#91a5bf; margin-top:7px; }
     .strip-current strong { color:#ff6973; font-size:12px; }
     .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
@@ -376,7 +378,13 @@
       <div class="run-settings"><div><label for="autoTradeDuration">Duration</label><select id="autoTradeDuration" disabled><option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option></select></div><div><label for="autoTradeRuns">Number of runs</label><input id="autoTradeRuns" type="number" min="1" max="20" step="1" value="1" disabled></div></div>
       <input id="autoTradeEnabled" type="checkbox" class="visually-hidden" aria-hidden="true" tabindex="-1" disabled>
       <p class="hint">When armed, the analyzer watches live ticks and can submit the selected number of Demo runs when a new actionable signal appears. Demo only; historical patterns are not guaranteed win probabilities.</p>
-      <div class="market-info" id="autoTradeResult">No trade submitted.</div>
+      <button type="button" id="tradeResultsToggle" aria-expanded="false">＋ TRADE RESULTS · DEMO / LIVE</button>
+      <div id="tradeResultsPanel" class="hidden">
+        <div class="result-title">DEMO RESULTS</div>
+        <div class="market-info" id="autoTradeResult">No Demo trade submitted.</div>
+        <div class="result-title" style="margin-top:10px">LIVE RESULTS</div>
+        <div class="market-info" id="liveTradeResult">Live execution is not enabled in this build. No Live trades will be placed.</div>
+      </div>
     </section>
 
   <section class="card">
@@ -474,7 +482,7 @@
       </div>
       <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
       <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
-      <p class="hint">Tap a digit on the circle or use the selector. The pointer follows the latest live tick. Green/red bars show recent frequency only, not guaranteed chances.</p>
+      <p class="hint">The red pointer below the strip follows the latest live tick. Circle borders show recent frequency: green highest, red lowest. Percentages are historical frequency, not guaranteed chances.</p>
     </section>
     <section class="card" aria-labelledby="manualExecutionTitle">
       <div class="section-heading" id="manualExecutionTitle">MANUAL EXECUTION · DEMO ONLY</div>
@@ -1632,7 +1640,8 @@ function renderManualDigits() {
   const max = Math.max(...counts), positive = counts.filter(n => n > 0), min = Math.min(...positive);
   digitBars.innerHTML = counts.map((count,digit) => {
     const pct = count / sample.length * 100, high = count === max && max > 0, low = count === min;
-    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + '"><div class="digit-stat-head"><span>' + digit + '</span><strong>' + pct.toFixed(1) + '%</strong></div><div class="digit-track"><div class="digit-fill" style="width:' + Math.max(0,Math.min(100,pct)) + '%"></div></div></div>';
+    const barrier = Number(manualBarrier.value) === digit;
+    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + (barrier ? ' barrier' : '') + '" style="--pct:' + Math.max(0,Math.min(100,pct)) + '%" title="Digit ' + digit + ': ' + pct.toFixed(1) + '% of ' + sample.length + ' recent ticks"><div class="digit-stat-inner"><span class="digit-stat-digit">' + digit + '</span><span class="digit-stat-pct">' + pct.toFixed(1) + '%</span></div></div>';
   }).join("");
   syncManualBarrierUI();
 }
@@ -1686,6 +1695,14 @@ digitWheel.addEventListener("click",function(event) {
   if (!button) return;
   manualBarrier.value = button.dataset.digit;
   syncManualBarrierUI();
+});
+const tradeResultsToggle = document.getElementById("tradeResultsToggle");
+const tradeResultsPanel = document.getElementById("tradeResultsPanel");
+tradeResultsToggle.addEventListener("click",function(){
+  const opening = tradeResultsPanel.classList.contains("hidden");
+  tradeResultsPanel.classList.toggle("hidden",!opening);
+  tradeResultsToggle.setAttribute("aria-expanded",String(opening));
+  tradeResultsToggle.textContent = opening ? "− HIDE TRADE RESULTS · DEMO / LIVE" : "＋ TRADE RESULTS · DEMO / LIVE";
 });
 resultDetailsToggle.addEventListener("click",function(){
   const opening = resultDetailsPanel.classList.contains("hidden");
@@ -1818,8 +1835,27 @@ function contractForSignal(result) {
   else throw new Error("This signal/contract mapping is not enabled for automatic execution yet. No trade was placed.");
   return base;
 }
+function hasDigitEntrySetup(result) {
+  const type = tradeTypeSelect.value;
+  const digits = getLastDigits(3);
+  if (digits.length < 3) return {ready:false, reason:"Waiting for 3 fresh ticks for entry timing."};
+  if (type !== "OVER_UNDER") return {ready:false, reason:"Entry timing is not configured for this contract type yet. No trade placed."};
+  const barrier = Number(overUnderBarrierSelect.value);
+  const signal = String(result && result.signal || "").toUpperCase();
+  const [older, previous, latest] = digits;
+  if (signal.startsWith("OVER ") && older <= barrier && previous <= barrier && latest > barrier) {
+    return {ready:true, reason:"OVER entry setup: two ticks at/below barrier, then a cross above it."};
+  }
+  if (signal.startsWith("UNDER ") && older >= barrier && previous >= barrier && latest < barrier) {
+    return {ready:true, reason:"UNDER entry setup: two ticks at/above barrier, then a cross below it."};
+  }
+  return {ready:false, reason:"Waiting for a fresh " + (signal.startsWith("OVER ") ? "upward" : "downward") + " barrier-cross setup. Signal alone will not trigger an entry."};
+}
+
 async function maybeExecuteDemoTrade(result) {
   if (!autoTradeEnabled.checked) return;
+  const entry = hasDigitEntrySetup(result);
+  if (!entry.ready) { autoTradeResult.textContent = entry.reason; return; }
   if (demoTradeBusy) { autoTradeResult.textContent = "A Demo run batch is already in progress; duplicate batch skipped."; return; }
   if (!verifiedDemoAccountId || !demoTradeReady) { autoTradeResult.textContent = "Demo trading is not connected. No trade was placed."; setAutoTradeStatus("Not connected — auto-trading paused", false); return; }
   if (!result || !result.signal || ["WAIT","FLAT"].includes(String(result.signal).toUpperCase())) { autoTradeResult.textContent = "Analysis returned WAIT/FLAT. No trade was placed."; return; }
