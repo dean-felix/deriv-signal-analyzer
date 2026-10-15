@@ -257,7 +257,7 @@
   
     /* Manual trading wheel and transaction history */
     .digit-wheel { position:relative; width:min(76vw,238px); aspect-ratio:1; margin:12px auto 15px; border:2px solid #344a69; border-radius:50%; background:radial-gradient(circle,#15253a 0 45%,#0b1320 46% 100%); box-shadow:inset 0 0 0 7px #18283d,0 0 24px #4d68ff12; }
-    .wheel-digit { position:absolute; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px; padding:0; display:grid; place-items:center; border:1px solid #344962; border-radius:50%; background:#23364d; color:#f1f6ff; font-size:14px; font-weight:900; box-shadow:none; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(calc(min(76vw,238px) * -.405)) rotate(calc(var(--digit-index) * -36deg)); z-index:2; }
+    .wheel-digit { position:absolute; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px; padding:0; display:grid; place-items:center; border:1px solid #344962; border-radius:50%; background:#23364d; color:#f1f6ff; font-size:14px; font-weight:900; box-shadow:none; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(-96px) rotate(calc(var(--digit-index) * -36deg)); z-index:2; }
     .wheel-digit:nth-of-type(1) { --digit-index:0; } .wheel-digit:nth-of-type(2) { --digit-index:1; } .wheel-digit:nth-of-type(3) { --digit-index:2; } .wheel-digit:nth-of-type(4) { --digit-index:3; } .wheel-digit:nth-of-type(5) { --digit-index:4; } .wheel-digit:nth-of-type(6) { --digit-index:5; } .wheel-digit:nth-of-type(7) { --digit-index:6; } .wheel-digit:nth-of-type(8) { --digit-index:7; } .wheel-digit:nth-of-type(9) { --digit-index:8; } .wheel-digit:nth-of-type(10) { --digit-index:9; }
     .wheel-digit.selected { outline:2px solid #f0c75e; outline-offset:2px; background:#72591f; color:#fff4c7; }
     .wheel-digit.latest-tick { border-color:#54f0b4; box-shadow:0 0 0 3px #2ae3a32c,0 0 16px #2ae3a366; }
@@ -279,7 +279,7 @@
     .manual-history-result.won { color:#63edb1; } .manual-history-result.lost { color:#ff7c8d; } .manual-history-result.open { color:#ffd477; }
     .manual-history-empty { color:#92a4bd; font-size:11px; padding:5px 0; }
     .manual-buy-row button:disabled { opacity:.45; }
-    @media(max-width:360px) { .digit-wheel { width:min(76vw,220px); } .wheel-digit { width:31px; height:31px; margin:-15.5px 0 0 -15.5px; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(calc(min(76vw,220px) * -.405)) rotate(calc(var(--digit-index) * -36deg)); } .manual-buy-row button { font-size:10px; } }
+    @media(max-width:360px) { .digit-wheel { width:min(76vw,220px); } .wheel-digit { width:31px; height:31px; margin:-15.5px 0 0 -15.5px; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(-89px) rotate(calc(var(--digit-index) * -36deg)); } .manual-buy-row button { font-size:10px; } }
 
   </style>
 </head>
