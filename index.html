@@ -281,6 +281,46 @@
     .manual-buy-row button:disabled { opacity:.45; }
     @media(max-width:360px) { .digit-wheel { width:min(76vw,220px); } .wheel-digit { width:31px; height:31px; margin:-15.5px 0 0 -15.5px; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(-89px) rotate(calc(var(--digit-index) * -36deg)); } .manual-buy-row button { font-size:10px; } }
 
+  
+    /* Compact high-signal layout */
+    .brand-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+    .compact-wallet { margin:0 0 0 auto; padding:5px 7px; min-width:0; max-width:56%; gap:7px; border-radius:10px; flex:0 1 auto; }
+    .compact-wallet .wallet-label { font-size:8px; letter-spacing:.6px; }
+    .compact-wallet .hint { display:none; }
+    .compact-wallet .wallet-balance { font-size:13px; line-height:1.2; }
+    .compact-wallet .wallet-account { max-width:125px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8px; }
+    .compact-wallet-value { min-width:0; }
+    .top-pill { display:none; }
+    #derivConnectionCard { padding:7px 9px; margin-bottom:8px; }
+    #derivConnectionTitle { margin-bottom:4px; }
+    #derivConnectionCard .hint { margin:5px 0; }
+    #derivConnectionCard .status { margin-bottom:5px !important; font-size:11px; }
+    #marketInfo, #historyDiagnostic { display:none; }
+    .trade-grid { gap:6px; }
+    .trade-option { min-height:57px; padding:7px 5px; position:relative; }
+    .trade-option > span:not(.trade-icon):not(.trade-signal-chip) { font-size:10px; }
+    .trade-signal-chip { display:block; margin-top:4px; border-radius:6px; padding:3px 4px; min-height:15px; font-size:10px; line-height:1.1; font-weight:900; color:#aabbd2; background:#111d2d; border:1px solid #293b53; }
+    .trade-option.active .trade-signal-chip { color:#8df5c5; border-color:#278866; background:#103729; }
+    .trade-signal-chip.wait { color:#aabbd2 !important; }
+    .trade-signal-chip.ready { color:#8df5c5 !important; }
+    .inline-result-controls { margin:5px 0 8px; }
+    #resultDetailsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
+    #resultDetailsPanel { margin-top:0; }
+    .digit-strip-wrap { position:relative; padding-top:23px; margin:12px auto 9px; max-width:100%; }
+    .digit-strip { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:3px; width:100%; }
+    .digit-strip .wheel-digit { position:static; width:100%; height:35px; margin:0; padding:0; transform:none !important; border-radius:8px; font-size:12px; }
+    .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
+    .digit-strip .wheel-digit.latest-tick { border-color:#ff5c62; box-shadow:inset 0 -3px #ff5c62,0 0 0 1px #ff5c62; }
+    .live-tick-pointer { position:absolute; top:0; left:5%; color:#ff424f; font-size:18px; line-height:18px; transform:translateX(-50%); transition:left .18s ease; text-shadow:0 0 8px #ff424f77; }
+    .strip-current { text-align:center; font-size:10px; color:#91a5bf; margin-top:7px; }
+    .strip-current strong { color:#ff6973; font-size:12px; }
+    .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
+    .manual-history:not(.expanded) { max-height:0; overflow:hidden; }
+    #manualHistoryToggle { margin:7px 0 0; width:100%; padding:8px; font-size:10px; background:#24364d; box-shadow:none; }
+    .manual-history.expanded { max-height:400px; overflow:auto; }
+    .manual-panel .hint { font-size:10px; }
+    @media(max-width:360px) { .compact-wallet { max-width:54%; } .trade-option { min-height:54px; } .digit-strip { gap:2px; } .digit-strip .wheel-digit { height:31px; font-size:11px; } }
+
   </style>
 </head>
 <body>
@@ -293,6 +333,10 @@
         <h1>Deriv Analyzer</h1>
       </div>
     </div>
+    <div class="wallet-card compact-wallet" id="walletCard" aria-live="polite">
+      <div><div class="wallet-label">WALLET</div><div class="hint" id="walletState">Connect to load balance</div></div>
+      <div class="compact-wallet-value"><div class="wallet-balance" id="walletBalance">—</div><div class="wallet-account" id="walletAccount">Not connected</div></div>
+    </div>
     <div class="subtitle">Live market insights · Built for your phone</div>
     <div class="top-pill"><span class="dot"></span> LIVE MARKET · DEMO AUTO ONLY</div>
     <section class="card" id="derivConnectionCard" aria-labelledby="derivConnectionTitle">
@@ -304,10 +348,7 @@
       <button type="button" id="derivConnectButton">CONNECT TO DERIV</button>
       <button type="button" id="derivLogoutButton" class="hidden" style="background:#26354b;box-shadow:none">DISCONNECT</button>
       <p class="hint" id="derivAuthHint">Connect securely through Deriv. This does not place trades.</p>
-      <div class="wallet-card" id="walletCard" aria-live="polite">
-        <div><div class="wallet-label">DERIV WALLET</div><div class="hint" id="walletState">Connect to load account balance</div></div>
-        <div><div class="wallet-balance" id="walletBalance">—</div><div class="wallet-account" id="walletAccount">Not connected</div></div>
-      </div>
+
     </section>
   </header>
   <div class="mode-tabs" role="tablist" aria-label="Trading mode">
@@ -347,14 +388,14 @@
       <option value="ONLY_UPS_DOWNS">Only Ups / Only Downs</option>
     </select>
     <div class="trade-grid" id="tradeTypeCards" role="group" aria-label="Choose contract type">
-      <button type="button" class="trade-option active" data-type="RISE_FALL"><span class="trade-icon">↗</span><span>Rise / Fall</span></button>
-      <button type="button" class="trade-option" data-type="HIGHER_LOWER"><span class="trade-icon">⇅</span><span>Higher / Lower</span></button>
-      <button type="button" class="trade-option" data-type="ASIAN_UP_DOWN"><span class="trade-icon">⌁</span><span>Asian Up / Down</span></button>
-      <button type="button" class="trade-option" data-type="EVEN_ODD"><span class="trade-icon">½</span><span>Even / Odd</span></button>
-      <button type="button" class="trade-option" data-type="OVER_UNDER"><span class="trade-icon">⇵</span><span>Over / Under</span></button>
-      <button type="button" class="trade-option" data-type="MATCHES"><span class="trade-icon">◎</span><span>Matches</span></button>
-      <button type="button" class="trade-option" data-type="DIFFERS"><span class="trade-icon">◉</span><span>Differs</span></button>
-      <button type="button" class="trade-option" data-type="ONLY_UPS_DOWNS"><span class="trade-icon">⇈</span><span>Only Ups / Downs</span></button>
+      <button type="button" class="trade-option active" data-type="RISE_FALL"><span class="trade-icon">↗</span><span>Rise / Fall</span><span class="trade-signal-chip" data-signal-for="RISE_FALL">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="HIGHER_LOWER"><span class="trade-icon">⇅</span><span>Higher / Lower</span><span class="trade-signal-chip" data-signal-for="HIGHER_LOWER">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="ASIAN_UP_DOWN"><span class="trade-icon">⌁</span><span>Asian Up / Down</span><span class="trade-signal-chip" data-signal-for="ASIAN_UP_DOWN">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="EVEN_ODD"><span class="trade-icon">½</span><span>Even / Odd</span><span class="trade-signal-chip" data-signal-for="EVEN_ODD">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="OVER_UNDER"><span class="trade-icon">⇵</span><span>Over / Under</span><span class="trade-signal-chip" data-signal-for="OVER_UNDER">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="MATCHES"><span class="trade-icon">◎</span><span>Matches</span><span class="trade-signal-chip" data-signal-for="MATCHES">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="DIFFERS"><span class="trade-icon">◉</span><span>Differs</span><span class="trade-signal-chip" data-signal-for="DIFFERS">WAIT</span></button>
+      <button type="button" class="trade-option" data-type="ONLY_UPS_DOWNS"><span class="trade-icon">⇈</span><span>Only Ups / Downs</span><span class="trade-signal-chip" data-signal-for="ONLY_UPS_DOWNS">WAIT</span></button>
     </div>
 
     <div id="barrierArea" class="hidden" style="margin-top:14px">
@@ -401,8 +442,9 @@
     <div class="digit" id="digit">Last digit: -</div>
   </section>
 
-  <section class="card result">
-    <div class="result-title">ANALYZER RESULT</div>
+  <div class="inline-result-controls"><button type="button" id="resultDetailsToggle" aria-expanded="false">＋ SIGNAL DETAILS</button></div>
+  <section class="card result hidden" id="resultDetailsPanel">
+    <div class="result-title">SIGNAL DETAILS</div>
     <div class="result-main" id="resultMain">WAITING FOR DATA</div>
     <div class="result-score" id="resultScore">---</div>
     <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
@@ -411,10 +453,12 @@
   <section id="manualModePanel" class="mode-panel hidden" role="tabpanel" aria-labelledby="manualModeTab">
     <section class="card manual-panel" aria-labelledby="manualDigitsTitle">
       <div class="manual-head"><div class="section-heading" id="manualDigitsTitle">MANUAL DIGITS <span class="live-chip">LIVE TICKER</span></div><span class="manual-current" id="manualCurrentDigit">—</span></div>
-      <div class="digit-wheel" id="digitWheel" aria-label="Choose a digit barrier from the circle">
-        <div class="wheel-center"><span class="wheel-center-label">LIVE TICK</span><strong id="wheelLiveDigit">—</strong><span class="wheel-center-note">tap a digit</span></div>
-        <div class="wheel-pointer" id="wheelPointer" aria-hidden="true"></div>
-        <button type="button" class="wheel-digit" data-digit="0" aria-label="Select barrier 0">0</button><button type="button" class="wheel-digit" data-digit="1" aria-label="Select barrier 1">1</button><button type="button" class="wheel-digit" data-digit="2" aria-label="Select barrier 2">2</button><button type="button" class="wheel-digit" data-digit="3" aria-label="Select barrier 3">3</button><button type="button" class="wheel-digit" data-digit="4" aria-label="Select barrier 4">4</button><button type="button" class="wheel-digit" data-digit="5" aria-label="Select barrier 5">5</button><button type="button" class="wheel-digit" data-digit="6" aria-label="Select barrier 6">6</button><button type="button" class="wheel-digit" data-digit="7" aria-label="Select barrier 7">7</button><button type="button" class="wheel-digit" data-digit="8" aria-label="Select barrier 8">8</button><button type="button" class="wheel-digit" data-digit="9" aria-label="Select barrier 9">9</button>
+      <div class="digit-strip-wrap" aria-label="Digit barrier strip">
+        <div class="digit-strip" id="digitWheel">
+          <button type="button" class="wheel-digit" data-digit="0" aria-label="Select barrier 0">0</button><button type="button" class="wheel-digit" data-digit="1" aria-label="Select barrier 1">1</button><button type="button" class="wheel-digit" data-digit="2" aria-label="Select barrier 2">2</button><button type="button" class="wheel-digit" data-digit="3" aria-label="Select barrier 3">3</button><button type="button" class="wheel-digit" data-digit="4" aria-label="Select barrier 4">4</button><button type="button" class="wheel-digit" data-digit="5" aria-label="Select barrier 5">5</button><button type="button" class="wheel-digit" data-digit="6" aria-label="Select barrier 6">6</button><button type="button" class="wheel-digit" data-digit="7" aria-label="Select barrier 7">7</button><button type="button" class="wheel-digit" data-digit="8" aria-label="Select barrier 8">8</button><button type="button" class="wheel-digit" data-digit="9" aria-label="Select barrier 9">9</button>
+        </div>
+        <div class="live-tick-pointer" id="wheelPointer" aria-hidden="true">▼</div>
+        <div class="strip-current">LIVE TICK: <strong id="wheelLiveDigit">—</strong></div>
       </div>
       <div class="manual-barrier-row">
         <label for="manualBarrier">Selected barrier</label>
@@ -440,6 +484,7 @@
     </section>
     <section class="card" aria-labelledby="manualHistoryTitle">
       <div class="manual-history-head"><div class="section-heading" id="manualHistoryTitle">TRANSACTIONS & RESULTS</div><span class="live-chip" id="manualHistoryCount">0 trades</span></div>
+      <button type="button" id="manualHistoryToggle" aria-expanded="false">＋ VIEW TRANSACTIONS</button>
       <div id="manualTradeHistory" class="manual-history"><div class="hint">Your manual trades will appear here after Deriv confirms a purchase.</div></div>
     </section>
   </section>
@@ -1248,6 +1293,17 @@ function runAnalysis(allowExecution = false) {
   resultMain.textContent = result.signal;
   resultScore.textContent = result.score;
   resultDetail.textContent = result.detail;
+  const chip = tradeTypeCards.querySelector('[data-signal-for="' + type + '"]');
+  if (chip) {
+    const signalText = String(result.signal || "WAIT").toUpperCase();
+    const scoreText = String(result.score || "");
+    const scoreMatch = scoreText.match(/(\d+(?:\.\d+)?%)/);
+    const barrier = type === "OVER_UNDER" ? " " + overUnderBarrierSelect.value : (type === "MATCHES" || type === "DIFFERS" ? " " + targetDigitSelect.value : "");
+    chip.textContent = signalText === "WAIT" || signalText === "FLAT" ? "WAIT" : signalText + barrier + (scoreMatch ? " · " + scoreMatch[1] : "");
+    chip.classList.toggle("wait", signalText === "WAIT" || signalText === "FLAT");
+    chip.classList.toggle("ready", signalText !== "WAIT" && signalText !== "FLAT");
+    chip.title = String(result.detail || "");
+  }
   renderManualDigits();
   if (allowExecution) maybeExecuteDemoTrade(result);
   return result;
@@ -1336,6 +1392,9 @@ const manualBarrier = document.getElementById("manualBarrier");
 const digitWheel = document.getElementById("digitWheel");
 const wheelPointer = document.getElementById("wheelPointer");
 const wheelLiveDigit = document.getElementById("wheelLiveDigit");
+const resultDetailsToggle = document.getElementById("resultDetailsToggle");
+const resultDetailsPanel = document.getElementById("resultDetailsPanel");
+const manualHistoryToggle = document.getElementById("manualHistoryToggle");
 const manualStake = document.getElementById("manualStake");
 const manualDuration = document.getElementById("manualDuration");
 const manualUnderButton = document.getElementById("manualUnderButton");
@@ -1558,7 +1617,7 @@ function renderManualDigits() {
   manualCurrentDigit.textContent = latest === null ? "—" : String(latest);
   wheelLiveDigit.textContent = latest === null ? "—" : String(latest);
   digitWheel.querySelectorAll(".wheel-digit").forEach(button => button.classList.toggle("latest-tick", latest !== null && Number(button.dataset.digit) === latest));
-  if (latest !== null) wheelPointer.style.transform = "rotate(" + (180 + latest * 36) + "deg)";
+  if (latest !== null) wheelPointer.style.left = ((latest + 0.5) * 10) + "%";
   const recent = ticks.slice(-24);
   digitTicker.innerHTML = recent.length ? recent.map((t,i) => '<span class="ticker-digit' + (i === recent.length - 1 ? ' latest' : '') + '">' + t.digit + '</span>').join("") : '<span class="hint">Waiting for live digits…</span>';
   if (!ticks.length) { digitBars.innerHTML = '<div class="hint">Waiting for usable live digit data.</div>'; syncManualBarrierUI(); return; }
@@ -1621,6 +1680,18 @@ digitWheel.addEventListener("click",function(event) {
   if (!button) return;
   manualBarrier.value = button.dataset.digit;
   syncManualBarrierUI();
+});
+resultDetailsToggle.addEventListener("click",function(){
+  const opening = resultDetailsPanel.classList.contains("hidden");
+  resultDetailsPanel.classList.toggle("hidden",!opening);
+  resultDetailsToggle.setAttribute("aria-expanded",String(opening));
+  resultDetailsToggle.textContent = opening ? "− HIDE SIGNAL DETAILS" : "＋ SIGNAL DETAILS";
+});
+manualHistoryToggle.addEventListener("click",function(){
+  const opening = !manualTradeHistory.classList.contains("expanded");
+  manualTradeHistory.classList.toggle("expanded",opening);
+  manualHistoryToggle.setAttribute("aria-expanded",String(opening));
+  manualHistoryToggle.textContent = opening ? "− HIDE TRANSACTIONS" : "＋ VIEW TRANSACTIONS";
 });
 manualUnderButton.addEventListener("click",function(){executeManualDigitTrade("UNDER");});
 manualOverButton.addEventListener("click",function(){executeManualDigitTrade("OVER");});
