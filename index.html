@@ -254,6 +254,33 @@
     .digit-stat.low .digit-stat-head { color:#ff8790; }
     @media (max-width:360px) { .app { padding:10px 8px 18px; } .card { padding:9px; } .trade-option { font-size:10px; } .digit-bars { gap:6px 4px; } }
 
+  
+    /* Manual trading wheel and transaction history */
+    .digit-wheel { position:relative; width:min(76vw,238px); aspect-ratio:1; margin:12px auto 15px; border:2px solid #344a69; border-radius:50%; background:radial-gradient(circle,#15253a 0 45%,#0b1320 46% 100%); box-shadow:inset 0 0 0 7px #18283d,0 0 24px #4d68ff12; }
+    .wheel-digit { position:absolute; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px; padding:0; display:grid; place-items:center; border:1px solid #344962; border-radius:50%; background:#23364d; color:#f1f6ff; font-size:14px; font-weight:900; box-shadow:none; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(calc(min(76vw,238px) * -.405)) rotate(calc(var(--digit-index) * -36deg)); z-index:2; }
+    .wheel-digit:nth-of-type(1) { --digit-index:0; } .wheel-digit:nth-of-type(2) { --digit-index:1; } .wheel-digit:nth-of-type(3) { --digit-index:2; } .wheel-digit:nth-of-type(4) { --digit-index:3; } .wheel-digit:nth-of-type(5) { --digit-index:4; } .wheel-digit:nth-of-type(6) { --digit-index:5; } .wheel-digit:nth-of-type(7) { --digit-index:6; } .wheel-digit:nth-of-type(8) { --digit-index:7; } .wheel-digit:nth-of-type(9) { --digit-index:8; } .wheel-digit:nth-of-type(10) { --digit-index:9; }
+    .wheel-digit.selected { outline:2px solid #f0c75e; outline-offset:2px; background:#72591f; color:#fff4c7; }
+    .wheel-digit.latest-tick { border-color:#54f0b4; box-shadow:0 0 0 3px #2ae3a32c,0 0 16px #2ae3a366; }
+    .wheel-center { position:absolute; inset:31%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:#0c1727; border:1px solid #2b405c; z-index:1; text-align:center; }
+    .wheel-center-label { font-size:8px; letter-spacing:1px; color:#8fa5c1; font-weight:800; }
+    .wheel-center strong { font-size:30px; line-height:1; color:#73f2c3; }
+    .wheel-center-note { font-size:8px; color:#91a2b9; }
+    .wheel-pointer { position:absolute; z-index:3; left:50%; top:50%; width:3px; height:36%; transform-origin:50% 0; transform:rotate(180deg); background:linear-gradient(#72f3c1,#72f3c100); pointer-events:none; border-radius:99px; opacity:.7; }
+    .manual-buy-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+    .manual-buy-row button { margin:0; min-height:45px; padding:9px 5px; font-size:12px; letter-spacing:0; }
+    .manual-under { background:linear-gradient(110deg,#b7354d,#7b263a); box-shadow:0 5px 15px #b7354d25; }
+    .manual-over { background:linear-gradient(110deg,#149b70,#126c83); box-shadow:0 5px 15px #149b7025; }
+    .manual-history-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .manual-history { display:grid; gap:7px; }
+    .manual-history-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; padding:9px; border:1px solid #2b3c52; border-radius:10px; background:#0c1421; font-size:11px; }
+    .manual-history-main { font-weight:800; overflow-wrap:anywhere; }
+    .manual-history-meta { color:#92a4bd; margin-top:3px; font-size:10px; overflow-wrap:anywhere; }
+    .manual-history-result { text-align:right; font-weight:900; align-self:center; }
+    .manual-history-result.won { color:#63edb1; } .manual-history-result.lost { color:#ff7c8d; } .manual-history-result.open { color:#ffd477; }
+    .manual-history-empty { color:#92a4bd; font-size:11px; padding:5px 0; }
+    .manual-buy-row button:disabled { opacity:.45; }
+    @media(max-width:360px) { .digit-wheel { width:min(76vw,220px); } .wheel-digit { width:31px; height:31px; margin:-15.5px 0 0 -15.5px; transform:rotate(calc(var(--digit-index) * 36deg)) translateY(calc(min(76vw,220px) * -.405)) rotate(calc(var(--digit-index) * -36deg)); } .manual-buy-row button { font-size:10px; } }
+
   </style>
 </head>
 <body>
@@ -384,15 +411,36 @@
   <section id="manualModePanel" class="mode-panel hidden" role="tabpanel" aria-labelledby="manualModeTab">
     <section class="card manual-panel" aria-labelledby="manualDigitsTitle">
       <div class="manual-head"><div class="section-heading" id="manualDigitsTitle">MANUAL DIGITS <span class="live-chip">LIVE TICKER</span></div><span class="manual-current" id="manualCurrentDigit">—</span></div>
+      <div class="digit-wheel" id="digitWheel" aria-label="Choose a digit barrier from the circle">
+        <div class="wheel-center"><span class="wheel-center-label">LIVE TICK</span><strong id="wheelLiveDigit">—</strong><span class="wheel-center-note">tap a digit</span></div>
+        <div class="wheel-pointer" id="wheelPointer" aria-hidden="true"></div>
+        <button type="button" class="wheel-digit" data-digit="0" aria-label="Select barrier 0">0</button><button type="button" class="wheel-digit" data-digit="1" aria-label="Select barrier 1">1</button><button type="button" class="wheel-digit" data-digit="2" aria-label="Select barrier 2">2</button><button type="button" class="wheel-digit" data-digit="3" aria-label="Select barrier 3">3</button><button type="button" class="wheel-digit" data-digit="4" aria-label="Select barrier 4">4</button><button type="button" class="wheel-digit" data-digit="5" aria-label="Select barrier 5">5</button><button type="button" class="wheel-digit" data-digit="6" aria-label="Select barrier 6">6</button><button type="button" class="wheel-digit" data-digit="7" aria-label="Select barrier 7">7</button><button type="button" class="wheel-digit" data-digit="8" aria-label="Select barrier 8">8</button><button type="button" class="wheel-digit" data-digit="9" aria-label="Select barrier 9">9</button>
+      </div>
       <div class="manual-barrier-row">
-        <label for="manualBarrier">Digit barrier</label>
-        <select id="manualBarrier" aria-label="Highlight digit barrier">
+        <label for="manualBarrier">Selected barrier</label>
+        <select id="manualBarrier" aria-label="Select digit barrier">
           <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option>
         </select>
       </div>
       <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
       <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
-      <p class="hint">Green marks the most frequent digit in the recent sample; red marks the least frequent. The selected barrier is outlined in gold. These are historical frequencies, not guaranteed chances.</p>
+      <p class="hint">Tap a digit on the circle or use the selector. The pointer follows the latest live tick. Green/red bars show recent frequency only, not guaranteed chances.</p>
+    </section>
+    <section class="card" aria-labelledby="manualExecutionTitle">
+      <div class="section-heading" id="manualExecutionTitle">MANUAL EXECUTION · DEMO ONLY</div>
+      <div class="run-settings">
+        <div><label for="manualStake">Stake</label><input id="manualStake" type="number" min="0.35" step="0.01" value="1.00"></div>
+        <div><label for="manualDuration">Duration</label><select id="manualDuration"><option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option></select></div>
+      </div>
+      <div class="manual-buy-row">
+        <button type="button" id="manualUnderButton" class="manual-under" disabled>↓ BUY UNDER <span id="underBarrierLabel">4</span></button>
+        <button type="button" id="manualOverButton" class="manual-over" disabled>↑ BUY OVER <span id="overBarrierLabel">4</span></button>
+      </div>
+      <div class="market-info" id="manualTradeStatus">Connect and verify a Demo account to enable manual execution. Pressing OVER or UNDER submits a trade.</div>
+    </section>
+    <section class="card" aria-labelledby="manualHistoryTitle">
+      <div class="manual-history-head"><div class="section-heading" id="manualHistoryTitle">TRANSACTIONS & RESULTS</div><span class="live-chip" id="manualHistoryCount">0 trades</span></div>
+      <div id="manualTradeHistory" class="manual-history"><div class="hint">Your manual trades will appear here after Deriv confirms a purchase.</div></div>
     </section>
   </section>
 </main>
@@ -1285,6 +1333,20 @@ const manualCurrentDigit = document.getElementById("manualCurrentDigit");
 const digitTicker = document.getElementById("digitTicker");
 const digitBars = document.getElementById("digitBars");
 const manualBarrier = document.getElementById("manualBarrier");
+const digitWheel = document.getElementById("digitWheel");
+const wheelPointer = document.getElementById("wheelPointer");
+const wheelLiveDigit = document.getElementById("wheelLiveDigit");
+const manualStake = document.getElementById("manualStake");
+const manualDuration = document.getElementById("manualDuration");
+const manualUnderButton = document.getElementById("manualUnderButton");
+const manualOverButton = document.getElementById("manualOverButton");
+const underBarrierLabel = document.getElementById("underBarrierLabel");
+const overBarrierLabel = document.getElementById("overBarrierLabel");
+const manualTradeStatus = document.getElementById("manualTradeStatus");
+const manualTradeHistory = document.getElementById("manualTradeHistory");
+const manualHistoryCount = document.getElementById("manualHistoryCount");
+const manualTrades = new Map();
+let manualTradeBusy = false;
 const autoModeTab = document.getElementById("autoModeTab");
 const manualModeTab = document.getElementById("manualModeTab");
 const autoModePanel = document.getElementById("autoModePanel");
@@ -1364,6 +1426,9 @@ derivLogoutButton.addEventListener("click", async function() {
   walletState.textContent = "Connect to load account balance";
   startAutoButton.disabled = true;
   stopAutoButton.disabled = true;
+  manualUnderButton.disabled = true;
+  manualOverButton.disabled = true;
+  manualTradeStatus.textContent = "Disconnected. Verify a Demo account to trade.";
   setAutoTradeStatus("Locked until a Demo account is verified", false);
   setDerivAuthStatus("Disconnected", false);
   derivAuthHint.textContent = "You can reconnect securely whenever you are ready.";
@@ -1414,6 +1479,9 @@ async function verifyDerivSession(session) {
     autoTradeRuns.disabled = false;
     startAutoButton.disabled = false;
     stopAutoButton.disabled = false;
+    manualUnderButton.disabled = false;
+    manualOverButton.disabled = false;
+    manualTradeStatus.textContent = "Demo verified · choose a barrier, stake and duration, then press OVER or UNDER to buy.";
     autoTradeStatus.textContent = "Demo verified · auto-trading is OFF";
     autoTradeDot.style.background = "#22c55e";
     setDerivAuthStatus("Deriv connected · Demo account verified", true);
@@ -1433,6 +1501,8 @@ async function verifyDerivSession(session) {
     autoTradeRuns.disabled = true;
     startAutoButton.disabled = true;
     stopAutoButton.disabled = true;
+    manualUnderButton.disabled = true;
+    manualOverButton.disabled = true;
     walletBalance.textContent = "—";
     walletAccount.textContent = "Not verified";
     walletState.textContent = "Wallet unavailable";
@@ -1472,23 +1542,89 @@ async function verifyDerivSession(session) {
 })();
 
 
+function syncManualBarrierUI() {
+  const barrier = Number(manualBarrier.value);
+  underBarrierLabel.textContent = String(barrier);
+  overBarrierLabel.textContent = String(barrier);
+  digitWheel.querySelectorAll(".wheel-digit").forEach(button => {
+    button.classList.toggle("selected", Number(button.dataset.digit) === barrier);
+    button.setAttribute("aria-pressed", String(Number(button.dataset.digit) === barrier));
+  });
+}
 function renderManualDigits() {
   if (!digitBars || !digitTicker) return;
   const ticks = recentTicks.filter(t => Number.isInteger(t.digit) && t.digit >= 0 && t.digit <= 9);
   const latest = ticks.length ? ticks[ticks.length - 1].digit : null;
   manualCurrentDigit.textContent = latest === null ? "—" : String(latest);
+  wheelLiveDigit.textContent = latest === null ? "—" : String(latest);
+  digitWheel.querySelectorAll(".wheel-digit").forEach(button => button.classList.toggle("latest-tick", latest !== null && Number(button.dataset.digit) === latest));
+  if (latest !== null) wheelPointer.style.transform = "rotate(" + (180 + latest * 36) + "deg)";
   const recent = ticks.slice(-24);
   digitTicker.innerHTML = recent.length ? recent.map((t,i) => '<span class="ticker-digit' + (i === recent.length - 1 ? ' latest' : '') + '">' + t.digit + '</span>').join("") : '<span class="hint">Waiting for live digits…</span>';
-  if (!ticks.length) { digitBars.innerHTML = '<div class="hint">Waiting for usable live digit data.</div>'; return; }
+  if (!ticks.length) { digitBars.innerHTML = '<div class="hint">Waiting for usable live digit data.</div>'; syncManualBarrierUI(); return; }
   const sample = ticks.slice(-SAMPLE_SIZE), counts = Array(10).fill(0);
   sample.forEach(t => counts[t.digit]++);
   const max = Math.max(...counts), positive = counts.filter(n => n > 0), min = Math.min(...positive);
   digitBars.innerHTML = counts.map((count,digit) => {
     const pct = count / sample.length * 100, high = count === max && max > 0, low = count === min;
-    const barrierClass = manualBarrier && Number(manualBarrier.value) === digit ? ' barrier' : '';
-    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + barrierClass + '"><div class="digit-stat-head"><span>' + digit + '</span><strong>' + pct.toFixed(1) + '%</strong></div><div class="digit-track"><div class="digit-fill" style="width:' + Math.max(0,Math.min(100,pct)) + '%"></div></div></div>';
+    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + '"><div class="digit-stat-head"><span>' + digit + '</span><strong>' + pct.toFixed(1) + '%</strong></div><div class="digit-track"><div class="digit-fill" style="width:' + Math.max(0,Math.min(100,pct)) + '%"></div></div></div>';
+  }).join("");
+  syncManualBarrierUI();
+}
+function renderManualTradeHistory() {
+  const rows = Array.from(manualTrades.values()).sort((a,b) => b.createdAt-a.createdAt);
+  manualHistoryCount.textContent = rows.length + (rows.length === 1 ? " trade" : " trades");
+  if (!rows.length) { manualTradeHistory.innerHTML = '<div class="manual-history-empty">Your manual trades will appear here after Deriv confirms a purchase.</div>'; return; }
+  manualTradeHistory.innerHTML = rows.map(t => {
+    const resultClass = t.status === "won" ? "won" : (t.status === "lost" ? "lost" : "open");
+    const resultText = t.status === "won" || t.status === "lost" ? (t.profit >= 0 ? "+" : "") + t.profit.toFixed(2) + " " + (verifiedDemoCurrency || "") : t.status.toUpperCase();
+    return '<div class="manual-history-row"><div><div class="manual-history-main">' + t.direction + ' ' + t.barrier + ' · ' + t.symbol + '</div><div class="manual-history-meta">Contract ' + t.contractId + ' · Stake ' + t.stake.toFixed(2) + ' · ' + t.duration + ' tick(s)</div><div class="manual-history-meta">' + t.updatedAt + '</div></div><div class="manual-history-result ' + resultClass + '">' + resultText + '</div></div>';
   }).join("");
 }
+async function executeManualDigitTrade(direction) {
+  if (manualTradeBusy) return;
+  if (!verifiedDemoAccountId) { manualTradeStatus.textContent = "Connect and verify a Deriv Demo account first. No trade placed."; return; }
+  if (!currentSymbol) { manualTradeStatus.textContent = "Wait for a live market to be selected before trading."; return; }
+  const stake = Number(manualStake.value), duration = Number(manualDuration.value), barrier = Number(manualBarrier.value);
+  if (!Number.isFinite(stake) || stake <= 0 || stake > 100) { manualTradeStatus.textContent = "Enter a valid Demo stake above 0 and no more than 100."; return; }
+  if (![1,2,3,5].includes(duration) || !Number.isInteger(barrier) || barrier < 0 || barrier > 9) { manualTradeStatus.textContent = "Check the duration and digit barrier."; return; }
+  if (demoTradeBusy) { manualTradeStatus.textContent = "Auto-trading is using the Demo connection. Stop auto-trading before placing a manual trade."; return; }
+  manualTradeBusy = true; manualUnderButton.disabled = true; manualOverButton.disabled = true;
+  try {
+    if (!demoTradeReady) {
+      manualTradeStatus.textContent = "Connecting to your verified Demo trading account…";
+      await startDemoTradeConnection();
+    }
+    const contract = {proposal:1,amount:stake,basis:"stake",currency:verifiedDemoCurrency,duration,duration_unit:"t",underlying_symbol:currentSymbol,contract_type:direction==="OVER"?"DIGITOVER":"DIGITUNDER",barrier:String(barrier)};
+    manualTradeStatus.textContent = "Requesting " + direction + " " + barrier + " proposal…";
+    const proposalResponse = await demoWsRequest(contract,"proposal"), proposal = proposalResponse.proposal;
+    if (!proposal || !proposal.id || !Number.isFinite(Number(proposal.ask_price)) || Number(proposal.ask_price) <= 0) throw new Error("Deriv did not return a valid price. No trade was bought.");
+    const buyResponse = await demoWsRequest({buy:String(proposal.id),price:Number(proposal.ask_price)},"buy"), bought = buyResponse.buy;
+    if (!bought || !bought.contract_id) throw new Error("Deriv did not confirm a contract ID. Check Deriv before retrying.");
+    const id = String(bought.contract_id);
+    manualTrades.set(id,{contractId:id,direction,barrier,symbol:currentSymbol,stake:Number(bought.buy_price ?? proposal.ask_price),duration,status:"open",profit:0,createdAt:Date.now(),updatedAt:new Date().toLocaleString()});
+    renderManualTradeHistory();
+    manualTradeStatus.textContent = "Purchase confirmed by Deriv · Contract " + id + ". Waiting for settlement result.";
+    demoTradeSocket.send(JSON.stringify({proposal_open_contract:1,contract_id:Number(id),subscribe:1,req_id:++demoRequestId}));
+    refreshDerivWallet();
+  } catch (error) {
+    manualTradeStatus.textContent = (error && error.message ? error.message : "Manual trade failed") + " No unconfirmed trade is shown as purchased.";
+  } finally {
+    manualTradeBusy = false;
+    manualUnderButton.disabled = !verifiedDemoAccountId;
+    manualOverButton.disabled = !verifiedDemoAccountId;
+  }
+}
+manualBarrier.addEventListener("change",syncManualBarrierUI);
+digitWheel.addEventListener("click",function(event) {
+  const button = event.target.closest("[data-digit]");
+  if (!button) return;
+  manualBarrier.value = button.dataset.digit;
+  syncManualBarrierUI();
+});
+manualUnderButton.addEventListener("click",function(){executeManualDigitTrade("UNDER");});
+manualOverButton.addEventListener("click",function(){executeManualDigitTrade("OVER");});
+syncManualBarrierUI();
 
 function setAutoTradeStatus(message, good) {
   autoTradeStatus.textContent = message;
@@ -1531,9 +1667,20 @@ async function startDemoTradeConnection() {
         else if(message.msg_type===pending.expectedType){clearTimeout(pending.timer);demoPendingRequests.delete(message.req_id);pending.resolve(message);}
       }
       if(message.msg_type==="proposal_open_contract" && message.proposal_open_contract) {
-        const c=message.proposal_open_contract, status=c.status||(c.is_sold?"sold":"open");
-        if(c.is_sold||["won","lost","sold","cancelled"].includes(String(status).toLowerCase())) { autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency; refreshDerivWallet(); }
+        const c=message.proposal_open_contract, status=String(c.status||(c.is_sold?"sold":"open")).toLowerCase();
+        if(c.is_sold||["won","lost","sold","cancelled"].includes(status)) { autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency; refreshDerivWallet(); }
         else autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Buy price: "+(c.buy_price??"—")+" "+verifiedDemoCurrency;
+        const manualRecord = manualTrades.get(String(c.contract_id));
+        if (manualRecord) {
+          manualRecord.status = status === "won" || status === "lost" ? status : (c.is_sold ? "sold" : status);
+          if (c.profit != null && Number.isFinite(Number(c.profit))) manualRecord.profit = Number(c.profit);
+          manualRecord.updatedAt = new Date().toLocaleString();
+          renderManualTradeHistory();
+          if (c.is_sold || ["won","lost","sold","cancelled"].includes(status)) {
+            manualTradeStatus.textContent = "Contract " + c.contract_id + " settled · " + status.toUpperCase() + " · Profit: " + (c.profit == null ? "not reported" : Number(c.profit).toFixed(2) + " " + verifiedDemoCurrency);
+            refreshDerivWallet();
+          }
+        }
       }
     };
   });
