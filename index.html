@@ -382,6 +382,7 @@
       <div id="tradeResultsPanel" class="hidden">
         <div class="result-title">DEMO RESULTS</div>
         <div class="market-info" id="autoTradeResult">No Demo trade submitted.</div>
+        <div class="manual-history" id="demoTradeResultHistory"><div class="manual-history-empty">Settled Demo trade results will be kept here during this page session.</div></div>
         <div class="result-title" style="margin-top:10px">LIVE RESULTS</div>
         <div class="market-info" id="liveTradeResult">Live execution is not enabled in this build. No Live trades will be placed.</div>
       </div>
@@ -1767,7 +1768,19 @@ async function startDemoTradeConnection() {
       }
       if(message.msg_type==="proposal_open_contract" && message.proposal_open_contract) {
         const c=message.proposal_open_contract, status=String(c.status||(c.is_sold?"sold":"open")).toLowerCase();
-        if(c.is_sold||["won","lost","sold","cancelled"].includes(status)) { autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency; refreshDerivWallet(); }
+        if(c.is_sold||["won","lost","sold","cancelled"].includes(status)) {
+          autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency;
+          const demoHistory = document.getElementById("demoTradeResultHistory");
+          if (demoHistory) {
+            if (demoHistory.querySelector(".manual-history-empty")) demoHistory.innerHTML = "";
+            const row = document.createElement("div");
+            row.className = "manual-history-row";
+            const profitText = c.profit == null ? "Profit not reported" : ((Number(c.profit) >= 0 ? "+" : "") + Number(c.profit).toFixed(2) + " " + verifiedDemoCurrency);
+            row.innerHTML = '<div><div class="manual-history-title">Demo · Contract ' + String(c.contract_id) + '</div><div class="manual-history-meta">' + new Date().toLocaleString() + '</div></div><div class="manual-history-result ' + (status === "won" ? "won" : (status === "lost" ? "lost" : "open")) + '">' + status.toUpperCase() + '<br>' + profitText + '</div>';
+            demoHistory.prepend(row);
+          }
+          refreshDerivWallet();
+        }
         else autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Buy price: "+(c.buy_price??"—")+" "+verifiedDemoCurrency;
         const manualRecord = manualTrades.get(String(c.contract_id));
         if (manualRecord) {
