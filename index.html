@@ -287,6 +287,14 @@
     <button type="button" class="mode-tab active" id="autoModeTab" role="tab" aria-selected="true" aria-controls="autoModePanel">⚡ AUTO TRADING</button>
     <button type="button" class="mode-tab" id="manualModeTab" role="tab" aria-selected="false" aria-controls="manualModePanel">◉ MANUAL DIGITS</button>
   </div>
+  <section class="card">
+    <label for="market">Market</label>
+    <select id="market">
+      <option value="">Loading markets...</option>
+    </select>
+    <div class="market-info" id="marketInfo">Loading market data...</div>
+    <div class="diagnostic" id="historyDiagnostic">History diagnostic: waiting...</div>
+  </section>
   <section id="autoModePanel" class="mode-panel" role="tabpanel" aria-labelledby="autoModeTab">
     <section class="card" id="autoTradeCard" aria-labelledby="autoTradeTitle">
       <div class="section-heading" id="autoTradeTitle">Demo auto-trading</div>
@@ -304,14 +312,6 @@
     </section>
   </header>
 
-  <section class="card">
-    <label for="market">Market</label>
-    <select id="market">
-      <option value="">Loading markets...</option>
-    </select>
-    <div class="market-info" id="marketInfo">Loading market data...</div>
-    <div class="diagnostic" id="historyDiagnostic">History diagnostic: waiting...</div>
-  </section>
 
   <section class="card">
     <div class="section-heading">Choose a contract type</div>
@@ -1371,6 +1371,30 @@ derivLogoutButton.addEventListener("click", async function() {
   derivAuthHint.textContent = "You can reconnect securely whenever you are ready.";
 });
 
+async function refreshDerivWallet() {
+  const session = sessionStorage.getItem("deriv_session");
+  if (!session || !verifiedDemoAccountId) return;
+  try {
+    const response = await fetch(DERIV_BACKEND_URL + "/api/accounts", {
+      cache: "no-store",
+      headers: { "X-Deriv-Session": session }
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    const account = (Array.isArray(data.accounts) ? data.accounts : []).find(a =>
+      String(a.account_id) === verifiedDemoAccountId
+    );
+    if (!account) return;
+    verifiedDemoCurrency = String(account.currency || verifiedDemoCurrency);
+    walletBalance.textContent = account.balance == null
+      ? "Balance unavailable"
+      : Number(account.balance).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + " " + verifiedDemoCurrency;
+    walletAccount.textContent = "Demo · " + verifiedDemoAccountId;
+    walletState.textContent = "Wallet refreshed · Demo";
+  } catch (_) {
+    walletState.textContent = "Balance refresh temporarily unavailable";
+  }
+}
 async function verifyDerivSession(session) {
   setDerivAuthStatus("Checking Deriv account…", true);
   derivAuthHint.textContent = "Verifying the Demo account and wallet. Trading stays disabled until verification succeeds.";
@@ -1510,7 +1534,7 @@ async function startDemoTradeConnection() {
       }
       if(message.msg_type==="proposal_open_contract" && message.proposal_open_contract) {
         const c=message.proposal_open_contract, status=c.status||(c.is_sold?"sold":"open");
-        if(c.is_sold||["won","lost","sold","cancelled"].includes(String(status).toLowerCase())) autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency;
+        if(c.is_sold||["won","lost","sold","cancelled"].includes(String(status).toLowerCase())) { autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency; refreshDerivWallet(); }
         else autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Buy price: "+(c.buy_price??"—")+" "+verifiedDemoCurrency;
       }
     };
