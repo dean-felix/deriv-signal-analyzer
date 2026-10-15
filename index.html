@@ -563,7 +563,7 @@ let manuallyClosed = false;
 
 const HISTORY_COUNT = 200;
 const MAX_TICKS = 500;
-const SAMPLE_SIZE = 160;
+const SAMPLE_SIZE = HISTORY_COUNT;
 
 function setStatus(text, connected) {
   statusText.textContent = text;
@@ -1037,11 +1037,11 @@ function needTicks(count, label) {
 function analyzeEvenOdd() {
   const digits = getLastDigits(SAMPLE_SIZE);
 
-  if (digits.length < 100) {
+  if (digits.length < SAMPLE_SIZE) {
     return {
       signal: "WAIT",
       score: digits.length + " usable digits",
-      detail: "Even/Odd needs at least 100 usable digits."
+      detail: "Even/Odd needs all " + SAMPLE_SIZE + " usable digits from the latest tick window."
     };
   }
 
@@ -1096,11 +1096,11 @@ function analyzeMatches() {
   const data = countDigits();
   const targetDigit = Number(targetDigitSelect.value);
 
-  if (data.total === 0) {
+  if (data.total < SAMPLE_SIZE) {
     return {
       signal: "WAIT",
       score: "No usable last digits",
-      detail: "Matches needs at least one usable last digit from " + currentSymbol + "."
+      detail: "Matches needs " + SAMPLE_SIZE + " usable digits from the latest tick window for " + currentSymbol + "."
     };
   }
 
@@ -1121,11 +1121,11 @@ function analyzeDiffers() {
   const data = countDigits();
   const targetDigit = Number(targetDigitSelect.value);
 
-  if (data.total === 0) {
+  if (data.total < SAMPLE_SIZE) {
     return {
       signal: "WAIT",
       score: "No usable last digits",
-      detail: "Differs needs at least one usable last digit from " + currentSymbol + "."
+      detail: "Differs needs " + SAMPLE_SIZE + " usable digits from the latest tick window for " + currentSymbol + "."
     };
   }
 
@@ -1147,11 +1147,11 @@ function analyzeOverUnder() {
   const data = countDigits();
   const barrier = Number(overUnderBarrierSelect.value);
 
-  if (data.total < 100) {
+  if (data.total < SAMPLE_SIZE) {
     return {
       signal: "WAIT",
       score: data.total + " usable digits",
-      detail: "Over/Under needs at least 100 usable digits."
+      detail: "Over/Under needs all " + SAMPLE_SIZE + " usable digits from the latest tick window."
     };
   }
 
@@ -1191,10 +1191,10 @@ function analyzeOverUnder() {
 }
 
 function analyzeRiseFall() {
-  const missing = needTicks(40, "Rise/Fall");
+  const missing = needTicks(SAMPLE_SIZE, "Rise/Fall");
   if (missing) return missing;
 
-  const ticks = getValidTicks(40);
+  const ticks = getValidTicks(SAMPLE_SIZE);
   let rises = 0;
   let falls = 0;
   let unchanged = 0;
@@ -1251,10 +1251,10 @@ function analyzeHigherLower() {
     };
   }
 
-  const missing = needTicks(80, "Higher/Lower");
+  const missing = needTicks(SAMPLE_SIZE, "Higher/Lower");
   if (missing) return missing;
 
-  const ticks = getValidTicks(80);
+  const ticks = getValidTicks(SAMPLE_SIZE);
   const above = ticks.filter(tick => tick.price > barrier).length;
   const below = ticks.filter(tick => tick.price < barrier).length;
   const equal = ticks.length - above - below;
@@ -1284,10 +1284,10 @@ function analyzeHigherLower() {
 }
 
 function analyzeAsianUpDown() {
-  const missing = needTicks(40, "Asian Up/Down");
+  const missing = needTicks(SAMPLE_SIZE, "Asian Up/Down");
   if (missing) return missing;
 
-  const ticks = getValidTicks(40);
+  const ticks = getValidTicks(SAMPLE_SIZE);
   const average = ticks.reduce((sum, tick) => sum + tick.price, 0) / ticks.length;
   const last = ticks[ticks.length - 1].price;
   const difference = last - average;
@@ -1320,10 +1320,10 @@ function analyzeAsianUpDown() {
 }
 
 function analyzeOnlyUpsDowns() {
-  const missing = needTicks(40, "Only Ups/Only Downs");
+  const missing = needTicks(SAMPLE_SIZE, "Only Ups/Only Downs");
   if (missing) return missing;
 
-  const ticks = getValidTicks(40);
+  const ticks = getValidTicks(SAMPLE_SIZE);
   let up = 0;
   let down = 0;
   let flat = 0;
@@ -1380,7 +1380,7 @@ function evaluateScanCandidate(symbol, metadata, ticks) {
     currentSymbol = symbol;
     currentPrecision = precisionFromPip(metadata && (metadata.pip_size ?? metadata.pip));
     recentTicks = ticks;
-    historyLoaded = ticks.length >= 100;
+    historyLoaded = ticks.length >= HISTORY_COUNT;
     if (!historyLoaded) return null;
 
     const type = tradeTypeSelect.value;
@@ -1576,7 +1576,7 @@ function runAnalysis(allowExecution = false) {
     return;
   }
 
-  if (!historyLoaded || recentTicks.length < 100) {
+  if (!historyLoaded || recentTicks.length < HISTORY_COUNT) {
     showWait("Waiting for enough historical and live data.");
     return;
   }
@@ -1654,10 +1654,10 @@ marketSelect.addEventListener("change", function() {
 
 analyzeButton.addEventListener("click", function() { runMarketScan(); });
 selectedAnalyzeButton.addEventListener("click", function() {
-  if (!currentSymbol || !historyLoaded || recentTicks.length < 100) {
+  if (!currentSymbol || !historyLoaded || recentTicks.length < HISTORY_COUNT) {
     resultMain.textContent = "WAIT";
     resultScore.textContent = "Insufficient selected-market data";
-    resultDetail.textContent = "Wait for at least 100 usable ticks from the currently selected market.";
+    resultDetail.textContent = "Wait until all " + HISTORY_COUNT + " latest ticks from the currently selected market are loaded.";
     return;
   }
   const option = Array.from(marketSelect.options).find(item => item.value === currentSymbol);
