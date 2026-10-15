@@ -315,7 +315,7 @@
     .digit-strip .wheel-digit { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:100%; height:53px; min-width:0; margin:0; padding:5px 1px 10px; transform:none !important; border-radius:6px; font-size:12px; overflow:hidden; }
     .digit-strip .wheel-digit .digit-frequency { font-size:8px; line-height:10px; font-weight:900; opacity:1; }
     .digit-strip .wheel-digit .digit-frequency-track { position:absolute; height:7px; left:2px; right:2px; bottom:2px; background:#243449 !important; border:1px solid #a8b7cb; border-radius:6px; overflow:hidden; z-index:1; display:block !important; }
-    .digit-strip .wheel-digit .digit-frequency-fill { height:100%; width:0; background:#a8b7cb; border-radius:6px; transition:width .15s linear,background-color .15s linear; display:block !important; }
+    .digit-strip .wheel-digit .digit-frequency-fill { height:100%; width:0; min-width:0; max-width:none; flex:none; background:#a8b7cb; border-radius:6px; transition:width .15s linear,background-color .15s linear; display:block !important; }
     .digit-strip .wheel-digit.frequency-high .digit-frequency-fill { background:#20d99a !important; }
     .digit-strip .wheel-digit.frequency-low .digit-frequency-fill { background:#ff5265 !important; }
     .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
@@ -1678,7 +1678,7 @@ function renderManualDigits() {
     }
     percent.textContent = sample.length ? pct.toFixed(1) + "%" : "—";
     const fill = button.querySelector(".digit-frequency-fill");
-    if (fill) fill.style.width = Math.max(0,Math.min(100,pct)) + "%";
+    if (fill) fill.style.width = (high || (low && !high) ? 100 : Math.max(0,Math.min(100,pct))) + "%";
   });
   syncManualBarrierUI();
 }
