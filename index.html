@@ -20,12 +20,47 @@
       color: #f6f8ff;
       min-height: 100vh;
     }
-    .app {
-      max-width: 560px;
-      margin: auto;
-      min-height: 100vh;
-      padding: 22px 16px 36px;
-    }
+    .app { max-width:560px; margin:auto; min-height:100vh; padding:12px 10px 22px; }
+    .card { padding:12px; margin-bottom:9px; border-radius:15px; }
+    .brand-row { gap:9px; margin-bottom:5px; }
+    .brand-mark { width:38px; height:38px; border-radius:12px; font-size:20px; }
+    h1 { font-size:21px; }
+    .subtitle { margin:4px 0 9px; font-size:12px; }
+    .top-pill { padding:5px 8px; margin:4px 0 8px; font-size:10px; }
+    .section-heading { margin-bottom:7px; font-size:12px; }
+    label { margin-bottom:5px; font-size:11px; }
+    select, button, input { border-radius:10px; padding:10px; font-size:14px; }
+    input { margin-bottom:8px; }
+    button { margin-top:8px; }
+    .trade-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+    .trade-option { min-height:48px; padding:7px; gap:7px; border-radius:11px; font-size:11px; }
+    .trade-option .trade-icon { width:27px; height:27px; border-radius:8px; font-size:14px; }
+    .price { font-size:clamp(23px,6vw,30px); margin-top:5px; }
+    .result { padding:15px 10px; }
+    .result-title { margin-bottom:6px; font-size:10px; }
+    .result-main { font-size:25px; }
+    .result-score { font-size:13px; margin-top:4px; }
+    .result-detail { font-size:11px; margin-top:6px; }
+    .hint, .market-info { font-size:10px; margin-top:5px; }
+    #derivConnectionCard, #autoTradeCard { padding:10px; }
+    .run-settings { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .run-settings input { margin-bottom:0; }
+    .manual-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .manual-head .section-heading { margin:0; }
+    .live-chip { color:#73f2c3; font-size:9px; letter-spacing:1px; margin-left:5px; }
+    .manual-current { display:grid; place-items:center; width:31px; height:31px; border-radius:10px; background:#23344b; border:1px solid #3e5677; color:#fff; font-size:18px; font-weight:900; }
+    .digit-ticker { display:flex; gap:4px; overflow:hidden; white-space:nowrap; margin:9px 0; padding:6px; border-radius:9px; background:#0b1320; border:1px solid #24334a; min-height:32px; align-items:center; }
+    .ticker-digit { flex:0 0 22px; text-align:center; padding:3px 0; border-radius:5px; font-size:12px; font-weight:800; background:#243449; color:#dce7f8; }
+    .ticker-digit.latest { background:#23a879; color:#04150f; box-shadow:0 0 12px #23a87955; }
+    .digit-bars { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px 6px; }
+    .digit-stat { min-width:0; }
+    .digit-stat-head { display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#d9e5f7; }
+    .digit-track { height:7px; background:#5a2731; border-radius:99px; overflow:hidden; }
+    .digit-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#19a875,#55f0ae); transition:width .25s ease; }
+    .digit-stat.low .digit-fill { background:linear-gradient(90deg,#c23c50,#ff6b78); }
+    .digit-stat.high .digit-track { box-shadow:0 0 0 1px #3ee7a5; }
+    .digit-stat.high .digit-stat-head { color:#5df0b2; }
+    .digit-stat.low .digit-stat-head { color:#ff8790; }
     .brand-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
     .brand-mark { display:grid; place-items:center; width:46px; height:46px; border-radius:15px; background:linear-gradient(145deg,#8a72ff,#4b36c9); box-shadow:0 8px 28px #6448ff40; font-size:23px; font-weight:900; }
     .eyebrow { color:var(--mint); text-transform:uppercase; letter-spacing:2px; font-size:10px; font-weight:800; margin-bottom:4px; }
@@ -178,15 +213,12 @@
       <div class="status"><span class="dot" id="autoTradeDot"></span><span id="autoTradeStatus">Locked until a Demo account is verified</span></div>
       <label for="autoTradeStake" style="margin-top:12px">Stake per trade</label>
       <input id="autoTradeStake" type="number" min="0.35" step="0.01" value="1.00" disabled>
-      <label for="autoTradeDuration">Contract duration</label>
-      <select id="autoTradeDuration" disabled>
-        <option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option>
-      </select>
+      <div class="run-settings"><div><label for="autoTradeDuration">Duration</label><select id="autoTradeDuration" disabled><option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option></select></div><div><label for="autoTradeRuns">Number of runs</label><input id="autoTradeRuns" type="number" min="1" max="20" step="1" value="1" disabled></div></div>
       <label style="display:flex;align-items:center;gap:10px;margin-top:14px;color:#e7edfa">
         <input id="autoTradeEnabled" type="checkbox" style="width:20px;height:20px;margin:0" disabled>
         Arm Demo auto-trading
       </label>
-      <p class="hint">When armed, pressing ANALYZE may place one Demo trade only if the result is not WAIT and the selected contract is supported. No Live trades. Check every result yourself; historical signals do not guarantee profit.</p>
+      <p class="hint">When armed, the analyzer watches live ticks and can submit the selected number of Demo runs when a new actionable signal appears. Demo only; historical patterns are not guaranteed win probabilities.</p>
       <div class="market-info" id="autoTradeResult">No trade submitted.</div>
     </section>
   </header>
@@ -267,9 +299,13 @@
     <div class="result-title">ANALYZER RESULT</div>
     <div class="result-main" id="resultMain">WAITING FOR DATA</div>
     <div class="result-score" id="resultScore">---</div>
-    <div class="result-detail" id="resultDetail">
-      Waiting for historical market data
-    </div>
+    <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
+  </section>
+  <section class="card manual-panel" aria-labelledby="manualDigitsTitle">
+    <div class="manual-head"><div class="section-heading" id="manualDigitsTitle">MANUAL DIGITS <span class="live-chip">LIVE TICKER</span></div><span class="manual-current" id="manualCurrentDigit">—</span></div>
+    <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
+    <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
+    <p class="hint">Bars show how often each digit appeared in the recent sample, not a prediction or guaranteed chance.</p>
   </section>
 </main>
 
@@ -389,11 +425,10 @@ function addTick(tick) {
 
 function updateLiveDisplay(tick) {
   if (!tick) return;
-
   priceElement.textContent = String(tick.price);
-  digitElement.textContent = "Last digit: " +
-    (tick.digit === null ? "-" : tick.digit);
+  digitElement.textContent = "Last digit: " + (tick.digit === null ? "-" : tick.digit);
   marketInfo.textContent = "Historical + live ticks: " + recentTicks.length;
+  renderManualDigits();
 }
 
 function connect() {
@@ -532,6 +567,7 @@ function subscribeToMarket(symbol) {
   if (!socket || socket.readyState !== WebSocket.OPEN || !symbol) return;
 
   currentSymbol = symbol;
+  lastAutoSignalKey = "";
   const selectedMarket = Array.from(marketSelect.options).find(option => option.value === symbol);
   const selectedMetadata = selectedMarket && selectedMarket._marketMetadata;
   currentPrecision = selectedMetadata
@@ -620,9 +656,11 @@ function handleHistory(data) {
     " history entries. " + recentTicks.length + " usable ticks loaded."
   );
 
-  resultMain.textContent = "READY";
-  resultScore.textContent = recentTicks.length + " ticks available";
-  resultDetail.textContent = "Choose a trade type and press ANALYZE.";
+  analysisActive = true;
+  resultMain.textContent = "ANALYZING";
+  resultScore.textContent = recentTicks.length + " ticks loaded · live refresh ON";
+  resultDetail.textContent = "Automatically analyzing the selected market and contract on incoming ticks.";
+  runAnalysis();
 }
 
 function handleLiveTick(tickData) {
@@ -636,10 +674,19 @@ function handleLiveTick(tickData) {
   updateLiveDisplay(tick);
   setStatus("Receiving live ticks", true);
 
-  // Recalculate on every incoming live tick while analysis is active.
-  // addTick still prevents duplicate entries in the rolling history.
-  if (historyLoaded && analysisActive) {
-    runAnalysis();
+  // Keep analysis current automatically; only a new actionable signal can start a batch.
+  if (historyLoaded) {
+    analysisActive = true;
+    const result = runAnalysis();
+    const signal = String(result && result.signal || "").toUpperCase();
+    if (!signal || signal === "WAIT" || signal === "FLAT") lastAutoSignalKey = "";
+    else {
+      const key = [currentSymbol, tradeTypeSelect.value, signal].join("|");
+      if (autoTradeEnabled.checked && key !== lastAutoSignalKey) {
+        lastAutoSignalKey = key;
+        maybeExecuteDemoTrade(result);
+      }
+    }
   }
 }
 
@@ -1065,7 +1112,9 @@ function runAnalysis(allowExecution = false) {
   resultMain.textContent = result.signal;
   resultScore.textContent = result.score;
   resultDetail.textContent = result.detail;
+  renderManualDigits();
   if (allowExecution) maybeExecuteDemoTrade(result);
+  return result;
 }
 
 function updateBarrierVisibility() {
@@ -1082,12 +1131,13 @@ marketSelect.addEventListener("change", function() {
   subscribeToMarket(marketSelect.value);
 });
 
-analyzeButton.addEventListener("click", function() { runAnalysis(true); });
+analyzeButton.addEventListener("click", function() { runAnalysis(); });
 
 tradeTypeCards.addEventListener("click", function(event) {
   const card = event.target.closest("[data-type]");
   if (!card) return;
   tradeTypeSelect.value = card.dataset.type;
+  lastAutoSignalKey = "";
   tradeTypeCards.querySelectorAll(".trade-option").forEach(option => {
     const active = option === card;
     option.classList.toggle("active", active);
@@ -1142,12 +1192,17 @@ const autoTradeStatus = document.getElementById("autoTradeStatus");
 const autoTradeDot = document.getElementById("autoTradeDot");
 const autoTradeStake = document.getElementById("autoTradeStake");
 const autoTradeDuration = document.getElementById("autoTradeDuration");
+const autoTradeRuns = document.getElementById("autoTradeRuns");
+const manualCurrentDigit = document.getElementById("manualCurrentDigit");
+const digitTicker = document.getElementById("digitTicker");
+const digitBars = document.getElementById("digitBars");
 const autoTradeResult = document.getElementById("autoTradeResult");
 let verifiedDemoAccountId = "";
 let verifiedDemoCurrency = "";
 let demoTradeSocket = null;
 let demoTradeReady = false;
 let demoTradeBusy = false;
+let lastAutoSignalKey = "";
 let demoRequestId = 100;
 const demoPendingRequests = new Map();
 
@@ -1200,6 +1255,7 @@ derivLogoutButton.addEventListener("click", async function() {
   autoTradeEnabled.disabled = true;
   autoTradeStake.disabled = true;
   autoTradeDuration.disabled = true;
+  autoTradeRuns.disabled = true;
   verifiedDemoAccountId = "";
   verifiedDemoCurrency = "";
   closeDemoTradeSocket();
@@ -1228,6 +1284,7 @@ async function verifyDerivSession(session) {
     autoTradeEnabled.disabled = false;
     autoTradeStake.disabled = false;
     autoTradeDuration.disabled = false;
+    autoTradeRuns.disabled = false;
     autoTradeStatus.textContent = "Demo verified · auto-trading is OFF";
     autoTradeDot.style.background = "#22c55e";
     setDerivAuthStatus("Deriv connected · Demo account verified", true);
@@ -1247,6 +1304,7 @@ async function verifyDerivSession(session) {
     autoTradeEnabled.disabled = true;
     autoTradeStake.disabled = true;
     autoTradeDuration.disabled = true;
+    autoTradeRuns.disabled = true;
     closeDemoTradeSocket();
     setDerivAuthStatus("Login returned — account check failed", false);
     derivAuthHint.textContent = (error && error.message ? error.message : "Account check failed") + ". Automatic trading remains locked.";
@@ -1282,6 +1340,23 @@ async function verifyDerivSession(session) {
   }
 })();
 
+
+function renderManualDigits() {
+  if (!digitBars || !digitTicker) return;
+  const ticks = recentTicks.filter(t => Number.isInteger(t.digit) && t.digit >= 0 && t.digit <= 9);
+  const latest = ticks.length ? ticks[ticks.length - 1].digit : null;
+  manualCurrentDigit.textContent = latest === null ? "—" : String(latest);
+  const recent = ticks.slice(-24);
+  digitTicker.innerHTML = recent.length ? recent.map((t,i) => '<span class="ticker-digit' + (i === recent.length - 1 ? ' latest' : '') + '">' + t.digit + '</span>').join("") : '<span class="hint">Waiting for live digits…</span>';
+  if (!ticks.length) { digitBars.innerHTML = '<div class="hint">Waiting for usable live digit data.</div>'; return; }
+  const sample = ticks.slice(-SAMPLE_SIZE), counts = Array(10).fill(0);
+  sample.forEach(t => counts[t.digit]++);
+  const max = Math.max(...counts), positive = counts.filter(n => n > 0), min = Math.min(...positive);
+  digitBars.innerHTML = counts.map((count,digit) => {
+    const pct = count / sample.length * 100, high = count === max && max > 0, low = count === min;
+    return '<div class="digit-stat' + (high ? ' high' : (!high && low ? ' low' : '')) + '"><div class="digit-stat-head"><span>' + digit + '</span><strong>' + pct.toFixed(1) + '%</strong></div><div class="digit-track"><div class="digit-fill" style="width:' + Math.max(0,Math.min(100,pct)) + '%"></div></div></div>';
+  }).join("");
+}
 
 function setAutoTradeStatus(message, good) {
   autoTradeStatus.textContent = message;
@@ -1335,7 +1410,7 @@ autoTradeEnabled.addEventListener("change", async function() {
   if(!autoTradeEnabled.checked){closeDemoTradeSocket();setAutoTradeStatus("Demo auto-trading is OFF",false);return;}
   if(!verifiedDemoAccountId){autoTradeEnabled.checked=false;setAutoTradeStatus("Verify a Demo account before arming",false);return;}
   autoTradeEnabled.disabled=true;setAutoTradeStatus("Connecting to Deriv Demo trading…",false);
-  try{await startDemoTradeConnection();setAutoTradeStatus("ARMED · Demo only · one trade per Analyze press",true);autoTradeResult.textContent="Ready. No trade has been submitted.";}
+  try{await startDemoTradeConnection();lastAutoSignalKey="";setAutoTradeStatus("ARMED · Demo only · live signal watcher ON",true);autoTradeResult.textContent="Watching live analysis. A new actionable signal can trigger the selected number of Demo runs.";}
   catch(error){autoTradeEnabled.checked=false;closeDemoTradeSocket();setAutoTradeStatus(error.message||"Could not arm Demo trading",false);}
   finally{autoTradeEnabled.disabled=false;}
 });
@@ -1354,21 +1429,32 @@ function contractForSignal(result) {
   return base;
 }
 async function maybeExecuteDemoTrade(result) {
-  if(!autoTradeEnabled.checked)return;
-  if(demoTradeBusy){autoTradeResult.textContent="Trade request already in progress. No duplicate order submitted.";return;}
-  if(!verifiedDemoAccountId||!demoTradeReady){autoTradeResult.textContent="Demo trading is not connected. No trade was placed.";setAutoTradeStatus("Not connected — auto-trading paused",false);return;}
-  if(!result||!result.signal||["WAIT","FLAT"].includes(String(result.signal).toUpperCase())){autoTradeResult.textContent="Analysis returned WAIT/FLAT. No trade was placed.";return;}
-  demoTradeBusy=true;analyzeButton.disabled=true;autoTradeResult.textContent="Checking Demo contract proposal…";
-  try{
-    const proposalResponse=await demoWsRequest(contractForSignal(result),"proposal"), proposal=proposalResponse.proposal;
-    if(!proposal||!proposal.id||!Number.isFinite(Number(proposal.ask_price))||Number(proposal.ask_price)<=0)throw new Error("Deriv did not return a valid proposal. No trade was placed.");
-    autoTradeResult.textContent="Proposal received. Buying on Demo…";
-    const buyResponse=await demoWsRequest({buy:String(proposal.id),price:Number(proposal.ask_price)},"buy"), bought=buyResponse.buy;
-    if(!bought||!bought.contract_id)throw new Error("Deriv did not confirm a contract ID. Check Demo portfolio before retrying.");
-    autoTradeResult.textContent="Demo purchase confirmed · Contract "+bought.contract_id+" · Stake "+(bought.buy_price??proposal.ask_price)+" "+verifiedDemoCurrency+" · Monitoring settlement…";
-    demoTradeSocket.send(JSON.stringify({proposal_open_contract:1,contract_id:Number(bought.contract_id),subscribe:1,req_id:++demoRequestId}));
-  }catch(error){autoTradeResult.textContent=(error.message||"Demo trade failed")+" No further order was submitted.";}
-  finally{demoTradeBusy=false;analyzeButton.disabled=false;}
+  if (!autoTradeEnabled.checked) return;
+  if (demoTradeBusy) { autoTradeResult.textContent = "A Demo run batch is already in progress; duplicate batch skipped."; return; }
+  if (!verifiedDemoAccountId || !demoTradeReady) { autoTradeResult.textContent = "Demo trading is not connected. No trade was placed."; setAutoTradeStatus("Not connected — auto-trading paused", false); return; }
+  if (!result || !result.signal || ["WAIT","FLAT"].includes(String(result.signal).toUpperCase())) { autoTradeResult.textContent = "Analysis returned WAIT/FLAT. No trade was placed."; return; }
+  const runs = Number(autoTradeRuns.value);
+  if (!Number.isInteger(runs) || runs < 1 || runs > 20) { autoTradeResult.textContent = "Choose between 1 and 20 runs. No trade was placed."; return; }
+  let contract;
+  try { contract = contractForSignal(result); } catch (error) { autoTradeResult.textContent = (error.message || "Unsupported signal") + ". No trade was placed."; return; }
+  demoTradeBusy = true; analyzeButton.disabled = true;
+  let completed = 0;
+  try {
+    for (let run = 1; run <= runs; run++) {
+      if (!autoTradeEnabled.checked || !demoTradeReady || !verifiedDemoAccountId) throw new Error("Auto-trading was switched off or disconnected; remaining runs stopped.");
+      autoTradeResult.textContent = "Demo run " + run + " of " + runs + " · Checking proposal…";
+      const proposalResponse = await demoWsRequest({...contract}, "proposal"), proposal = proposalResponse.proposal;
+      if (!proposal || !proposal.id || !Number.isFinite(Number(proposal.ask_price)) || Number(proposal.ask_price) <= 0) throw new Error("Deriv did not return a valid proposal for run " + run + ".");
+      const buyResponse = await demoWsRequest({buy:String(proposal.id),price:Number(proposal.ask_price)}, "buy"), bought = buyResponse.buy;
+      if (!bought || !bought.contract_id) throw new Error("Deriv did not confirm a contract ID for run " + run + ". Check Demo portfolio before retrying.");
+      completed++;
+      demoTradeSocket.send(JSON.stringify({proposal_open_contract:1,contract_id:Number(bought.contract_id),subscribe:1,req_id:++demoRequestId}));
+      autoTradeResult.textContent = "Confirmed " + completed + " of " + runs + " Demo runs · Latest contract " + bought.contract_id + " · Monitoring settlement.";
+    }
+    autoTradeResult.textContent = "Batch submitted: " + completed + " of " + runs + " Demo runs confirmed. Settlement updates follow below.";
+  } catch (error) {
+    autoTradeResult.textContent = "Batch stopped after " + completed + " of " + runs + " confirmed runs. " + (error.message || "Demo trade failed");
+  } finally { demoTradeBusy = false; analyzeButton.disabled = false; }
 }
 
 connect();
