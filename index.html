@@ -1492,7 +1492,8 @@ function updateBarrierVisibility() {
   const type = tradeTypeSelect.value;
   barrierArea.classList.toggle("hidden", type !== "HIGHER_LOWER");
   digitArea.classList.toggle("hidden", type !== "MATCHES" && type !== "DIFFERS");
-  overUnderArea.classList.toggle("hidden", type !== "OVER_UNDER");
+  overUnderArea.classList.add("hidden");
+  digitArea.classList.add("hidden");
   digitHint.textContent = type === "MATCHES"
     ? "Matches wins only if the next relevant digit equals your selected digit."
     : "Differs wins only if the next relevant digit is different from your selected digit.";
@@ -2039,9 +2040,9 @@ function contractForSignal(result) {
   const base={proposal:1,amount,basis:"stake",currency:verifiedDemoCurrency,duration,duration_unit:"t",underlying_symbol:currentSymbol};
   if(type==="RISE_FALL"&&(signal==="RISE"||signal==="FALL"))base.contract_type=signal==="RISE"?"CALL":"PUT";
   else if(type==="EVEN_ODD"&&(signal==="EVEN"||signal==="ODD"))base.contract_type=signal==="EVEN"?"DIGITEVEN":"DIGITODD";
-  else if(type==="OVER_UNDER"&&(signal.startsWith("OVER ")||signal.startsWith("UNDER "))){base.contract_type=signal.startsWith("OVER ")?"DIGITOVER":"DIGITUNDER";base.barrier=String(Number(overUnderBarrierSelect.value));}
-  else if(type==="MATCHES"&&signal.startsWith("MATCHES ")){base.contract_type="DIGITMATCH";base.barrier=String(Number(targetDigitSelect.value));}
-  else if(type==="DIFFERS"&&signal.startsWith("DIFFERS ")){base.contract_type="DIGITDIFF";base.barrier=String(Number(targetDigitSelect.value));}
+  else if(type==="OVER_UNDER"&&(signal.startsWith("OVER ")||signal.startsWith("UNDER "))){base.contract_type=signal.startsWith("OVER ")?"DIGITOVER":"DIGITUNDER";base.barrier=String(Number((signal.match(/(?:OVER|UNDER)\s+(\d+)/)||[])[1]));}
+  else if(type==="MATCHES"&&signal.startsWith("MATCHES ")){base.contract_type="DIGITMATCH";base.barrier=String(Number((signal.match(/MATCHES\s+(\d+)/)||[])[1]));}
+  else if(type==="DIFFERS"&&signal.startsWith("DIFFERS ")){base.contract_type="DIGITDIFF";base.barrier=String(Number((signal.match(/DIFFERS\s+(\d+)/)||[])[1]));}
   else throw new Error("This signal/contract mapping is not enabled for automatic execution yet. No trade was placed.");
   return base;
 }
@@ -2050,8 +2051,8 @@ function hasDigitEntrySetup(result) {
   const digits = getLastDigits(3);
   if (digits.length < 3) return {ready:false, reason:"Waiting for 3 fresh ticks for entry timing."};
   if (type !== "OVER_UNDER") return {ready:false, reason:"Entry timing is not configured for this contract type yet. No trade placed."};
-  const barrier = Number(overUnderBarrierSelect.value);
   const signal = String(result && result.signal || "").toUpperCase();
+  const barrier = Number((signal.match(/(?:OVER|UNDER)\s+(\d+)/)||[])[1] ?? overUnderBarrierSelect.value);
   const [older, previous, latest] = digits;
   if (signal.startsWith("OVER ") && older <= barrier && previous <= barrier && latest > barrier) {
     return {ready:true, reason:"OVER entry setup: two ticks at/below barrier, then a cross above it."};
