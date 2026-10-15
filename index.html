@@ -298,7 +298,7 @@
     .inline-result-controls { margin:5px 0 8px; }
     #resultDetailsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
     #resultDetailsPanel { margin-top:0; }
-    .floating-results-toggle { position:fixed; z-index:1001; top:8px; right:10px; width:auto; max-width:52vw; padding:9px 12px; border-radius:999px; font-size:11px; font-weight:900; background:#1764d8; color:#fff; border:1px solid #69a7ff; box-shadow:0 5px 18px #0008; }
+    .floating-results-toggle { position:fixed; z-index:1001; right:10px; bottom:12px; top:auto; width:auto; max-width:70vw; padding:9px 12px; border-radius:999px; font-size:11px; font-weight:900; background:#1764d8; color:#fff; border:1px solid #69a7ff; box-shadow:0 5px 18px #0008; }
     .floating-results-panel { position:fixed; z-index:1000; top:53px; left:10px; right:10px; max-height:min(70vh,560px); overflow:hidden; display:flex; flex-direction:column; background:#101a29; border:1px solid #3b5270; border-radius:14px; box-shadow:0 16px 50px #000b; padding:12px; }
     .floating-results-panel.hidden { display:none !important; }
     .floating-results-head { display:flex; align-items:center; justify-content:space-between; color:#f2f7ff; margin-bottom:8px; }
@@ -309,18 +309,18 @@
     .trade-result-source { font-size:9px; color:#94a8c3; text-transform:uppercase; font-weight:800; letter-spacing:.5px; }
     .trade-result-meta { font-size:10px; color:#91a5bf; margin-top:3px; }
     .trade-result-profit { font-size:11px; font-weight:900; white-space:nowrap; }
-    @media(max-width:380px) { .floating-results-toggle { top:6px; right:6px; padding:7px 9px; font-size:10px; } .floating-results-panel { top:46px; left:6px; right:6px; padding:9px; } }
-    .digit-strip-wrap { position:relative; padding-top:13px; padding-bottom:2px; margin:12px auto 9px; max-width:100%; overflow:visible; }
+    @media(max-width:380px) { .floating-results-toggle { bottom:8px; right:6px; top:auto; padding:7px 9px; font-size:10px; } .floating-results-panel { top:46px; left:6px; right:6px; padding:9px; } }
+    .digit-strip-wrap { position:relative; padding-top:0; padding-bottom:16px; margin:12px auto 9px; max-width:100%; overflow:visible; }
     .digit-strip { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:3px; width:100%; align-items:stretch; }
     .digit-strip .wheel-digit { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:100%; height:53px; min-width:0; margin:0; padding:5px 1px 10px; transform:none !important; border-radius:6px; font-size:12px; overflow:hidden; }
     .digit-strip .wheel-digit .digit-frequency { font-size:8px; line-height:10px; font-weight:900; opacity:1; }
-    .digit-strip .wheel-digit .digit-frequency-track { position:absolute; height:6px; left:2px; right:2px; bottom:2px; background:#52627a; border:1px solid #8393aa; border-radius:6px; overflow:hidden; }
-    .digit-strip .wheel-digit .digit-frequency-fill { height:100%; width:0; background:#a8b7cb; border-radius:6px; transition:width .15s linear,background-color .15s linear; }
-    .digit-strip .wheel-digit.frequency-high .digit-frequency-fill { background:#20d99a; }
-    .digit-strip .wheel-digit.frequency-low .digit-frequency-fill { background:#ff5265; }
+    .digit-strip .wheel-digit .digit-frequency-track { position:absolute; height:7px; left:2px; right:2px; bottom:2px; background:#243449 !important; border:1px solid #a8b7cb; border-radius:6px; overflow:hidden; z-index:1; display:block !important; }
+    .digit-strip .wheel-digit .digit-frequency-fill { height:100%; width:0; background:#a8b7cb; border-radius:6px; transition:width .15s linear,background-color .15s linear; display:block !important; }
+    .digit-strip .wheel-digit.frequency-high .digit-frequency-fill { background:#20d99a !important; }
+    .digit-strip .wheel-digit.frequency-low .digit-frequency-fill { background:#ff5265 !important; }
     .digit-strip .wheel-digit.selected { background:#1764d8; border:2px solid #69a7ff; color:white; outline:0; box-shadow:0 0 0 2px #1764d833; }
     .digit-strip .wheel-digit.latest-tick { border-color:#ff5c62; box-shadow:inset 0 -3px #ff5c62,0 0 0 1px #ff5c62; }
-    .live-tick-pointer { position:absolute; top:0; bottom:auto; left:5%; width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid #ff424f; border-top:0; transform:translateX(-50%); transition:left .12s linear; filter:drop-shadow(0 0 3px #ff424f99); pointer-events:none; z-index:3; }
+    .live-tick-pointer { position:absolute; top:55px; bottom:auto; left:5%; width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid #ff424f; border-top:0; transform:translateX(-50%); transition:left .12s linear; filter:drop-shadow(0 0 3px #ff424f99); pointer-events:none; z-index:3; }
     .strip-current { text-align:center; font-size:10px; color:#91a5bf; margin-top:7px; }
     .strip-current strong { color:#ff6973; font-size:12px; }
     .wheel-center,.wheel-center-label,.wheel-center-note { display:none; }
@@ -477,7 +477,7 @@
         <div class="digit-strip" id="digitWheel">
           <button type="button" class="wheel-digit" data-digit="0" aria-label="Select barrier 0">0</button><button type="button" class="wheel-digit" data-digit="1" aria-label="Select barrier 1">1</button><button type="button" class="wheel-digit" data-digit="2" aria-label="Select barrier 2">2</button><button type="button" class="wheel-digit" data-digit="3" aria-label="Select barrier 3">3</button><button type="button" class="wheel-digit" data-digit="4" aria-label="Select barrier 4">4</button><button type="button" class="wheel-digit" data-digit="5" aria-label="Select barrier 5">5</button><button type="button" class="wheel-digit" data-digit="6" aria-label="Select barrier 6">6</button><button type="button" class="wheel-digit" data-digit="7" aria-label="Select barrier 7">7</button><button type="button" class="wheel-digit" data-digit="8" aria-label="Select barrier 8">8</button><button type="button" class="wheel-digit" data-digit="9" aria-label="Select barrier 9">9</button>
         </div>
-        <div class="live-tick-pointer" id="wheelPointer" aria-hidden="true">▼</div>
+        <div class="live-tick-pointer" id="wheelPointer" aria-hidden="true"></div>
         <div class="strip-current">LIVE TICK: <strong id="wheelLiveDigit">—</strong></div>
       </div>
       <div class="manual-barrier-row">
@@ -488,7 +488,7 @@
       </div>
       <div class="digit-ticker" id="digitTicker" aria-label="Recent live digits">Waiting for live digits…</div>
       <div class="digit-bars" id="digitBars"><div class="hint">Digit distribution appears after live data arrives.</div></div>
-      <p class="hint">The red upward-pointing triangle marks the last digit of the latest live tick from the selected Deriv market. The pointer moves only when a live tick arrives; if the feed is disconnected it will stop. Percentages and visible frequency bars are inside these same square digit buttons: green is most frequent, red is least frequent. Historical frequency is not a guaranteed chance.</p>
+      <p class="hint">One red upward-pointing triangle sits below the digit squares and marks the last digit of the latest live tick from the selected Deriv market. It moves only when a live tick arrives. The green bar marks the highest-frequency digit(s), and the red bar marks the lowest-frequency digit(s), including zero-frequency digits. These are historical frequencies, not guaranteed chances.</p>
     </section>
     <section class="card" aria-labelledby="manualExecutionTitle">
       <div class="section-heading" id="manualExecutionTitle">MANUAL EXECUTION · DEMO ONLY</div>
