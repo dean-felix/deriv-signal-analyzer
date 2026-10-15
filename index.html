@@ -417,12 +417,14 @@
       <button type="button" class="trade-option" data-type="ONLY_UPS_DOWNS"><span class="trade-icon">⇈</span><span>Only Ups / Downs</span><span class="trade-signal-chip" data-signal-for="ONLY_UPS_DOWNS">WAIT</span></button>
     </div>
 
-  <div class="inline-result-controls"><button type="button" id="resultDetailsToggle" aria-expanded="false">＋ SIGNAL DETAILS</button></div>
-  <section class="card result hidden" id="resultDetailsPanel">
-    <div class="result-title">SIGNAL DETAILS</div>
+  <div class="start-row">
+    <button type="button" id="selectedAnalyzeButton" class="start-auto">ANALYZE SELECTED MARKET</button>
+  </div>
+  <section class="card result" id="resultDetailsPanel">
+    <div class="result-title">SELECTED MARKET ANALYSIS</div>
     <div class="result-main" id="resultMain">WAITING FOR DATA</div>
     <div class="result-score" id="resultScore">---</div>
-    <div class="result-detail" id="resultDetail">Waiting for historical market data</div>
+    <div class="result-detail" id="resultDetail">Analyze the currently selected market separately.</div>
   </section>
 
     <div id="barrierArea" class="hidden" style="margin-top:14px">
@@ -457,7 +459,13 @@
       <button type="button" id="startAutoButton" class="start-auto" disabled>▶ START AUTO</button>
       <button type="button" id="stopAutoButton" class="stop-auto" disabled>■ STOP</button>
     </div>
-    <button id="analyzeButton">ANALYZE NOW (NO TRADE)</button>
+    <button id="analyzeButton">SCAN ALL MARKETS · BEST RESULT</button>
+    <section class="card result" id="marketScanResultCard" aria-live="polite">
+      <div class="result-title">BEST RESULT ACROSS ALL MARKETS</div>
+      <div class="result-main" id="marketScanMain">READY TO SCAN</div>
+      <div class="result-score" id="marketScanScore">---</div>
+      <div class="result-detail" id="marketScanDetail">Choose a trade type, then scan all available Bull, Bear and Volatility markets. This result is separate from the selected-market analysis above.</div>
+    </section>
   </section>
 
   <section class="card">
@@ -530,6 +538,10 @@ const historyDiagnostic = document.getElementById("historyDiagnostic");
 const resultMain = document.getElementById("resultMain");
 const resultScore = document.getElementById("resultScore");
 const resultDetail = document.getElementById("resultDetail");
+const selectedAnalyzeButton = document.getElementById("selectedAnalyzeButton");
+const marketScanMain = document.getElementById("marketScanMain");
+const marketScanScore = document.getElementById("marketScanScore");
+const marketScanDetail = document.getElementById("marketScanDetail");
 
 let socket = null;
 let currentSymbol = "";
@@ -1349,21 +1361,23 @@ function finishMarketScan() {
   marketScanState = null;
   analyzeButton.disabled = false;
   if (!state.results.length) {
-    showWait("No market produced a sufficiently strong, comparable signal from verified recent ticks. Try again after more data arrives.", "WAIT · No qualifying result");
+    marketScanMain.textContent = "WAIT";
+    marketScanScore.textContent = "No qualifying result";
+    marketScanDetail.textContent = "No market produced a sufficiently strong, comparable signal from verified recent ticks. Try again after more live data arrives. The selected-market result above has not been changed.";
     return;
   }
   state.results.sort((a,b) => b.pct - a.pct);
   const best = state.results[0];
-  resultMain.textContent = best.signal;
-  resultScore.textContent = best.pct.toFixed(1) + "% observed historical frequency · " + best.name;
-  resultDetail.textContent = "Strongest qualifying " + tradeTypeSelect.options[tradeTypeSelect.selectedIndex].text +
+  marketScanMain.textContent = best.signal;
+  marketScanScore.textContent = best.pct.toFixed(1) + "% observed historical frequency · " + best.name;
+  marketScanDetail.textContent = "Strongest qualifying " + tradeTypeSelect.options[tradeTypeSelect.selectedIndex].text +
     " candidate across " + state.checked + " live Deriv markets: " + best.name + " (" + best.symbol + "). " +
-    best.detail + " This percentage is a historical sample measure, not a guaranteed win probability. Trade types without a comparable percentage or requiring a contract-specific barrier are not forced into a prediction.";
+    best.detail + " This percentage is a historical sample measure, not a guaranteed win probability. The selected-market analysis above remains separate.";
   const chip = tradeTypeCards.querySelector('[data-signal-for="' + tradeTypeSelect.value + '"]');
   if (chip) {
     chip.textContent = best.signal + " · " + best.pct.toFixed(1) + "%";
     chip.classList.remove("wait"); chip.classList.add("ready");
-    chip.title = resultDetail.textContent;
+    chip.title = marketScanDetail.textContent;
   }
   setHistoryDiagnostic("Market scan complete: " + state.checked + " markets checked; " + state.results.length + " qualifying candidates.");
   renderManualDigits();
@@ -1409,9 +1423,9 @@ function runMarketScan() {
   marketScanRequests.clear();
   marketScanState = {pending:new Set(), results:[], checked:0, total:markets.length};
   analyzeButton.disabled = true;
-  resultMain.textContent = "SCANNING MARKETS";
-  resultScore.textContent = "0 / " + markets.length + " markets checked";
-  resultDetail.textContent = "Checking recent live Deriv history for the selected trade type. Over/Under and Matches/Differs will test candidate barriers/digits automatically. No trade is placed.";
+  marketScanMain.textContent = "SCANNING MARKETS";
+  marketScanScore.textContent = "0 / " + markets.length + " markets checked";
+  marketScanDetail.textContent = "Checking verified recent Deriv history for the selected trade type. Over/Under tests barrier digits automatically; Matches and Differs test target digits automatically. No trade is placed, and the selected-market result above is not overwritten.";
   setHistoryDiagnostic("Scanning " + markets.length + " active Bull, Bear and Volatility markets…");
 
   markets.forEach(option => {
@@ -1506,6 +1520,26 @@ marketSelect.addEventListener("change", function() {
 });
 
 analyzeButton.addEventListener("click", function() { runMarketScan(); });
+selectedAnalyzeButton.addEventListener("click", function() {
+  if (!currentSymbol || !historyLoaded || recentTicks.length < 100) {
+    resultMain.textContent = "WAIT";
+    resultScore.textContent = "Insufficient selected-market data";
+    resultDetail.textContent = "Wait for at least 100 usable ticks from the currently selected market.";
+    return;
+  }
+  const option = Array.from(marketSelect.options).find(item => item.value === currentSymbol);
+  const candidate = evaluateScanCandidate(currentSymbol, option && option._marketMetadata, recentTicks.slice(-MAX_TICKS));
+  if (!candidate) {
+    resultMain.textContent = "WAIT";
+    resultScore.textContent = "No qualifying selected-market result";
+    resultDetail.textContent = "This market did not produce a sufficiently strong result for the selected trade type. Try again after more ticks arrive.";
+    return;
+  }
+  resultMain.textContent = candidate.signal;
+  resultScore.textContent = candidate.pct.toFixed(1) + "% observed historical frequency · " + candidate.name;
+  resultDetail.textContent = "Analysis of the currently selected market only: " + candidate.name + " (" + candidate.symbol + "). " + candidate.detail + " Historical frequency is not a guaranteed win probability. Use SCAN ALL MARKETS to compare all supported markets.";
+  renderManualDigits();
+});
 
 tradeTypeCards.addEventListener("click", function(event) {
   const card = event.target.closest("[data-type]");
