@@ -557,7 +557,7 @@ let marketScanRequests = new Map();
 let marketScanState = null;
 let reconnectTimer = null;
 let activeSymbolsTimer = null;
-let useLegacyMarketEndpoint = false;
+let useLegacyMarketEndpoint = true;
 let manuallyClosed = false;
 
 const HISTORY_COUNT = 200;
@@ -651,6 +651,7 @@ function connect() {
   setStatus("Connecting to Deriv...", false);
 
   try {
+    // Use the established public WebSocket first; fall back to the newer endpoint if it fails.
     const endpoint = useLegacyMarketEndpoint
       ? "wss://ws.derivws.com/websockets/v3?app_id=1089"
       : "wss://api.derivws.com/trading/v1/options/ws/public";
@@ -664,14 +665,14 @@ function connect() {
 
   socket.onopen = function() {
     setStatus("Connected — loading markets...", true);
-    socket.send(JSON.stringify({ active_symbols: "brief", req_id: ++requestCounter }));
+    socket.send(JSON.stringify({ active_symbols: "brief", product_type: "basic", req_id: ++requestCounter }));
     activeSymbolsTimer = setTimeout(function() {
       if (!marketSelect.options.length ||
           marketSelect.options[0].textContent === "Loading markets...") {
-        if (!useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN) {
-          useLegacyMarketEndpoint = true;
+        if (useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN) {
+          useLegacyMarketEndpoint = false;
           setStatus("Market list timed out — switching Deriv feed...", false);
-          setHistoryDiagnostic("Primary market feed did not return symbols; trying compatibility feed.");
+          setHistoryDiagnostic("Standard market feed did not return symbols; trying the alternate feed.");
           socket.close();
         } else {
           setStatus("Deriv market list timed out — reconnecting...", false);
@@ -701,8 +702,9 @@ function connect() {
       console.error("Deriv errors:", data.errors);
       setStatus("Deriv market feed error: " + message, false);
       setHistoryDiagnostic(message);
-      if (!useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN) {
-        useLegacyMarketEndpoint = true;
+      if (useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN &&
+          marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
+        useLegacyMarketEndpoint = false;
         socket.close();
       }
       return;
@@ -726,6 +728,14 @@ function connect() {
 
       if (data.req_id === currentContractsRequestId) {
         marketContracts = [];
+      }
+
+      if (useLegacyMarketEndpoint && socket && socket.readyState === WebSocket.OPEN &&
+          marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
+        useLegacyMarketEndpoint = false;
+        setHistoryDiagnostic("Standard market feed returned an error (" + message + "); switching to alternate feed.");
+        socket.close();
+        return;
       }
 
       setStatus("Deriv error: " + message, false);
