@@ -878,8 +878,13 @@ function handleLiveTick(tickData) {
     else {
       const key = [currentSymbol, tradeTypeSelect.value, signal].join("|");
       if (autoTradeEnabled.checked && key !== lastAutoSignalKey) {
-        lastAutoSignalKey = key;
-        maybeExecuteDemoTrade(result);
+        const entry = hasDigitEntrySetup(result);
+        if (entry.ready) {
+          lastAutoSignalKey = key;
+          maybeExecuteDemoTrade(result);
+        } else {
+          autoTradeResult.textContent = entry.reason;
+        }
       }
     }
   }
