@@ -1196,6 +1196,16 @@ derivLogoutButton.addEventListener("click", async function() {
     console.warn("Deriv disconnect request failed.");
   }
   sessionStorage.removeItem("deriv_session");
+  autoTradeEnabled.checked = false;
+  autoTradeEnabled.disabled = true;
+  autoTradeStake.disabled = true;
+  autoTradeDuration.disabled = true;
+  verifiedDemoAccountId = "";
+  verifiedDemoCurrency = "";
+  closeDemoTradeSocket();
+  const wallet = document.getElementById("verifiedDemoWallet");
+  if (wallet) wallet.remove();
+  setAutoTradeStatus("Locked until a Demo account is verified", false);
   setDerivAuthStatus("Disconnected", false);
   derivAuthHint.textContent = "You can reconnect securely whenever you are ready.";
 });
