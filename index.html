@@ -173,6 +173,22 @@
       <button type="button" id="derivLogoutButton" class="hidden" style="background:#26354b;box-shadow:none">DISCONNECT</button>
       <p class="hint" id="derivAuthHint">Connect securely through Deriv. This does not place trades.</p>
     </section>
+    <section class="card" id="autoTradeCard" aria-labelledby="autoTradeTitle">
+      <div class="section-heading" id="autoTradeTitle">Demo auto-trading</div>
+      <div class="status"><span class="dot" id="autoTradeDot"></span><span id="autoTradeStatus">Locked until a Demo account is verified</span></div>
+      <label for="autoTradeStake" style="margin-top:12px">Stake per trade</label>
+      <input id="autoTradeStake" type="number" min="0.35" step="0.01" value="1.00" disabled>
+      <label for="autoTradeDuration">Contract duration</label>
+      <select id="autoTradeDuration" disabled>
+        <option value="1">1 tick</option><option value="2">2 ticks</option><option value="3">3 ticks</option><option value="5">5 ticks</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:10px;margin-top:14px;color:#e7edfa">
+        <input id="autoTradeEnabled" type="checkbox" style="width:20px;height:20px;margin:0" disabled>
+        Arm Demo auto-trading
+      </label>
+      <p class="hint">When armed, pressing ANALYZE may place one Demo trade only if the result is not WAIT and the selected contract is supported. No Live trades. Check every result yourself; historical signals do not guarantee profit.</p>
+      <div class="market-info" id="autoTradeResult">No trade submitted.</div>
+    </section>
   </header>
 
   <section class="card">
@@ -998,7 +1014,7 @@ function analyzeOnlyUpsDowns() {
   };
 }
 
-function runAnalysis() {
+function runAnalysis(allowExecution = false) {
   if (!currentSymbol) {
     showWait("Select a market.");
     return;
@@ -1049,6 +1065,7 @@ function runAnalysis() {
   resultMain.textContent = result.signal;
   resultScore.textContent = result.score;
   resultDetail.textContent = result.detail;
+  if (allowExecution) maybeExecuteDemoTrade(result);
 }
 
 function updateBarrierVisibility() {
@@ -1065,7 +1082,7 @@ marketSelect.addEventListener("change", function() {
   subscribeToMarket(marketSelect.value);
 });
 
-analyzeButton.addEventListener("click", runAnalysis);
+analyzeButton.addEventListener("click", function() { runAnalysis(true); });
 
 tradeTypeCards.addEventListener("click", function(event) {
   const card = event.target.closest("[data-type]");
@@ -1120,6 +1137,20 @@ const derivAuthDot = document.getElementById("derivAuthDot");
 const derivConnectButton = document.getElementById("derivConnectButton");
 const derivLogoutButton = document.getElementById("derivLogoutButton");
 const derivAuthHint = document.getElementById("derivAuthHint");
+const autoTradeEnabled = document.getElementById("autoTradeEnabled");
+const autoTradeStatus = document.getElementById("autoTradeStatus");
+const autoTradeDot = document.getElementById("autoTradeDot");
+const autoTradeStake = document.getElementById("autoTradeStake");
+const autoTradeDuration = document.getElementById("autoTradeDuration");
+const autoTradeResult = document.getElementById("autoTradeResult");
+let verifiedDemoAccountId = "";
+let verifiedDemoCurrency = "";
+let demoTradeSocket = null;
+let demoTradeReady = false;
+let demoTradeBusy = false;
+let demoRequestId = 100;
+const demoPendingRequests = new Map();
+
 
 function setDerivAuthStatus(message, connected) {
   derivAuthStatus.textContent = message;
@@ -1177,13 +1208,102 @@ derivLogoutButton.addEventListener("click", async function() {
     history.replaceState(null, "", window.location.pathname + window.location.search);
     setDerivAuthStatus("Deriv login returned — checking account…", true);
     derivAuthHint.textContent = "Checking your Deriv Demo account. Trading remains disabled.";
-    fetch(DERIV_BACKEND_URL + "/api/accounts", { cache: "no-store", headers: { "X-Deriv-Session": session } }).then(async function(r) { const d = await r.json(); if (!r.ok) throw new Error(d.error || "Account verification failed"); const a = (d.accounts || []).find(function(x) { return x.is_virtual === true || x.is_virtual === 1 || /demo|virtual/i.test(String(x.account_type || x.type || "")) || /^VRTC/i.test(String(x.account_id || "")); }); if (!a) throw new Error("No Demo account confirmed"); derivAuthStatus.textContent = "Deriv connected · Demo account verified"; derivAuthHint.textContent = "Demo account only. No trades are placed."; const wallet = document.createElement("div"); wallet.className = "market-info"; wallet.textContent = "Demo wallet: " + (a.balance == null ? "balance unavailable" : a.balance + " " + (a.currency || "")); derivAuthHint.before(wallet); }).catch(function(e) { derivAuthStatus.textContent = "Login returned — account check failed"; derivAuthHint.textContent = (e && e.message ? e.message : "Account check failed") + ". Trading remains disabled."; });
+    fetch(DERIV_BACKEND_URL + "/api/accounts", { cache: "no-store", headers: { "X-Deriv-Session": session } }).then(async function(r) { const d = await r.json(); if (!r.ok) throw new Error(d.error || "Account verification failed"); const a = (d.accounts || []).find(function(x) { return x.is_virtual === true || x.is_virtual === 1 || /demo|virtual/i.test(String(x.account_type || x.type || "")) || /^VRTC/i.test(String(x.account_id || "")); }); if (!a) throw new Error("No Demo account confirmed"); verifiedDemoAccountId = String(a.account_id); verifiedDemoCurrency = String(a.currency || ""); autoTradeEnabled.disabled = false; autoTradeStake.disabled = false; autoTradeDuration.disabled = false; autoTradeStatus.textContent = "Demo verified · auto-trading is OFF"; autoTradeDot.style.background = "#22c55e"; derivAuthStatus.textContent = "Deriv connected · Demo account verified"; derivAuthHint.textContent = "Demo account only. No trades are placed."; const wallet = document.createElement("div"); wallet.className = "market-info"; wallet.textContent = "Demo wallet: " + (a.balance == null ? "balance unavailable" : a.balance + " " + (a.currency || "")); derivAuthHint.before(wallet); }).catch(function(e) { derivAuthStatus.textContent = "Login returned — account check failed"; derivAuthHint.textContent = (e && e.message ? e.message : "Account check failed") + ". Trading remains disabled."; });
     derivConnectButton.classList.add("hidden");
     derivLogoutButton.classList.remove("hidden");
   } else {
     checkDerivBackend();
   }
 })();
+
+
+function setAutoTradeStatus(message, good) {
+  autoTradeStatus.textContent = message;
+  autoTradeDot.style.background = good ? "#22c55e" : "#777";
+}
+function closeDemoTradeSocket() {
+  demoTradeReady = false;
+  if (demoTradeSocket) { try { demoTradeSocket.close(); } catch (_) {} }
+  demoTradeSocket = null;
+  for (const pending of demoPendingRequests.values()) { clearTimeout(pending.timer); pending.reject(new Error("Demo trading connection closed.")); }
+  demoPendingRequests.clear();
+}
+function demoWsRequest(payload, expectedType, timeoutMs = 12000) {
+  if (!demoTradeSocket || demoTradeSocket.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Demo trading connection is not ready."));
+  const reqId = ++demoRequestId; payload.req_id = reqId;
+  return new Promise(function(resolve, reject) {
+    const timer = setTimeout(function() { demoPendingRequests.delete(reqId); reject(new Error("Timed out waiting for Deriv " + expectedType + " response.")); }, timeoutMs);
+    demoPendingRequests.set(reqId, { expectedType, resolve, reject, timer });
+    demoTradeSocket.send(JSON.stringify(payload));
+  });
+}
+async function startDemoTradeConnection() {
+  const session = sessionStorage.getItem("deriv_session");
+  if (!session || !verifiedDemoAccountId) throw new Error("Verify your Demo account first.");
+  const response = await fetch(DERIV_BACKEND_URL + "/api/otp", { method:"POST", headers:{"Content-Type":"application/json","X-Deriv-Session":session}, body:JSON.stringify({accountId:verifiedDemoAccountId}) });
+  const data = await response.json().catch(function(){return {};});
+  if (!response.ok || typeof data.url !== "string" || data.accountType !== "demo") throw new Error(data.error || "Could not create a Demo trading session.");
+  closeDemoTradeSocket();
+  await new Promise(function(resolve, reject) {
+    const ws = new WebSocket(data.url); demoTradeSocket = ws;
+    const timer = setTimeout(function(){ try{ws.close();}catch(_){} reject(new Error("Timed out connecting to Deriv Demo trading.")); },12000);
+    ws.onopen = function(){clearTimeout(timer);demoTradeReady=true;resolve();};
+    ws.onerror = function(){clearTimeout(timer);reject(new Error("Could not connect to Deriv Demo trading."));};
+    ws.onclose = function(){demoTradeReady=false;if(autoTradeEnabled.checked)setAutoTradeStatus("Demo connection lost — auto-trading paused",false);};
+    ws.onmessage = function(event) {
+      let message; try{message=JSON.parse(event.data);}catch(_){return;}
+      if(message.req_id && demoPendingRequests.has(message.req_id)) {
+        const pending=demoPendingRequests.get(message.req_id);
+        if(message.error){clearTimeout(pending.timer);demoPendingRequests.delete(message.req_id);pending.reject(new Error(message.error.message||"Deriv trading request failed."));}
+        else if(message.msg_type===pending.expectedType){clearTimeout(pending.timer);demoPendingRequests.delete(message.req_id);pending.resolve(message);}
+      }
+      if(message.msg_type==="proposal_open_contract" && message.proposal_open_contract) {
+        const c=message.proposal_open_contract, status=c.status||(c.is_sold?"sold":"open");
+        if(c.is_sold||["won","lost","sold","cancelled"].includes(String(status).toLowerCase())) autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Profit: "+(c.profit??"not reported")+" "+verifiedDemoCurrency;
+        else autoTradeResult.textContent="Contract "+c.contract_id+" · "+status+" · Buy price: "+(c.buy_price??"—")+" "+verifiedDemoCurrency;
+      }
+    };
+  });
+}
+autoTradeEnabled.addEventListener("change", async function() {
+  if(!autoTradeEnabled.checked){closeDemoTradeSocket();setAutoTradeStatus("Demo auto-trading is OFF",false);return;}
+  if(!verifiedDemoAccountId){autoTradeEnabled.checked=false;setAutoTradeStatus("Verify a Demo account before arming",false);return;}
+  autoTradeEnabled.disabled=true;setAutoTradeStatus("Connecting to Deriv Demo trading…",false);
+  try{await startDemoTradeConnection();setAutoTradeStatus("ARMED · Demo only · one trade per Analyze press",true);autoTradeResult.textContent="Ready. No trade has been submitted.";}
+  catch(error){autoTradeEnabled.checked=false;closeDemoTradeSocket();setAutoTradeStatus(error.message||"Could not arm Demo trading",false);}
+  finally{autoTradeEnabled.disabled=false;}
+});
+function contractForSignal(result) {
+  const type=tradeTypeSelect.value, signal=String(result.signal||"").toUpperCase();
+  const amount=Number(autoTradeStake.value), duration=Number(autoTradeDuration.value);
+  if(!Number.isFinite(amount)||amount<=0||amount>100)throw new Error("Stake must be greater than zero and no more than 100 "+(verifiedDemoCurrency||"account currency")+".");
+  if(!Number.isInteger(duration)||duration<1||duration>5)throw new Error("Choose a supported duration from 1 to 5 ticks.");
+  const base={proposal:1,amount,basis:"stake",currency:verifiedDemoCurrency,duration,duration_unit:"t",underlying_symbol:currentSymbol};
+  if(type==="RISE_FALL"&&(signal==="RISE"||signal==="FALL"))base.contract_type=signal==="RISE"?"CALL":"PUT";
+  else if(type==="EVEN_ODD"&&(signal==="EVEN"||signal==="ODD"))base.contract_type=signal==="EVEN"?"DIGITEVEN":"DIGITODD";
+  else if(type==="OVER_UNDER"&&(signal.startsWith("OVER ")||signal.startsWith("UNDER "))){base.contract_type=signal.startsWith("OVER ")?"DIGITOVER":"DIGITUNDER";base.barrier=String(Number(overUnderBarrierSelect.value));}
+  else if(type==="MATCHES"&&signal.startsWith("MATCHES ")){base.contract_type="DIGITMATCH";base.barrier=String(Number(targetDigitSelect.value));}
+  else if(type==="DIFFERS"&&signal.startsWith("DIFFERS ")){base.contract_type="DIGITDIFF";base.barrier=String(Number(targetDigitSelect.value));}
+  else throw new Error("This signal/contract mapping is not enabled for automatic execution yet. No trade was placed.");
+  return base;
+}
+async function maybeExecuteDemoTrade(result) {
+  if(!autoTradeEnabled.checked)return;
+  if(demoTradeBusy){autoTradeResult.textContent="Trade request already in progress. No duplicate order submitted.";return;}
+  if(!verifiedDemoAccountId||!demoTradeReady){autoTradeResult.textContent="Demo trading is not connected. No trade was placed.";setAutoTradeStatus("Not connected — auto-trading paused",false);return;}
+  if(!result||!result.signal||["WAIT","FLAT"].includes(String(result.signal).toUpperCase())){autoTradeResult.textContent="Analysis returned WAIT/FLAT. No trade was placed.";return;}
+  demoTradeBusy=true;analyzeButton.disabled=true;autoTradeResult.textContent="Checking Demo contract proposal…";
+  try{
+    const proposalResponse=await demoWsRequest(contractForSignal(result),"proposal"), proposal=proposalResponse.proposal;
+    if(!proposal||!proposal.id||!Number.isFinite(Number(proposal.ask_price))||Number(proposal.ask_price)<=0)throw new Error("Deriv did not return a valid proposal. No trade was placed.");
+    autoTradeResult.textContent="Proposal received. Buying on Demo…";
+    const buyResponse=await demoWsRequest({buy:String(proposal.id),price:Number(proposal.ask_price)},"buy"), bought=buyResponse.buy;
+    if(!bought||!bought.contract_id)throw new Error("Deriv did not confirm a contract ID. Check Demo portfolio before retrying.");
+    autoTradeResult.textContent="Demo purchase confirmed · Contract "+bought.contract_id+" · Stake "+(bought.buy_price??proposal.ask_price)+" "+verifiedDemoCurrency+" · Monitoring settlement…";
+    demoTradeSocket.send(JSON.stringify({proposal_open_contract:1,contract_id:Number(bought.contract_id),subscribe:1,req_id:++demoRequestId}));
+  }catch(error){autoTradeResult.textContent=(error.message||"Demo trade failed")+" No further order was submitted.";}
+  finally{demoTradeBusy=false;analyzeButton.disabled=false;}
+}
 
 connect();
 </script>
