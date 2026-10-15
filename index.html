@@ -1200,19 +1200,75 @@ derivLogoutButton.addEventListener("click", async function() {
   derivAuthHint.textContent = "You can reconnect securely whenever you are ready.";
 });
 
+async function verifyDerivSession(session) {
+  setDerivAuthStatus("Checking Deriv account…", true);
+  derivAuthHint.textContent = "Verifying the Demo account and wallet. Trading stays disabled until verification succeeds.";
+  try {
+    const response = await fetch(DERIV_BACKEND_URL + "/api/accounts", { cache: "no-store", headers: { "X-Deriv-Session": session } });
+    const data = await response.json().catch(function(){ return {}; });
+    if (!response.ok) throw new Error(data.error || "Account verification failed");
+    const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+    const account = accounts.find(function(a) {
+      return a.is_virtual === true || a.is_virtual === 1 || a.is_virtual === "1" ||
+        /demo|virtual/i.test(String(a.account_type || a.type || "")) || /^VRTC/i.test(String(a.account_id || ""));
+    });
+    if (!account) throw new Error("No Demo account confirmed");
+    verifiedDemoAccountId = String(account.account_id);
+    verifiedDemoCurrency = String(account.currency || "");
+    autoTradeEnabled.disabled = false;
+    autoTradeStake.disabled = false;
+    autoTradeDuration.disabled = false;
+    autoTradeStatus.textContent = "Demo verified · auto-trading is OFF";
+    autoTradeDot.style.background = "#22c55e";
+    setDerivAuthStatus("Deriv connected · Demo account verified", true);
+    derivAuthHint.textContent = "Demo account verified. Live accounts are not eligible for automatic execution.";
+    let wallet = document.getElementById("verifiedDemoWallet");
+    if (!wallet) {
+      wallet = document.createElement("div");
+      wallet.id = "verifiedDemoWallet";
+      wallet.className = "market-info";
+      derivAuthHint.before(wallet);
+    }
+    wallet.textContent = "Demo wallet: " + (account.balance == null ? "balance unavailable" : account.balance + " " + verifiedDemoCurrency) + " · " + verifiedDemoAccountId;
+  } catch (error) {
+    verifiedDemoAccountId = "";
+    verifiedDemoCurrency = "";
+    autoTradeEnabled.checked = false;
+    autoTradeEnabled.disabled = true;
+    autoTradeStake.disabled = true;
+    autoTradeDuration.disabled = true;
+    closeDemoTradeSocket();
+    setDerivAuthStatus("Login returned — account check failed", false);
+    derivAuthHint.textContent = (error && error.message ? error.message : "Account check failed") + ". Automatic trading remains locked.";
+    setAutoTradeStatus("Locked until a Demo account is verified", false);
+  }
+}
+
 (function handleDerivReturn() {
   const hash = new URLSearchParams(window.location.hash.slice(1));
-  const session = hash.get("deriv_session");
-  if (session) {
-    sessionStorage.setItem("deriv_session", session);
+  const sessionFromReturn = hash.get("deriv_session");
+  const authError = hash.get("deriv_auth_error");
+  if (sessionFromReturn) {
+    sessionStorage.setItem("deriv_session", sessionFromReturn);
     history.replaceState(null, "", window.location.pathname + window.location.search);
     setDerivAuthStatus("Deriv login returned — checking account…", true);
-    derivAuthHint.textContent = "Checking your Deriv Demo account. Trading remains disabled.";
-    fetch(DERIV_BACKEND_URL + "/api/accounts", { cache: "no-store", headers: { "X-Deriv-Session": session } }).then(async function(r) { const d = await r.json(); if (!r.ok) throw new Error(d.error || "Account verification failed"); const a = (d.accounts || []).find(function(x) { return x.is_virtual === true || x.is_virtual === 1 || /demo|virtual/i.test(String(x.account_type || x.type || "")) || /^VRTC/i.test(String(x.account_id || "")); }); if (!a) throw new Error("No Demo account confirmed"); verifiedDemoAccountId = String(a.account_id); verifiedDemoCurrency = String(a.currency || ""); autoTradeEnabled.disabled = false; autoTradeStake.disabled = false; autoTradeDuration.disabled = false; autoTradeStatus.textContent = "Demo verified · auto-trading is OFF"; autoTradeDot.style.background = "#22c55e"; derivAuthStatus.textContent = "Deriv connected · Demo account verified"; derivAuthHint.textContent = "Demo account only. No trades are placed."; const wallet = document.createElement("div"); wallet.className = "market-info"; wallet.textContent = "Demo wallet: " + (a.balance == null ? "balance unavailable" : a.balance + " " + (a.currency || "")); derivAuthHint.before(wallet); }).catch(function(e) { derivAuthStatus.textContent = "Login returned — account check failed"; derivAuthHint.textContent = (e && e.message ? e.message : "Account check failed") + ". Trading remains disabled."; });
     derivConnectButton.classList.add("hidden");
     derivLogoutButton.classList.remove("hidden");
-  } else {
+    verifyDerivSession(sessionFromReturn);
+  } else if (authError) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setDerivAuthStatus("Deriv login failed", false);
+    derivAuthHint.textContent = "Deriv authorization error: " + authError + ". Try connecting again.";
     checkDerivBackend();
+  } else {
+    const savedSession = sessionStorage.getItem("deriv_session");
+    if (savedSession) {
+      derivConnectButton.classList.add("hidden");
+      derivLogoutButton.classList.remove("hidden");
+      verifyDerivSession(savedSession);
+    } else {
+      checkDerivBackend();
+    }
   }
 })();
 
