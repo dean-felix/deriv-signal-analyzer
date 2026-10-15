@@ -298,8 +298,9 @@
     .inline-result-controls { margin:5px 0 8px; }
     #resultDetailsToggle { margin:0; width:100%; padding:7px; font-size:10px; background:#24364d; box-shadow:none; }
     #resultDetailsPanel { margin-top:0; }
-    .floating-results-toggle { position:fixed; z-index:1001; right:10px; bottom:12px; top:auto; width:auto; max-width:70vw; padding:9px 12px; border-radius:999px; font-size:11px; font-weight:900; background:#1764d8; color:#fff; border:1px solid #69a7ff; box-shadow:0 5px 18px #0008; }
-    .floating-results-panel { position:fixed; z-index:1000; top:53px; left:10px; right:10px; max-height:min(70vh,560px); overflow:hidden; display:flex; flex-direction:column; background:#101a29; border:1px solid #3b5270; border-radius:14px; box-shadow:0 16px 50px #000b; padding:12px; }
+    .floating-results-toggle { position:fixed; z-index:1001; left:50%; right:auto; bottom:12px; top:auto; transform:translateX(-50%); width:auto; max-width:90vw; padding:10px 16px; border-radius:999px; font-size:11px; font-weight:900; white-space:nowrap; background:#1764d8; color:#fff; border:1px solid #69a7ff; box-shadow:0 5px 18px #0008; }
+    .floating-results-panel { position:fixed; z-index:1000; top:auto; bottom:62px; left:10px; right:10px; max-height:min(70vh,560px); overflow:hidden; display:flex; flex-direction:column; background:#101a29; border:1px solid #3b5270; border-radius:14px; box-shadow:0 16px 50px #000b; padding:12px; animation:results-float-up .18s ease-out; }
+    @keyframes results-float-up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
     .floating-results-panel.hidden { display:none !important; }
     .floating-results-head { display:flex; align-items:center; justify-content:space-between; color:#f2f7ff; margin-bottom:8px; }
     .floating-results-head button { width:32px; height:30px; padding:0; margin:0; background:#29384c; box-shadow:none; font-size:20px; }
@@ -309,7 +310,7 @@
     .trade-result-source { font-size:9px; color:#94a8c3; text-transform:uppercase; font-weight:800; letter-spacing:.5px; }
     .trade-result-meta { font-size:10px; color:#91a5bf; margin-top:3px; }
     .trade-result-profit { font-size:11px; font-weight:900; white-space:nowrap; }
-    @media(max-width:380px) { .floating-results-toggle { bottom:8px; right:6px; top:auto; padding:7px 9px; font-size:10px; } .floating-results-panel { top:46px; left:6px; right:6px; padding:9px; } }
+    @media(max-width:380px) { .floating-results-toggle { left:50%; right:auto; bottom:8px; top:auto; padding:8px 12px; font-size:10px; } .floating-results-panel { top:auto; bottom:50px; left:6px; right:6px; padding:9px; } }
     .digit-strip-wrap { position:relative; padding-top:0; padding-bottom:16px; margin:12px auto 9px; max-width:100%; overflow:visible; }
     .digit-strip { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:3px; width:100%; align-items:stretch; }
     .digit-strip .wheel-digit { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:100%; height:53px; min-width:0; margin:0; padding:5px 1px 10px; transform:none !important; border-radius:6px; font-size:12px; overflow:hidden; }
@@ -336,7 +337,7 @@
 </style>
 </head>
 <body>
-<button type="button" id="tradeResultsToggle" class="floating-results-toggle" aria-expanded="false">▼ TRADE RESULTS</button>
+<button type="button" id="tradeResultsToggle" class="floating-results-toggle" aria-expanded="false">▲ TRADE RESULTS</button>
 <div id="tradeResultsPanel" class="floating-results-panel hidden" role="dialog" aria-label="Manual and automated trade results" aria-modal="false">
   <div class="floating-results-head"><strong>TRADE RESULTS</strong><button type="button" id="tradeResultsClose" aria-label="Close trade results">×</button></div>
   <div class="floating-results-summary"><span id="tradeResultsCount">0 trades</span><span>TOTAL PROFIT <strong id="tradeResultsTotal">0.00</strong> <span id="tradeResultsCurrency"></span></span></div>
@@ -1710,7 +1711,7 @@ function openTradeResults(open) {
   const opening = typeof open === "boolean" ? open : tradeResultsPanel.classList.contains("hidden");
   tradeResultsPanel.classList.toggle("hidden", !opening);
   tradeResultsToggle.setAttribute("aria-expanded", String(opening));
-  tradeResultsToggle.textContent = opening ? "▲ CLOSE RESULTS" : "▼ TRADE RESULTS";
+  tradeResultsToggle.textContent = opening ? "▼ HIDE RESULTS" : "▲ TRADE RESULTS";
 }
 tradeResultsToggle.addEventListener("click", () => openTradeResults());
 tradeResultsClose.addEventListener("click", () => openTradeResults(false));
@@ -1755,7 +1756,6 @@ digitWheel.addEventListener("click",function(event) {
   manualBarrier.value = button.dataset.digit;
   syncManualBarrierUI();
 });
-tradeResultsToggle.addEventListener("click",function(){ openTradeResults(); });
 resultDetailsToggle.addEventListener("click",function(){
   const opening = resultDetailsPanel.classList.contains("hidden");
   resultDetailsPanel.classList.toggle("hidden",!opening);
