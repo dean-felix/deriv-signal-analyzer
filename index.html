@@ -1020,6 +1020,7 @@ function analyzeMatches() {
 
   const count = data.counts[targetDigit];
   const rate = count / data.total;
+  if (rate < 0.14) return { signal:"WAIT", score:"Top digit frequency: " + (rate * 100).toFixed(1) + "%", detail:"No digit reached the minimum 14% historical frequency threshold for a Matches candidate in " + currentSymbol + ". Wait for a clearer sample." };
 
   return {
     signal: "MATCHES " + targetDigit,
@@ -1044,6 +1045,7 @@ function analyzeDiffers() {
 
   const count = data.counts[targetDigit];
   const rate = count / data.total;
+  if (rate > 0.07) return { signal:"WAIT", score:"Target digit frequency: " + (rate * 100).toFixed(1) + "%", detail:"No target digit is sufficiently uncommon for a Differs candidate; the selected digit must appear in 7% or less of the recent sample. Wait for a clearer sample." };
 
   return {
     signal: "DIFFERS " + targetDigit,
