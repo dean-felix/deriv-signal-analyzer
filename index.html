@@ -725,6 +725,7 @@ function connect() {
 
   socket.onclose = function() {
     setStatus("Disconnected — attempting to reconnect...", false);
+    if (marketScanState) clearMarketScan("Deriv connection dropped during the scan. The scan was stopped safely; reconnecting now. Press SCAN ALL MARKETS again after the connection returns.");
     if (!manuallyClosed) scheduleReconnect();
   };
 }
@@ -1355,15 +1356,29 @@ function evaluateScanCandidate(symbol, metadata, ticks) {
   }
 }
 
+function clearMarketScan(message) {
+  for (const [reqId, item] of marketScanRequests.entries()) {
+    if (item && item.timeout) clearTimeout(item.timeout);
+    marketScanRequests.delete(reqId);
+  }
+  marketScanState = null;
+  analyzeButton.disabled = false;
+  marketScanMain.textContent = "SCAN INTERRUPTED";
+  marketScanScore.textContent = "No complete result";
+  marketScanDetail.textContent = message + " The selected-market analysis remains separate.";
+}
+
 function finishMarketScan() {
   const state = marketScanState;
-  if (!state || state.pending.size) return;
+  if (!state || state.pending.size || state.queue.length) return;
   marketScanState = null;
   analyzeButton.disabled = false;
   if (!state.results.length) {
     marketScanMain.textContent = "WAIT";
     marketScanScore.textContent = "No qualifying result";
-    marketScanDetail.textContent = "No market produced a sufficiently strong, comparable signal from verified recent ticks. Try again after more live data arrives. The selected-market result above has not been changed.";
+    marketScanDetail.textContent = "No market produced a sufficiently strong signal from verified recent ticks. " +
+      state.failed + " market request(s) failed or timed out. Try again after the connection is stable. The selected-market result above has not changed.";
+    setHistoryDiagnostic("Scan complete: " + state.checked + "/" + state.total + " markets checked; " + state.failed + " request(s) failed.");
     return;
   }
   state.results.sort((a,b) => b.pct - a.pct);
@@ -1372,24 +1387,60 @@ function finishMarketScan() {
   marketScanScore.textContent = best.pct.toFixed(1) + "% observed historical frequency · " + best.name;
   marketScanDetail.textContent = "Strongest qualifying " + tradeTypeSelect.options[tradeTypeSelect.selectedIndex].text +
     " candidate across " + state.checked + " live Deriv markets: " + best.name + " (" + best.symbol + "). " +
-    best.detail + " This percentage is a historical sample measure, not a guaranteed win probability. The selected-market analysis above remains separate.";
+    best.detail + " This percentage is a historical sample measure, not a guaranteed win probability. The selected-market analysis above remains separate." +
+    (state.failed ? " " + state.failed + " market request(s) failed or timed out and were excluded." : "");
   const chip = tradeTypeCards.querySelector('[data-signal-for="' + tradeTypeSelect.value + '"]');
   if (chip) {
     chip.textContent = best.signal + " · " + best.pct.toFixed(1) + "%";
     chip.classList.remove("wait"); chip.classList.add("ready");
     chip.title = marketScanDetail.textContent;
   }
-  setHistoryDiagnostic("Market scan complete: " + state.checked + " markets checked; " + state.results.length + " qualifying candidates.");
+  setHistoryDiagnostic("Market scan complete: " + state.checked + "/" + state.total + " markets checked; " + state.results.length + " qualifying candidates; " + state.failed + " request(s) failed.");
   renderManualDigits();
+}
+
+function sendNextMarketScanRequests() {
+  const state = marketScanState;
+  if (!state || !socket || socket.readyState !== WebSocket.OPEN) return;
+  while (state.pending.size < 4 && state.queue.length) {
+    const item = state.queue.shift();
+    const reqId = ++requestCounter;
+    item.reqId = reqId;
+    marketScanRequests.set(reqId, item);
+    state.pending.add(reqId);
+    try {
+      socket.send(JSON.stringify({ticks_history:item.symbol,end:"latest",count:HISTORY_COUNT,style:"ticks",req_id:reqId}));
+      item.timeout = setTimeout(function() {
+        if (!marketScanState || !marketScanRequests.has(reqId)) return;
+        marketScanRequests.delete(reqId);
+        marketScanState.pending.delete(reqId);
+        if (item.attempt < 2) {
+          marketScanState.queue.push({symbol:item.symbol,metadata:item.metadata,attempt:item.attempt+1});
+        } else {
+          marketScanState.checked++;
+          marketScanState.failed++;
+        }
+        marketScanScore.textContent = marketScanState.checked + " / " + marketScanState.total + " markets checked";
+        setHistoryDiagnostic("Scanning markets… " + marketScanState.checked + "/" + marketScanState.total + " complete; timed-out markets are retried once.");
+        sendNextMarketScanRequests();
+      }, 9000);
+    } catch (error) {
+      marketScanRequests.delete(reqId);
+      state.pending.delete(reqId);
+      if (item.attempt < 2) state.queue.push({symbol:item.symbol,metadata:item.metadata,attempt:item.attempt+1});
+      else { state.checked++; state.failed++; }
+    }
+  }
+  if (marketScanState && !marketScanState.pending.size && !marketScanState.queue.length) finishMarketScan();
 }
 
 function handleMarketScanResponse(data, error) {
   const reqId = data && data.req_id;
   const item = marketScanRequests.get(reqId);
   if (!item || !marketScanState) return;
+  if (item.timeout) clearTimeout(item.timeout);
   marketScanRequests.delete(reqId);
   marketScanState.pending.delete(reqId);
-  marketScanState.checked++;
   const history = data && data.history;
   if (!error && history && Array.isArray(history.prices) && Array.isArray(history.times)) {
     const ticks = [];
@@ -1402,8 +1453,16 @@ function handleMarketScanResponse(data, error) {
     currentPrecision = savedPrecision;
     const candidate = evaluateScanCandidate(item.symbol, item.metadata, ticks.slice(-MAX_TICKS));
     if (candidate) marketScanState.results.push(candidate);
+    marketScanState.checked++;
+  } else if (item.attempt < 2) {
+    marketScanState.queue.push({symbol:item.symbol,metadata:item.metadata,attempt:item.attempt+1});
+  } else {
+    marketScanState.checked++;
+    marketScanState.failed++;
   }
-  if (!marketScanState.pending.size) finishMarketScan();
+  marketScanScore.textContent = marketScanState.checked + " / " + marketScanState.total + " markets checked";
+  setHistoryDiagnostic("Scanning markets… " + marketScanState.checked + "/" + marketScanState.total + " complete.");
+  sendNextMarketScanRequests();
 }
 
 function runMarketScan() {
@@ -1423,22 +1482,19 @@ function runMarketScan() {
     marketScanDetail.textContent = "Deriv has not returned any active Bull, Bear or Volatility markets. The selected-market analysis above is unchanged.";
     return;
   }
-
+  if (marketScanState) clearMarketScan("Previous scan cancelled because a new scan was started.");
   marketScanRequests.clear();
-  marketScanState = {pending:new Set(), results:[], checked:0, total:markets.length};
+  marketScanState = {
+    pending:new Set(),
+    queue:markets.map(option => ({symbol:option.value,metadata:option._marketMetadata || null,attempt:1})),
+    results:[], checked:0, failed:0, total:markets.length
+  };
   analyzeButton.disabled = true;
   marketScanMain.textContent = "SCANNING MARKETS";
   marketScanScore.textContent = "0 / " + markets.length + " markets checked";
-  marketScanDetail.textContent = "Checking verified recent Deriv history for the selected trade type. Over/Under tests barrier digits automatically; Matches and Differs test target digits automatically. No trade is placed, and the selected-market result above is not overwritten.";
-  setHistoryDiagnostic("Scanning " + markets.length + " active Bull, Bear and Volatility markets…");
-
-  markets.forEach(option => {
-    const reqId = ++requestCounter;
-    const item = {symbol:option.value, metadata:option._marketMetadata || null};
-    marketScanRequests.set(reqId, item);
-    marketScanState.pending.add(reqId);
-    socket.send(JSON.stringify({ticks_history:option.value,end:"latest",count:HISTORY_COUNT,style:"ticks",req_id:reqId}));
-  });
+  marketScanDetail.textContent = "Checking verified recent Deriv history in small batches. Any timed-out or rejected market request is retried once. No trade is placed; selected-market analysis remains separate.";
+  setHistoryDiagnostic("Scanning " + markets.length + " active Bull, Bear and Volatility markets in batches…");
+  sendNextMarketScanRequests();
 }
 
 function runAnalysis(allowExecution = false) {
