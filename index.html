@@ -558,7 +558,7 @@ let marketScanRequests = new Map();
 let marketScanState = null;
 let reconnectTimer = null;
 let activeSymbolsTimer = null;
-let useLegacyMarketEndpoint = true;
+const DERIV_MARKET_ENDPOINT = "wss://api.derivws.com/trading/v1/options/ws/public";
 let manuallyClosed = false;
 
 const HISTORY_COUNT = 200;
@@ -652,13 +652,9 @@ function connect() {
   setStatus("Connecting to Deriv...", false);
 
   try {
-    // Both fallback hosts speak the same legacy WebSocket v3 protocol.
-    // Do not fall back to the newer Options API, which is not a drop-in
-    // replacement for active_symbols / ticks_history requests.
-    const endpoint = useLegacyMarketEndpoint
-      ? "wss://ws.derivws.com/websockets/v3?app_id=1089"
-      : "wss://ws.binaryws.com/websockets/v3?app_id=1089";
-    socket = new WebSocket(endpoint);
+    // Use the Deriv Options public WebSocket endpoint that this app used
+    // when market lists and live ticks were previously confirmed working.
+    socket = new WebSocket(DERIV_MARKET_ENDPOINT);
   } catch (error) {
     setStatus("Could not create WebSocket", false);
     setHistoryDiagnostic("Connection could not be created.");
@@ -668,15 +664,14 @@ function connect() {
 
   socket.onopen = function() {
     setStatus("Connected — loading markets...", true);
-    const marketRequest = { active_symbols: "brief", product_type: "basic", req_id: ++requestCounter };
+    const marketRequest = { active_symbols: "brief", req_id: ++requestCounter };
     setHistoryDiagnostic("Connected to Deriv WebSocket v3; requesting the active market list...");
     socket.send(JSON.stringify(marketRequest));
     activeSymbolsTimer = setTimeout(function() {
       if (!marketSelect.options.length ||
           marketSelect.options[0].textContent === "Loading markets...") {
-        useLegacyMarketEndpoint = !useLegacyMarketEndpoint;
-        setStatus("Market list timed out — switching Deriv feed...", false);
-        setHistoryDiagnostic("No active-symbol response from the last endpoint. Switching API version and retrying.");
+        setStatus("Market list timed out — reconnecting to Deriv...", false);
+        setHistoryDiagnostic("No active-symbol response arrived from " + DERIV_MARKET_ENDPOINT + ". Reconnecting to the same known endpoint.");
         if (socket && socket.readyState === WebSocket.OPEN) socket.close();
         else scheduleReconnect();
       }
@@ -703,7 +698,6 @@ function connect() {
       setHistoryDiagnostic(message);
       if (socket && socket.readyState === WebSocket.OPEN &&
           marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
-        useLegacyMarketEndpoint = !useLegacyMarketEndpoint;
         socket.close();
       }
       return;
@@ -731,8 +725,7 @@ function connect() {
 
       if (socket && socket.readyState === WebSocket.OPEN &&
           marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
-        useLegacyMarketEndpoint = !useLegacyMarketEndpoint;
-        setHistoryDiagnostic("Market-list request was rejected (" + message + "); switching API version.");
+        setHistoryDiagnostic("Market-list request was rejected (" + message + ") by the Deriv public WebSocket endpoint.");
         socket.close();
         return;
       }
