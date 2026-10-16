@@ -1764,7 +1764,6 @@ const manualBarrier = document.getElementById("manualBarrier");
 const digitWheel = document.getElementById("digitWheel");
 const wheelPointer = document.getElementById("wheelPointer");
 const wheelLiveDigit = document.getElementById("wheelLiveDigit");
-const resultDetailsToggle = document.getElementById("resultDetailsToggle");
 const resultDetailsPanel = document.getElementById("resultDetailsPanel");
 const manualStake = document.getElementById("manualStake");
 const manualDuration = document.getElementById("manualDuration");
@@ -2103,12 +2102,7 @@ digitWheel.addEventListener("click",function(event) {
   manualBarrier.value = button.dataset.digit;
   syncManualBarrierUI();
 });
-resultDetailsToggle.addEventListener("click",function(){
-  const opening = resultDetailsPanel.classList.contains("hidden");
-  resultDetailsPanel.classList.toggle("hidden",!opening);
-  resultDetailsToggle.setAttribute("aria-expanded",String(opening));
-  resultDetailsToggle.textContent = opening ? "− HIDE SIGNAL DETAILS" : "＋ SIGNAL DETAILS";
-});
+// Removed obsolete signal-details toggle listener: its button is not present in the HTML.
 manualUnderButton.addEventListener("click",function(){executeManualDigitTrade("UNDER");});
 manualOverButton.addEventListener("click",function(){executeManualDigitTrade("OVER");});
 syncManualBarrierUI();
