@@ -652,10 +652,12 @@ function connect() {
   setStatus("Connecting to Deriv...", false);
 
   try {
-    // Keep each endpoint's request format compatible with that API version.
+    // Both fallback hosts speak the same legacy WebSocket v3 protocol.
+    // Do not fall back to the newer Options API, which is not a drop-in
+    // replacement for active_symbols / ticks_history requests.
     const endpoint = useLegacyMarketEndpoint
       ? "wss://ws.derivws.com/websockets/v3?app_id=1089"
-      : "wss://api.derivws.com/trading/v1/options/ws/public";
+      : "wss://ws.binaryws.com/websockets/v3?app_id=1089";
     socket = new WebSocket(endpoint);
   } catch (error) {
     setStatus("Could not create WebSocket", false);
@@ -666,9 +668,8 @@ function connect() {
 
   socket.onopen = function() {
     setStatus("Connected — loading markets...", true);
-    const marketRequest = { active_symbols: "brief", req_id: ++requestCounter };
-    // The legacy API accepts product_type; the newer API removed that parameter.
-    if (useLegacyMarketEndpoint) marketRequest.product_type = "basic";
+    const marketRequest = { active_symbols: "brief", product_type: "basic", req_id: ++requestCounter };
+    setHistoryDiagnostic("Connected to Deriv WebSocket v3; requesting the active market list...");
     socket.send(JSON.stringify(marketRequest));
     activeSymbolsTimer = setTimeout(function() {
       if (!marketSelect.options.length ||
