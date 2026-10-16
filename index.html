@@ -565,6 +565,7 @@ const DERIV_MARKET_ENDPOINTS = [
 let derivEndpointIndex = 0;
 let DERIV_MARKET_ENDPOINT = DERIV_MARKET_ENDPOINTS[derivEndpointIndex];
 let manuallyClosed = false;
+let lastMarketApiError = "";
 
 const HISTORY_COUNT = 200;
 const MAX_TICKS = 500;
@@ -653,6 +654,7 @@ function updateLiveDisplay(tick) {
 
 function connect() {
   clearTimeout(reconnectTimer);
+  lastMarketApiError = "";
   clearTimeout(activeSymbolsTimer);
   setStatus("Connecting to Deriv...", false);
 
@@ -703,13 +705,10 @@ function connect() {
         ? data.errors.map(item => item.message || item.code || "Deriv API error").join("; ")
         : "Deriv API returned an error";
       console.error("Deriv errors:", data.errors);
-      setStatus("Deriv market feed error: " + message, false);
-      setHistoryDiagnostic(message);
-      if (socket && socket.readyState === WebSocket.OPEN &&
-          marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
-        derivEndpointIndex = (derivEndpointIndex + 1) % DERIV_MARKET_ENDPOINTS.length;
-        socket.close();
-      }
+      lastMarketApiError = "Deriv API errors: " + message;
+      clearTimeout(activeSymbolsTimer);
+      setStatus("Deriv rejected the market request", false);
+      setHistoryDiagnostic(lastMarketApiError + ". Connection kept open so the server response is not hidden by an automatic reconnect.");
       return;
     }
 
@@ -733,11 +732,14 @@ function connect() {
         marketContracts = [];
       }
 
-      if (socket && socket.readyState === WebSocket.OPEN &&
-          marketSelect.options[0] && marketSelect.options[0].textContent === "Loading markets...") {
-        setHistoryDiagnostic("Market-list request was rejected (" + message + ") by " + DERIV_MARKET_ENDPOINT + "; retrying the alternate legacy host.");
-        derivEndpointIndex = (derivEndpointIndex + 1) % DERIV_MARKET_ENDPOINTS.length;
-        socket.close();
+      if (marketSelect.options[0] &&
+          marketSelect.options[0].textContent === "Loading markets...") {
+        lastMarketApiError = "Deriv rejected active_symbols: " + message +
+          (data.error.code ? " [code " + data.error.code + "]" : "");
+        clearTimeout(activeSymbolsTimer);
+        setStatus("Deriv rejected the market request", false);
+        setHistoryDiagnostic(lastMarketApiError + " · Endpoint: " + DERIV_MARKET_ENDPOINT +
+          ". Automatic host switching paused so the actual cause remains visible.");
         return;
       }
 
@@ -803,9 +805,13 @@ function connect() {
   socket.onclose = function(event) {
     clearTimeout(activeSymbolsTimer);
     setStatus("Disconnected — attempting to reconnect...", false);
-    if (event && (event.code !== 1000 || event.reason)) {
+    if (event && (event.code !== 1000 || event.reason || lastMarketApiError)) {
       setHistoryDiagnostic("Market WebSocket closed: code " + event.code +
-        (event.reason ? " · " + event.reason : "") + ". Reconnecting...");
+        " · wasClean=" + Boolean(event.wasClean) +
+        (event.reason ? " · close reason: " + event.reason : "") +
+        " · endpoint: " + DERIV_MARKET_ENDPOINT +
+        (lastMarketApiError ? " · last server error: " + lastMarketApiError : "") +
+        ". Reconnecting...");
     }
     if (marketScanState) clearMarketScan("Deriv connection dropped during the scan. The scan was stopped safely; reconnecting now. Press SCAN ALL MARKETS again after the connection returns.");
     if (!manuallyClosed) scheduleReconnect();
