@@ -1,5 +1,5 @@
 const PORT = Number(Bun.env.PORT || 3000);
-const DERIV_URL = "wss://ws.derivws.com/websockets/v3?app_id=1089";
+const DERIV_URL = "wss://api.derivws.com/trading/v1/options/ws/public";
 const ALLOWED_ORIGIN = "https://dean-felix.github.io";
 
 type RelayData = {
