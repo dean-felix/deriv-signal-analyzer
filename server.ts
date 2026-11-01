@@ -15,13 +15,16 @@ Bun.serve<RelayData>({
     open(client) {
       const upstream = new WebSocket(DERIV_URL);
       client.data.upstream = upstream;
+      console.log("Market client opened; starting Deriv upstream handshake.");
       client.data.upstreamTimer = setTimeout(() => {
         if (upstream.readyState !== WebSocket.OPEN && client.readyState === WebSocket.OPEN) {
+          console.error("Deriv upstream handshake timed out; readyState=" + upstream.readyState);
           client.close(1011, "Deriv upstream connection timed out");
         }
       }, 15000);
 
       upstream.addEventListener("open", () => {
+        console.log("Deriv upstream WebSocket opened.");
         if (client.data.upstreamTimer) clearTimeout(client.data.upstreamTimer);
         client.data.upstreamTimer = null;
         for (const payload of client.data.pending.splice(0)) {
@@ -32,13 +35,15 @@ Bun.serve<RelayData>({
         if (client.readyState === WebSocket.OPEN) client.send(event.data);
       });
       upstream.addEventListener("close", event => {
+        console.error("Deriv upstream WebSocket closed; code=" + event.code + "; reason=" + (event.reason || "(empty)") + "; clean=" + event.wasClean);
         if (client.data.upstreamTimer) clearTimeout(client.data.upstreamTimer);
         client.data.upstreamTimer = null;
         if (client.readyState === WebSocket.OPEN) {
           client.close(1011, "Deriv upstream closed (" + event.code + ")");
         }
       });
-      upstream.addEventListener("error", () => {
+      upstream.addEventListener("error", event => {
+        console.error("Deriv upstream WebSocket error:", event);
         if (client.data.upstreamTimer) clearTimeout(client.data.upstreamTimer);
         client.data.upstreamTimer = null;
         if (client.readyState === WebSocket.OPEN) client.close(1011, "Deriv upstream error");
@@ -52,7 +57,8 @@ Bun.serve<RelayData>({
         client.data.pending.push(message);
       }
     },
-    close(client) {
+    close(client, code, reason) {
+      console.log("Market client closed; code=" + code + "; reason=" + (reason || "(empty)"));
       if (client.data.upstreamTimer) clearTimeout(client.data.upstreamTimer);
       const upstream = client.data.upstream;
       if (upstream && upstream.readyState < WebSocket.CLOSING) upstream.close();
