@@ -664,7 +664,9 @@ function connect() {
     // protocol. The Options public endpoint is a different protocol.
     DERIV_MARKET_ENDPOINT = DERIV_MARKET_ENDPOINTS[derivEndpointIndex];
     setHistoryDiagnostic("Opening market-data connection to " + DERIV_MARKET_ENDPOINT);
-    socket = new WebSocket(DERIV_MARKET_ENDPOINT);
+    const ws = new WebSocket(DERIV_MARKET_ENDPOINT);
+    socket = ws;
+    const endpoint = DERIV_MARKET_ENDPOINT;
   } catch (error) {
     setStatus("Could not create WebSocket", false);
     setHistoryDiagnostic("Connection could not be created.");
@@ -672,25 +674,30 @@ function connect() {
     return;
   }
 
-  socket.onopen = function() {
+  const ws = socket;
+  const endpoint = DERIV_MARKET_ENDPOINT;
+  ws.onopen = function() {
+    if (socket !== ws) return;
     setStatus("Connected — requesting markets...", true);
-    setHistoryDiagnostic("WebSocket opened at " + DERIV_MARKET_ENDPOINT + "; requesting active_symbols.");
+    setHistoryDiagnostic("WebSocket opened at " + endpoint + "; requesting active_symbols.");
     const marketRequest = { active_symbols: "brief", product_type: "basic", req_id: ++requestCounter };
-    socket.send(JSON.stringify(marketRequest));
+    ws.send(JSON.stringify(marketRequest));
     activeSymbolsTimer = setTimeout(function() {
+      if (socket !== ws) return;
       if (!marketSelect.options.length ||
           marketSelect.options[0].textContent === "Loading markets...") {
-        const failedEndpoint = DERIV_MARKET_ENDPOINT;
+        const failedEndpoint = endpoint;
         derivEndpointIndex = (derivEndpointIndex + 1) % DERIV_MARKET_ENDPOINTS.length;
         setStatus("Market list timed out — trying alternate feed...", false);
         setHistoryDiagnostic("No active_symbols response from " + failedEndpoint + ". Retrying with the alternate legacy WebSocket host.");
-        if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+        if (ws.readyState === WebSocket.OPEN) ws.close();
         else scheduleReconnect();
       }
-    }, 9000);
+    }, 12000);
   };
 
-  socket.onmessage = function(event) {
+  ws.onmessage = function(event) {
+    if (socket !== ws) return;
     let data;
 
     try {
@@ -798,19 +805,21 @@ function connect() {
     }
   };
 
-  socket.onerror = function() {
+  ws.onerror = function() {
     setStatus("Connection error", false);
-    setHistoryDiagnostic("WebSocket connection error at " + DERIV_MARKET_ENDPOINT + ". Check that this network/browser permits WebSocket connections.");
+    if (socket !== ws) return;
+    setHistoryDiagnostic("WebSocket connection error at " + endpoint + ". Check that this network/browser permits WebSocket connections.");
   };
 
-  socket.onclose = function(event) {
+  ws.onclose = function(event) {
+    if (socket !== ws) return;
     clearTimeout(activeSymbolsTimer);
     setStatus("Disconnected — attempting to reconnect...", false);
     if (event && (event.code !== 1000 || event.reason || lastMarketApiError)) {
       setHistoryDiagnostic("Market WebSocket closed: code " + event.code +
         " · wasClean=" + Boolean(event.wasClean) +
         (event.reason ? " · close reason: " + event.reason : "") +
-        " · endpoint: " + DERIV_MARKET_ENDPOINT +
+        " · endpoint: " + endpoint +
         (lastMarketApiError ? " · last server error: " + lastMarketApiError : "") +
         ". Reconnecting...");
     }
@@ -819,6 +828,7 @@ function connect() {
     }
     if (marketScanState) clearMarketScan("Deriv connection dropped during the scan. The scan was stopped safely; reconnecting now. Press SCAN ALL MARKETS again after the connection returns.");
     if (!manuallyClosed) scheduleReconnect();
+    if (socket === ws) socket = null;
   };
 }
 
