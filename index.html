@@ -687,7 +687,6 @@ function connect() {
       if (!marketSelect.options.length ||
           marketSelect.options[0].textContent === "Loading markets...") {
         const failedEndpoint = endpoint;
-        derivEndpointIndex = (derivEndpointIndex + 1) % DERIV_MARKET_ENDPOINTS.length;
         setStatus("Market list timed out — trying alternate feed...", false);
         setHistoryDiagnostic("No active_symbols response from " + failedEndpoint + ". Retrying with the alternate legacy WebSocket host.");
         if (ws.readyState === WebSocket.OPEN) ws.close();
