@@ -559,7 +559,7 @@ let marketScanState = null;
 let reconnectTimer = null;
 let activeSymbolsTimer = null;
 const DERIV_MARKET_ENDPOINTS = [
-  "wss://deriv-api-production.up.railway.app/market",
+  "wss://deriv-market-relay-production.up.railway.app/market",
   "wss://ws.derivws.com/websockets/v3?app_id=1089",
   "wss://ws.binaryws.com/websockets/v3?app_id=1089"
 ];
@@ -806,8 +806,8 @@ function connect() {
   };
 
   ws.onerror = function() {
-    setStatus("Connection error", false);
     if (socket !== ws) return;
+    setStatus("Connection error", false);
     setHistoryDiagnostic("WebSocket connection error at " + endpoint + ". Check that this network/browser permits WebSocket connections.");
   };
 
