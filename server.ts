@@ -128,8 +128,10 @@ Bun.serve<RelayData>({
       if (upstream?.readyState === WebSocket.OPEN) {
         try { upstream.send(message); }
         catch (error) { console.error("Deriv request forwarding failed:", String(error)); scheduleReconnect(client); }
-      } else if (client.data.pending.length < 50) {
-        client.data.pending.push(message as string | ArrayBuffer | Uint8Array);
+      } else if (upstream?.readyState === WebSocket.CONNECTING) {
+        if (client.data.pending.length < 50) client.data.pending.push(message as string | ArrayBuffer | Uint8Array);
+      } else {
+        if (client.data.pending.length < 50) client.data.pending.push(message as string | ArrayBuffer | Uint8Array);
         scheduleReconnect(client);
       }
     },
