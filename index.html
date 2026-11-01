@@ -559,6 +559,7 @@ let marketScanState = null;
 let reconnectTimer = null;
 let activeSymbolsTimer = null;
 const DERIV_MARKET_ENDPOINTS = [
+  "wss://deriv-api-production.up.railway.app/market",
   "wss://ws.derivws.com/websockets/v3?app_id=1089",
   "wss://ws.binaryws.com/websockets/v3?app_id=1089"
 ];
@@ -812,6 +813,9 @@ function connect() {
         " · endpoint: " + DERIV_MARKET_ENDPOINT +
         (lastMarketApiError ? " · last server error: " + lastMarketApiError : "") +
         ". Reconnecting...");
+    }
+    if (event && event.code !== 1000) {
+      derivEndpointIndex = (derivEndpointIndex + 1) % DERIV_MARKET_ENDPOINTS.length;
     }
     if (marketScanState) clearMarketScan("Deriv connection dropped during the scan. The scan was stopped safely; reconnecting now. Press SCAN ALL MARKETS again after the connection returns.");
     if (!manuallyClosed) scheduleReconnect();
