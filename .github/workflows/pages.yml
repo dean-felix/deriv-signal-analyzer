@@ -41,7 +41,7 @@ jobs:
           const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
           const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
           if (duplicates.length) throw new Error('Duplicate HTML IDs: ' + [...new Set(duplicates)].join(', '));
-          for (const name of ['analyzeRiseFall','analyzeHigherLower','analyzeAsianUpDown','analyzeEvenOdd','analyzeOverUnder','analyzeMatches','analyzeDiffers','analyzeOnlyUpsDowns']) {
+          for (const name of ['prediction','bestOverUnder','updateManualSignal','analyze']) {
             if (!scripts[0][1].includes('function ' + name)) throw new Error('Missing analysis function: ' + name);
           }
           console.log('App validation passed: inline JavaScript parses, manifest is valid, service worker handlers exist, IDs are unique.');
