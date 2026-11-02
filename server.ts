@@ -52,8 +52,18 @@ function attachUpstream(client: import("bun").ServerWebSocket<RelayData>) {
   upstream.addEventListener("message", event => {
     if (client.readyState !== WebSocket.OPEN) return;
     client.data.messagesOut++;
+    let summary = "";
+    try {
+      const payload = JSON.parse(typeof event.data === "string" ? event.data : new TextDecoder().decode(event.data as ArrayBuffer));
+      summary = payload.error
+        ? " error=" + String(payload.error.code || "") + ": " + String(payload.error.message || "")
+        : " msg_type=" + String(payload.msg_type || "unknown");
+      if (client.data.messagesOut <= 12 || payload.error) {
+        console.log("Deriv upstream response #" + client.data.messagesOut + summary);
+      }
+    } catch {}
     if (client.data.messagesOut <= 3 || client.data.messagesOut % 100 === 0) {
-      console.log("Deriv data forwarded; total=" + client.data.messagesOut);
+      console.log("Deriv data forwarded; total=" + client.data.messagesOut + summary);
     }
     try { client.send(event.data); }
     catch (error) { console.error("Browser feed forwarding failed:", String(error)); }
