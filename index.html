@@ -202,30 +202,41 @@ async function runPremiumBot(){
   for(let run=1;run<=runs&&!botStopRequested;run++){
    let socket=null;
    try{
+    let proposal=null,ask=NaN,payout=NaN;
     while(!botStopRequested){
      if(!live||symbol!==market||ticks.length<200){$('signal').textContent='WAIT';$('reason').textContent='RUN '+run+'/'+runs+' HELD · waiting for '+market+' live data (200 ticks required).';await new Promise(resolve=>setTimeout(resolve,800));continue}
      const gate=premiumBotPrediction(contract,botActiveConfig.barrier);
      if(gate.side==='WAIT'){$('signal').textContent='WAIT';$('reason').textContent='RUN '+run+'/'+runs+' HELD · '+gate.reason+' Waiting for the selected '+side+' signal to return.';await new Promise(resolve=>setTimeout(resolve,800));continue}
      $('signal').textContent=gate.side;
      $('reason').textContent='Signal confirmed for run '+run+'/'+runs+' · '+gate.strength.toFixed(1)+'% historical rate. Requesting a fresh Deriv quote.';
+     $('signal').textContent='RUN '+run+'/'+runs+' · REQUESTING QUOTE';
+     const otpResponse=await fetch(DERIV_API+'/api/otp',{method:'POST',headers:{'Content-Type':'application/json','X-Deriv-Session':derivSession},body:JSON.stringify({accountId:account.account_id}),cache:'no-store'});
+     const otp=await otpResponse.json();
+     if(!otpResponse.ok)throw new Error(otp.error||'Could not authorize the demo account.');
+     if(otp.accountType!=='demo')throw new Error('Deriv did not confirm demo authorization. No order was sent.');
+     if(botStopRequested)break;
+     socket=new WebSocket(otp.url);
+     await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Secure Deriv connection timed out.')),15000);socket.onopen=()=>{clearTimeout(timer);resolve()};socket.onerror=()=>{clearTimeout(timer);reject(new Error('Secure Deriv WebSocket connection failed.'))};socket.onclose=()=>{clearTimeout(timer);reject(new Error('Deriv closed the authenticated connection.'))}});
+     if(botStopRequested)break;
+     const proposalRequest={proposal:1,amount:stake,basis:'stake',contract_type:contract,currency:account.currency||'USD',duration,duration_unit:'t',underlying_symbol:market};
+     if(['DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract))proposalRequest.barrier=String(barrier);else if(contract==='ONETOUCH'||contract==='NOTOUCH')proposalRequest.barrier=touchBarrier;
+     const quoteMessage=await socketMessage(socket,proposalRequest,'proposal');
+     proposal=quoteMessage.proposal;
+     if(!proposal||!proposal.id)throw new Error('Deriv did not return a valid proposal.');
+     ask=Number(proposal.ask_price);payout=Number(proposal.payout);
+     if(!Number.isFinite(ask)||!Number.isFinite(payout))throw new Error('Deriv returned an invalid quote.');
+     if(botStopRequested)break;
+     const finalGate=premiumBotPrediction(contract,botActiveConfig.barrier);
+     if(finalGate.side==='WAIT'){
+      $('signal').textContent='WAIT';
+      $('reason').textContent='RUN '+run+'/'+runs+' HELD · signal changed to WAIT after the quote. Quote discarded; waiting for confirmation again.';
+      if(socket&&socket.readyState<2){try{socket.close()}catch{}}
+      socket=null;
+      await new Promise(resolve=>setTimeout(resolve,800));
+      continue;
+     }
      break;
     }
-    if(botStopRequested)break;
-    $('signal').textContent='RUN '+run+'/'+runs+' · REQUESTING QUOTE';
-    const otpResponse=await fetch(DERIV_API+'/api/otp',{method:'POST',headers:{'Content-Type':'application/json','X-Deriv-Session':derivSession},body:JSON.stringify({accountId:account.account_id}),cache:'no-store'});
-    const otp=await otpResponse.json();
-    if(!otpResponse.ok)throw new Error(otp.error||'Could not authorize the demo account.');
-    if(otp.accountType!=='demo')throw new Error('Deriv did not confirm demo authorization. No order was sent.');
-    if(botStopRequested)break;
-    socket=new WebSocket(otp.url);
-    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Secure Deriv connection timed out.')),15000);socket.onopen=()=>{clearTimeout(timer);resolve()};socket.onerror=()=>{clearTimeout(timer);reject(new Error('Secure Deriv WebSocket connection failed.'))};socket.onclose=()=>{clearTimeout(timer);reject(new Error('Deriv closed the authenticated connection.'))}});
-    if(botStopRequested)break;
-    const proposalRequest={proposal:1,amount:stake,basis:'stake',contract_type:contract,currency:account.currency||'USD',duration,duration_unit:'t',underlying_symbol:market};
-    if(['DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract))proposalRequest.barrier=String(barrier);else if(contract==='ONETOUCH'||contract==='NOTOUCH')proposalRequest.barrier=touchBarrier;
-    const quoteMessage=await socketMessage(socket,proposalRequest,'proposal'),proposal=quoteMessage.proposal;
-    if(!proposal||!proposal.id)throw new Error('Deriv did not return a valid proposal.');
-    const ask=Number(proposal.ask_price),payout=Number(proposal.payout);
-    if(!Number.isFinite(ask)||!Number.isFinite(payout))throw new Error('Deriv returned an invalid quote.');
     if(botStopRequested)break;
     $('signal').textContent='RUN '+run+'/'+runs+' · BUYING';
     const bought=await socketMessage(socket,{buy:proposal.id,price:ask},'buy');
