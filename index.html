@@ -188,7 +188,7 @@ async function runPremiumBot(){
     const settled=await settlementPromise;
     if(settled){const profit=Number(settled.profit||0),status=settled.status||(profit>=0?'won':'lost');updateBotTradeHistory(contractId,{status:profit>=0?'won':'lost',profit});await loadDerivAccounts();$('signal').textContent='RUN '+run+'/'+runs+' · '+status.toUpperCase()}
     else{updateBotTradeHistory(contractId,{status:'open',message:'Settlement pending'});$('signal').textContent='CONTRACT OPEN · SETTLEMENT PENDING';$('reason').textContent='Contract '+contractId+' is still open. Check Transactions for its latest status.';break}
-   }catch(error){$('signal').textContent='BOT STOPPED · RUN '+run;$('reason').textContent=error.message;addBotTradeHistory({contractId:'—',run,totalRuns:runs,market,side,stake,currency:account.currency||'USD',duration,status:'error',message:error.message,createdAt:new Date().toISOString()});break}
+   }catch(error){$('signal').textContent='BOT STOPPED · RUN '+run;$('reason').textContent=error.message;addBotTradeHistory({contractId:'—',batchId,run,totalRuns:runs,market,side,stake,currency:account.currency||'USD',duration,status:'error',message:error.message,createdAt:new Date().toISOString()});break}
    finally{if(socket&&socket.readyState<2){try{socket.close()}catch{}}}
   }
  }finally{manualBusy=false;$('botToggle').disabled=false;$('botToggle').textContent='START BOT';await loadDerivAccounts();renderBotTradeHistory()}
