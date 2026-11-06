@@ -51,14 +51,14 @@ function premiumBotPrediction(type,barrier){
  if(type==='RUNHIGH'||type==='RUNLOW'){
   let hits=0,total=0;for(let i=0;i+duration<data.length;i++){let ok=true;for(let j=1;j<=duration;j++){if(type==='RUNHIGH'?data[i+j]<=data[i+j-1]:data[i+j]>=data[i+j-1]){ok=false;break}}total++;if(ok)hits++}
   const rate=total?hits/total*100:0,up=type==='RUNHIGH',aligned=up?(data.at(-1)>data.at(-2)&&data.at(-2)>data.at(-3)):(data.at(-1)<data.at(-2)&&data.at(-2)<data.at(-3));
-  const ready=aligned&&rate>=50,side=ready?(up?'Only Up':'Only Down'):'WAIT';
+  const ready=aligned&&rate>0,side=ready?(up?'Only Up':'Only Down'):'WAIT';
   return {side,strength:rate,reason:'Historical '+duration+'-tick all-'+(up?'rising':'falling')+' window rate: '+rate.toFixed(1)+'%. Entry also requires the latest two tick moves to point '+(up?'up':'down')+'.'};
  }
  if(type==='ONETOUCH'||type==='NOTOUCH'){
   const offset=Number(barrier);if(!Number.isFinite(offset)||offset===0)return {side:'WAIT',strength:0,reason:'Enter a non-zero signed price offset, such as +1.00 or -1.00.'};
   let hits=0,total=0;for(let i=0;i+duration<data.length;i++){const start=data[i],window=data.slice(i+1,i+duration+1),hit=offset>0?Math.max(...window)-start>=offset:start-Math.min(...window)>=Math.abs(offset);total++;if(hit)hits++}
   const touchRate=total?hits/total*100:0,rate=type==='ONETOUCH'?touchRate:100-touchRate,pointsAway=offset>0?data.at(-1)<data.at(-2):data.at(-1)>data.at(-2),aligned=type==='ONETOUCH'?!pointsAway:pointsAway;
-  const ready=rate>=50&&aligned,side=ready?((type==='ONETOUCH'?'Touch ':'No Touch ')+(offset>0?'+':'')+offset.toFixed(2)):'WAIT';
+  const ready=rate>0&&aligned,side=ready?((type==='ONETOUCH'?'Touch ':'No Touch ')+(offset>0?'+':'')+offset.toFixed(2)):'WAIT';
   return {side,strength:rate,reason:'Historical '+duration+'-tick '+(type==='ONETOUCH'?'barrier-hit':'barrier-not-hit')+' rate: '+rate.toFixed(1)+'% for '+(offset>0?'+':'')+offset.toFixed(2)+' price offset. Recent ticks must move '+(type==='ONETOUCH'?'toward':'away from')+' the barrier.'};
  }
  return prediction(type,barrier);
