@@ -173,7 +173,7 @@ async function runPremiumBot(){
  if(!Number.isInteger(runs)||runs<1||runs>100){$('signal').textContent='INVALID RUN COUNT';$('reason').textContent='Number of runs must be between 1 and 100.';return}
  if(!Number.isFinite(stake)||stake<0.35){$('signal').textContent='INVALID STAKE';$('reason').textContent='Enter a valid Premium Bot stake (minimum 0.35 '+(account.currency||'USD')+').' ;return}
  if(!contract){$('signal').textContent='TRADE TYPE NOT SUPPORTED';$('reason').textContent='Select a supported Premium Bot contract.';return}
- if(botPair==='TOUCH'&&!/^[+-](?:\\d+(?:\\.\\d*)?|\\.\\d+)$/.test(touchBarrier)){ $('signal').textContent='INVALID PRICE BARRIER';$('reason').textContent='Enter a signed price offset such as +1.00 or -1.00 for Touch / No Touch.';return}
+ if(botPair==='TOUCH'&&!/^[+-](?:\d+(?:\.\d*)?|\.\d+)$/.test(touchBarrier)){ $('signal').textContent='INVALID PRICE BARRIER';$('reason').textContent='Enter a signed price offset such as +1.00 or -1.00 for Touch / No Touch.';return}
  if(botPair==='TOUCH'&&barrier===0){$('signal').textContent='INVALID PRICE BARRIER';$('reason').textContent='Touch / No Touch barrier must be non-zero.';return}
  if(['DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract)&&(!Number.isInteger(barrier)||barrier<0||barrier>9)){$('signal').textContent='INVALID BARRIER';$('reason').textContent='Set a valid barrier digit from 0 to 9.';return}
  const signal=premiumBotPrediction(contract,botPair==='TOUCH'?touchBarrier:barrier);
