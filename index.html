@@ -250,7 +250,7 @@ async function runChartBot(){
    $('chartBotReason').textContent=a.reason+' · Confidence '+a.confidence+'%. No trade is sent until the candle signal is confirmed.';
    if(a.side!=='WAIT'&&a.candleEpoch!==chartBotLastTradedCandle){
     chartBotLastTradedCandle=a.candleEpoch;
-    try{await executeChartTrade(a.contract,a.duration,'CHART BOT',a)}
+    try{const result=await executeChartTrade(a.contract,a.duration,'CHART BOT',a);if(result?.status==='open'){chartBotStopRequested=true;$('chartBotSignal').textContent='SETTLEMENT PENDING · BOT PAUSED'}}
     catch(e){showChartTradePopup('CHART BOT','TRADE NOT SENT',e.message,'loss');$('chartBotSignal').textContent='WAIT · '+e.message}
     if(chartBotStopRequested)break;
     await new Promise(r=>setTimeout(r,1200));
