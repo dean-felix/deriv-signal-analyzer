@@ -65,7 +65,7 @@ if(type.startsWith('DIGIT')&&strength<50){side='WAIT';reason+=' Current historic
 if(type==='CALL'||type==='PUT'||type==='ONLYUP'||type==='ONLYDOWN'){const dir=ticks.slice(-6).map(t=>t.quote);const delta=dir.at(-1)-dir[0],up=type==='CALL'||type==='ONLYUP';const aligned=up?delta>0:delta<0;strength=Math.min(99,Math.abs(delta)/(Math.abs(dir[0])||1)*10000);side=aligned&&strength>.01?(type==='ONLYUP'?'Only Up':type==='ONLYDOWN'?'Only Down':up?'Rise':'Fall'):'WAIT';reason='Short-window tick direction; requires confirmation.'}
 return {side,strength,reason,counts:c,top:hi,rare:lo}}
 function parityBacktest(history){
- const parity=history.map(d=>d%2),strategyOutcomes=[],triggerOutcomes=[];
+ const parity=history.map(d=>d%2),strategyOutcomes=[],strategyBaselines=[];
  const choose=(past)=>{
   if(past.length<40)return null;
   const current=past.at(-1),target=1-current,candidates=[];
@@ -91,12 +91,11 @@ function parityBacktest(history){
   const past=parity.slice(0,i+1),current=parity[i],target=1-current;
   let bh=0,bt=0;
   for(let j=0;j<i;j++)if(parity[j]===current){bt++;if(parity[j+1]===target)bh++}
-  triggerOutcomes.push(bt?bh/bt:.5);
   const candidate=choose(past);
-  if(candidate)strategyOutcomes.push(parity[i+1]===target?1:0);
+  if(candidate){strategyOutcomes.push(parity[i+1]===target?1:0);strategyBaselines.push(candidate.baseline)}
  }
  const wins=strategyOutcomes.reduce((a,b)=>a+b,0),rate=strategyOutcomes.length?wins/strategyOutcomes.length:0;
- const baseline=strategyOutcomes.length?triggerOutcomes.slice(-strategyOutcomes.length).reduce((a,b)=>a+b,0)/strategyOutcomes.length:.5;
+ const baseline=strategyBaselines.length?strategyBaselines.reduce((a,b)=>a+b,0)/strategyBaselines.length:.5;
  return {ready:strategyOutcomes.length>=12&&rate>=.55&&rate>=baseline+.05,signals:strategyOutcomes.length,rate,baseline,reason:'Two-sided walk-forward test: '+strategyOutcomes.length+' qualifying setups, '+(rate*100).toFixed(1)+'% hit rate vs '+(baseline*100).toFixed(1)+'% parity-trigger baseline.'};
 }
 function premiumParityPrediction(){
