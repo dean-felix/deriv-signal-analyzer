@@ -64,61 +64,62 @@ else {const a=ticks.slice(-20).map(t=>t.quote),delta=a[a.length-1]-a[0],mean=a.r
 if(type.startsWith('DIGIT')&&strength<50){side='WAIT';reason+=' Current historical frequency is below 50%; no entry edge.'}
 if(type==='CALL'||type==='PUT'||type==='ONLYUP'||type==='ONLYDOWN'){const dir=ticks.slice(-6).map(t=>t.quote);const delta=dir.at(-1)-dir[0],up=type==='CALL'||type==='ONLYUP';const aligned=up?delta>0:delta<0;strength=Math.min(99,Math.abs(delta)/(Math.abs(dir[0])||1)*10000);side=aligned&&strength>.01?(type==='ONLYUP'?'Only Up':type==='ONLYDOWN'?'Only Down':up?'Rise':'Fall'):'WAIT';reason='Short-window tick direction; requires confirmation.'}
 return {side,strength,reason,counts:c,top:hi,rare:lo}}
-function parityBacktest(history){
- const parity=history.map(d=>d%2),strategyOutcomes=[],strategyBaselines=[];
- const choose=(past)=>{
-  if(past.length<40)return null;
-  const current=past.at(-1),target=1-current,candidates=[];
-  let sideHits=0,sideTotal=0;
-  for(let j=0;j<past.length-1;j++)if(past[j]===current){sideTotal++;if(past[j+1]===target)sideHits++}
-  const baseline=sideTotal?sideHits/sideTotal:.5;
-  for(let k=1;k<=3;k++){
-   if(past.length<k+15)continue;
-   const ctx=past.slice(-k).join('');let hits=0,total=0;
-   for(let j=k;j<past.length-1;j++){
-    if(past.slice(j-k,j).join('')===ctx&&past[j]===current){total++;if(past[j+1]===target)hits++}
-   }
-   if(total>=14){
-    const rate=(hits+1)/(total+2);
-    candidates.push({k,ctx,total,hits,rate,rawRate:hits/total,baseline,target});
-   }
-  }
-  candidates.sort((a,b)=>((b.rate-b.baseline)-(a.rate-a.baseline))||(b.total-a.total));
-  const best=candidates[0];
-  return best&&best.rawRate>=.58&&best.rate>=best.baseline+.08?best:null;
+function parityModel(history){
+ const p=history.map(d=>d%2),n=p.length;
+ if(n<70)return {ready:false,reason:'Collecting at least 70 real ticks before predicting parity.'};
+ const current=p[n-1],lastDigit=history[n-1],previousDigit=history[n-2];
+ const counts=p.slice(-200).reduce((a,v)=>(a[v]++,a),[0,0]);
+ const recent=p.slice(-30).reduce((a,v)=>(a[v]++,a),[0,0]);
+ const dominant=counts[1]===counts[0]?(recent[1]>=recent[0]?1:0):(counts[1]>counts[0]?1:0);
+ const dominantRate=counts[dominant]/Math.min(200,n);
+ let streak=1;for(let i=n-2;i>=0&&p[i]===current;i--)streak++;
+ const runKey=Math.min(streak,4);
+ const stats=(predicate)=>{
+  let total=0,even=0,odd=0;
+  for(let i=1;i<n-1;i++)if(predicate(i)){total++;p[i+1]===0?even++:odd++}
+  return {total,prob:[(even+1)/(total+2),(odd+1)/(total+2)]};
  };
- for(let i=40;i<parity.length-1;i++){
-  const past=parity.slice(0,i+1),current=parity[i],target=1-current;
-  let bh=0,bt=0;
-  for(let j=0;j<i;j++)if(parity[j]===current){bt++;if(parity[j+1]===target)bh++}
-  const candidate=choose(past);
-  if(candidate){strategyOutcomes.push(parity[i+1]===target?1:0);strategyBaselines.push(candidate.baseline)}
+ const transition=stats(i=>p[i]===current);
+ const context=stats(i=>i>=1&&p[i]===current&&p[i-1]===p[n-2]);
+ const run=stats(i=>{
+  if(p[i]!==current)return false;
+  let len=1;for(let j=i-1;j>=0&&p[j]===current;j--)len++;
+  return Math.min(len,4)===runKey;
+ });
+ const movement=lastDigit-previousDigit;
+ const movementClass=Math.sign(movement);
+ const moveStats=stats(i=>Math.sign(history[i]-history[i-1])===movementClass&&p[i]===current);
+ const recentDominant=recent[1]>=recent[0]?1:0;
+ const scores=[0,0];
+ for(let side=0;side<=1;side++){
+  scores[side]=.22*(counts[side]/Math.min(200,n))+
+   .25*transition.prob[side]+.22*context.prob[side]+
+   .18*run.prob[side]+.13*moveStats.prob[side];
+  if(side===recentDominant)scores[side]+=.025;
  }
- const wins=strategyOutcomes.reduce((a,b)=>a+b,0),rate=strategyOutcomes.length?wins/strategyOutcomes.length:0;
- const baseline=strategyBaselines.length?strategyBaselines.reduce((a,b)=>a+b,0)/strategyBaselines.length:.5;
- return {ready:strategyOutcomes.length>=12&&rate>=.55&&rate>=baseline+.05,signals:strategyOutcomes.length,rate,baseline,reason:'Two-sided walk-forward test: '+strategyOutcomes.length+' qualifying setups, '+(rate*100).toFixed(1)+'% hit rate vs '+(baseline*100).toFixed(1)+'% parity-trigger baseline.'};
+ const total=scores[0]+scores[1],prob=scores.map(v=>v/total);
+ const chosen=prob[1]>prob[0]?1:0,confidence=prob[chosen],margin=Math.abs(prob[1]-prob[0]);
+ const evidence=Math.min(transition.total,context.total,run.total,moveStats.total);
+ const ready=evidence>=8&&confidence>=.56&&margin>=.10;
+ return {ready,side:chosen?'Odd':'Even',confidence:confidence*100,margin:margin*100,dominant:dominant?'Odd':'Even',dominantRate:dominantRate*100,current:current?'Odd':'Even',streak,previousDigit,lastDigit,movement,counts,transition,context,run,moveStats,evidence,
+  reason:'Both parities scored. Dominant '+(dominant?'ODD':'EVEN')+' '+(dominantRate*100).toFixed(1)+'%; last digits '+previousDigit+' → '+lastDigit+' ('+(movement>0?'up':movement<0?'down':'unchanged')+'); current '+(current?'ODD':'EVEN')+' streak '+streak+'. Next-parity estimate: '+(chosen?'ODD':'EVEN')+' '+(confidence*100).toFixed(1)+'%, lead '+(margin*100).toFixed(1)+' points.'+(ready?'':' Evidence/confidence is not strong enough; WAIT.')};
+}
+function parityBacktest(history){
+ const p=history.map(d=>d%2),results=[];
+ for(let i=70;i<p.length-1;i++){
+  const model=parityModel(history.slice(0,i+1));
+  if(model.ready)results.push({hit:(p[i+1]===(model.side==='Odd'?1:0))?1:0});
+ }
+ const rate=results.length?results.reduce((a,x)=>a+x.hit,0)/results.length:0;
+ return {signals:results.length,rate,ready:results.length>=10&&rate>=.53,reason:'Past-only rolling test: '+results.length+' qualified predictions, '+(rate*100).toFixed(1)+'% hit rate.'};
 }
 function premiumParityPrediction(){
  const history=ticks.slice(-200).map(getDigit);
- if(history.length<70)return {side:'WAIT',strength:0,reason:'Collecting at least 70 real ticks before testing both Even and Odd.'};
- const parity=history.map(d=>d%2),current=parity.at(-1),targetParity=1-current,targetName=targetParity?'Odd':'Even';
+ const model=parityModel(history);
+ if(!model.ready)return {side:'WAIT',strength:model.confidence||0,reason:model.reason};
  const test=parityBacktest(history);
- if(!test.ready)return {side:'WAIT',strength:test.rate*100,reason:test.reason+' Neither side has passed the two-sided validation gate; no trade.'};
- const candidates=[];
- for(let k=1;k<=3;k++){
-  const ctx=parity.slice(-k).join('');let hits=0,total=0;
-  for(let j=k;j<parity.length-1;j++){
-   if(parity.slice(j-k,j).join('')===ctx&&parity[j]===current){total++;if(parity[j+1]===targetParity)hits++}
-  }
-  if(total>=14)candidates.push({k,ctx,total,rate:(hits+1)/(total+2),rawRate:hits/total});
- }
- candidates.sort((a,b)=>(b.rate-a.rate)||(b.total-a.total));
- const best=candidates[0];
- let baseHits=0,baseTotal=0;
- for(let j=0;j<parity.length-1;j++)if(parity[j]===current){baseTotal++;if(parity[j+1]===targetParity)baseHits++}
- const baseline=baseTotal?baseHits/baseTotal:.5;
- if(!best||best.rawRate<.58||best.rate<baseline+.08)return {side:'WAIT',strength:best?best.rate*100:0,reason:'Latest '+(current?'ODD':'EVEN')+' trigger was checked against both directions, but the '+targetName+' setup has no sufficient edge over its own trigger baseline. '+test.reason};
- return {side:targetName,strength:best.rate*100,reason:'Both sides evaluated live. Latest '+(current?'ODD':'EVEN')+' tick triggers a '+targetName.toUpperCase()+' candidate · context '+best.ctx+' · '+best.total+' past matches · '+(best.rawRate*100).toFixed(1)+'% observed hit rate vs '+(baseline*100).toFixed(1)+'% side-specific trigger baseline. '+test.reason+' One-tick entry only.'};
+ if(!test.ready)return {side:'WAIT',strength:model.confidence,reason:model.reason+' '+test.reason+' No entry until the rolling test has enough qualified predictions.'};
+ return {side:model.side,strength:model.confidence,reason:model.reason+' '+test.reason+' Prediction is for the next tick; one-tick entry only.'};
 }
 function premiumBotPrediction(type,barrier){
  if(type==='DIGITEVEN'||type==='DIGITODD')return premiumParityPrediction();
