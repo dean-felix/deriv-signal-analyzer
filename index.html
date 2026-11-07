@@ -141,7 +141,7 @@ function manualContract(){const t=pairType(manualPair,manualSide);if(['DIGITEVEN
 function manualBarrier(contract){if(['ONETOUCH','NOTOUCH'].includes(contract)){const raw=String($('manualTouchBarrier').value||'').trim();if(!/^[+-](?:\d+(?:\.\d*)?|\.\d+)$/.test(raw))throw new Error('For Touch / No Touch, enter a signed price offset such as +1.00 or -1.00.');const latest=ticks[ticks.length-1]?.quote;if(!Number.isFinite(latest))throw new Error('Wait for a live market price before setting the Touch barrier.');return (latest+Number(raw)).toFixed(pipSize)}if(['DIGITOVER','DIGITUNDER'].includes(contract)){if(selectedBarrier!==null)return selectedBarrier;if(ticks.length<200)throw new Error('Need 200 real ticks before choosing a barrier.');const c=digitCounts();let best=null;for(let b=0;b<=9;b++){const count=contract==='DIGITOVER'?c.slice(b+1).reduce((a,v)=>a+v,0):c.slice(0,b).reduce((a,v)=>a+v,0);if(!best||count>best.count)best={barrier:b,count}}if(!best||best.count===0)throw new Error('No usable barrier is available for this contract.');return best.barrier}if(['DIGITMATCH','DIGITDIFF'].includes(contract)){if(selectedBarrier!==null)return selectedBarrier;if(contract==='DIGITMATCH'||contract==='DIGITDIFF'){const c=digitCounts();return c.indexOf(Math.max(...c))}throw new Error('Select a barrier digit (0–9) for Touch / No Touch.')}return null}
 function parseTickLimit(value){if(Number.isFinite(Number(value)))return Number(value);const match=String(value||'').match(/(\d+)\s*t/i);return match?Number(match[1]):null}function manualDurationMinimum(){const type=pairType(manualPair,manualSide);return type==='RUNHIGH'||type==='RUNLOW'?2:1}function normalizeManualDuration(){const field=$('manualTicks');if(!field)return;const min=manualDurationMinimum();field.min=String(min);let value=Math.round(Number(field.value)||min);value=Math.max(min,Math.min(100,value));field.value=String(value);$('manualDurationHint').textContent=min===2?'Only Up / Only Down requires at least 2 ticks. Use + / − to change it.':'Use + / − to adjust the contract duration (1–100 ticks).'}function socketMessage(socket,request,expected){return new Promise((resolve,reject)=>{const id=++req;const timer=setTimeout(()=>{cleanup();reject(new Error('Deriv did not respond in time. Please try again.'))},15000);const cleanup=()=>{clearTimeout(timer);socket.removeEventListener('message',onMessage)};const onMessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.req_id!==id)return;cleanup();if(m.error)reject(new Error(m.error.message||'Deriv rejected the request.'));else resolve(m)};socket.addEventListener('message',onMessage);try{socket.send(JSON.stringify({...request,req_id:id}))}catch(e){cleanup();reject(e)}})}
 async function manualBuyNotice(){if(manualBusy){$('manualSignal').textContent='ORDER IN PROGRESS · wait for the current request';return}if(!derivSession){alert('Connect your Deriv account first using Switch → Connect Deriv account.');return}const account=selectedDerivAccount();if(!account){alert('No '+selectedAccount.toUpperCase()+' account is available in this Deriv login. Switch accounts or reconnect.');return}if(ticks.length<200){alert('Wait until 200 real ticks are loaded for this market before placing a manual order.');return}
-if(selectedAccount==='live'&&!confirm('REAL MONEY WARNING\nYou are about to place a LIVE Deriv trade using real funds. Continue?'))return;
+
 let socket=null;manualBusy=true;$('manualLeft').disabled=$('manualRight').disabled=true;$('manualSignal').textContent='Connecting securely to Deriv…';
 try{const contract=manualContract(),barrier=manualBarrier(contract),stake=Number($('stake').value),market=$('manualMarket').value;let duration=Number($('manualTicks').value)||1;if(!Number.isFinite(stake)||stake<0.35)throw new Error('Enter a valid stake of at least 0.35 '+(account.currency||'USD')+'.');if(!Number.isInteger(duration)||duration<manualDurationMinimum())throw new Error('Choose at least '+manualDurationMinimum()+' ticks for this contract.');
 const otpResponse=await fetch(DERIV_API+'/api/otp',{method:'POST',headers:{'Content-Type':'application/json','X-Deriv-Session':derivSession},body:JSON.stringify({accountId:account.account_id}),cache:'no-store'});const otp=await otpResponse.json();if(!otpResponse.ok)throw new Error(otp.error||'Could not authorize the selected Deriv account.');if(otp.accountType!==selectedAccount)throw new Error('Deriv returned a different account type. No order was sent.');
@@ -177,8 +177,7 @@ function analyzeChartBot(){
 function showChartTradePopup(title,status,details,kind){
  $('chartBotPopupTitle').textContent=title;$('chartBotPopupStatus').textContent=status;$('chartBotPopupStatus').className='chart-trade-status'+(kind?' '+kind:'');$('chartBotPopupDetails').textContent=details;$('chartBotPopup').classList.remove('hidden');
 }
-async function executeChartTrade(contract,duration,source,analysis,liveConfirmed=false){
- if(selectedAccount==='live'&&!liveConfirmed&&!confirm('REAL MONEY WARNING\nThis will place a LIVE Chart trade using real funds. Continue?'))throw new Error('Live trade cancelled. No order was sent.');
+async function executeChartTrade(contract,duration,source,analysis){
  if(!derivSession)throw new Error('Connect your Deriv account first using Switch → Connect Deriv account.');
  const account=selectedDerivAccount();if(!account)throw new Error('No verified '+selectedAccount+' account is available in this login.');
  const market=$('market').value,stake=Number($('chartBotStake').value);if(!Number.isFinite(stake)||stake<.35)throw new Error('Enter a valid Chart Bot stake of at least 0.35 USD.');
@@ -237,7 +236,7 @@ async function runChartManualTrade(contract){
 async function runChartBot(){
  if(chartBotRunning){showChartTradePopup('CHART BOT','ALREADY RUNNING','Stop the current Chart Bot before starting another.','loss');return}
  if(!derivSession){showChartTradePopup('CHART BOT','CONNECT DERIV ACCOUNT','Connect your Deriv account first. No order was sent.','loss');return}
- if(selectedAccount==='live'&&!confirm('REAL MONEY WARNING\nChart Bot will place LIVE trades using real funds until you stop it. Continue?'))return;
+ 
  chartBotRunning=true;chartBotStopRequested=false;chartBotLastTradedCandle=null;
  $('startBot').disabled=true;$('startBot').textContent='CHART BOT RUNNING';$('stopChartBot').disabled=false;$('chartBotSignal').textContent='ANALYZING CANDLES…';
  try{
@@ -249,7 +248,7 @@ async function runChartBot(){
    $('chartBotReason').textContent=a.reason+' · Confidence '+a.confidence+'%. No trade is sent until the candle signal is confirmed.';
    if(a.side!=='WAIT'&&a.candleEpoch!==chartBotLastTradedCandle){
     chartBotLastTradedCandle=a.candleEpoch;
-    try{const result=await executeChartTrade(a.contract,a.duration,'CHART BOT',a,true);if(result?.status==='open'){chartBotStopRequested=true;$('chartBotSignal').textContent='SETTLEMENT PENDING · BOT PAUSED'}}
+    try{const result=await executeChartTrade(a.contract,a.duration,'CHART BOT',a);if(result?.status==='open'){chartBotStopRequested=true;$('chartBotSignal').textContent='SETTLEMENT PENDING · BOT PAUSED'}}
     catch(e){showChartTradePopup('CHART BOT','TRADE NOT SENT',e.message,'loss');$('chartBotSignal').textContent='WAIT · '+e.message}
     if(chartBotStopRequested)break;
     await new Promise(r=>setTimeout(r,1200));
@@ -288,7 +287,7 @@ async function runPremiumBot(){
  if(manualBusy){$('signal').textContent='MANUAL ORDER IN PROGRESS';$('reason').textContent='Wait for the Manual Trader request to finish before starting Premium Bot.';return}
  if(!derivSession){$('signal').textContent='CONNECT DERIV ACCOUNT';$('reason').textContent='Connect your Deriv account first using Switch → Connect Deriv account.';return}
  const account=selectedDerivAccount();
- if(selectedAccount==='live'&&!confirm('REAL MONEY WARNING\nPremium Bot will place up to '+$('runs').value+' LIVE trades using real funds. Continue?'))return;
+ 
  if(!account){$('signal').textContent=selectedAccount.toUpperCase()+' ACCOUNT NOT FOUND';$('reason').textContent='No '+selectedAccount+' account is available in this Deriv login. Connect the correct account first.';return}
  const market=$('botMarket').value;
  if(!live||symbol!==market||ticks.length<200){if(symbol!==market)subscribe(market);$('signal').textContent='WAITING FOR MARKET DATA';$('reason').textContent='Wait until '+market+' has at least 200 live Deriv ticks loaded.';return}
