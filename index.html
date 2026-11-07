@@ -64,53 +64,65 @@ else {const a=ticks.slice(-20).map(t=>t.quote),delta=a[a.length-1]-a[0],mean=a.r
 if(type.startsWith('DIGIT')&&strength<50){side='WAIT';reason+=' Current historical frequency is below 50%; no entry edge.'}
 if(type==='CALL'||type==='PUT'||type==='ONLYUP'||type==='ONLYDOWN'){const dir=ticks.slice(-6).map(t=>t.quote);const delta=dir.at(-1)-dir[0],up=type==='CALL'||type==='ONLYUP';const aligned=up?delta>0:delta<0;strength=Math.min(99,Math.abs(delta)/(Math.abs(dir[0])||1)*10000);side=aligned&&strength>.01?(type==='ONLYUP'?'Only Up':type==='ONLYDOWN'?'Only Down':up?'Rise':'Fall'):'WAIT';reason='Short-window tick direction; requires confirmation.'}
 return {side,strength,reason,counts:c,top:hi,rare:lo}}
-function parityBacktest(history,target){
- const n=history.length;if(n<70)return {ready:false,reason:'Need at least 70 real ticks to validate parity timing.'};
- const targetParity=target==='DIGITODD'?1:0,triggerParity=1-targetParity;
- const parity=history.map(d=>d%2),triggerOutcomes=[],strategyOutcomes=[];
+function parityBacktest(history){
+ const parity=history.map(d=>d%2),strategyOutcomes=[],triggerOutcomes=[];
  const choose=(past)=>{
-  if(past.length<30)return null;
-  const current=past.at(-1);if(current!==triggerParity)return null;
-  const candidates=[];
+  if(past.length<40)return null;
+  const current=past.at(-1),target=1-current,candidates=[];
+  let sideHits=0,sideTotal=0;
+  for(let j=0;j<past.length-1;j++)if(past[j]===current){sideTotal++;if(past[j+1]===target)sideHits++}
+  const baseline=sideTotal?sideHits/sideTotal:.5;
   for(let k=1;k<=3;k++){
-   if(past.length<k+12)continue;
+   if(past.length<k+15)continue;
    const ctx=past.slice(-k).join('');let hits=0,total=0;
-   for(let j=k;j<past.length;j++){if(past.slice(j-k,j).join('')===ctx){total++;if(past[j]===targetParity)hits++}}
-   if(total>=12)candidates.push({k,ctx,total,rate:hits/total});
+   for(let j=k;j<past.length-1;j++){
+    if(past.slice(j-k,j).join('')===ctx&&past[j]===current){total++;if(past[j+1]===target)hits++}
+   }
+   if(total>=14){
+    const rate=(hits+1)/(total+2);
+    candidates.push({k,ctx,total,hits,rate,rawRate:hits/total,baseline,target});
+   }
   }
-  candidates.sort((a,b)=>(b.rate-a.rate)||(b.total-a.total));
-  return candidates[0]||null;
+  candidates.sort((a,b)=>((b.rate-b.baseline)-(a.rate-a.baseline))||(b.total-a.total));
+  const best=candidates[0];
+  return best&&best.rawRate>=.58&&best.rate>=best.baseline+.08?best:null;
  };
  for(let i=40;i<parity.length-1;i++){
-  if(parity[i]!==triggerParity)continue;
-  const prior=parity.slice(0,i),next=parity[i+1];
-  triggerOutcomes.push(next===targetParity?1:0);
-  const c=choose(prior.concat(parity[i]));
-  if(c&&c.rate>=.58)strategyOutcomes.push(next===targetParity?1:0);
+  const past=parity.slice(0,i+1),current=parity[i],target=1-current;
+  let bh=0,bt=0;
+  for(let j=0;j<i;j++)if(parity[j]===current){bt++;if(parity[j+1]===target)bh++}
+  triggerOutcomes.push(bt?bh/bt:.5);
+  const candidate=choose(past);
+  if(candidate)strategyOutcomes.push(parity[i+1]===target?1:0);
  }
- const base=triggerOutcomes.length?triggerOutcomes.reduce((a,b)=>a+b,0)/triggerOutcomes.length:0;
  const wins=strategyOutcomes.reduce((a,b)=>a+b,0),rate=strategyOutcomes.length?wins/strategyOutcomes.length:0;
- return {ready:strategyOutcomes.length>=12&&rate>=.55&&rate>=base+.05,signals:strategyOutcomes.length,rate,baseline:base,reason:'Walk-forward test: '+strategyOutcomes.length+' qualifying entries, '+(rate*100).toFixed(1)+'% hit rate vs '+(base*100).toFixed(1)+'% opposite-parity trigger baseline.'};
+ const baseline=strategyOutcomes.length?triggerOutcomes.slice(-strategyOutcomes.length).reduce((a,b)=>a+b,0)/strategyOutcomes.length:.5;
+ return {ready:strategyOutcomes.length>=12&&rate>=.55&&rate>=baseline+.05,signals:strategyOutcomes.length,rate,baseline,reason:'Two-sided walk-forward test: '+strategyOutcomes.length+' qualifying setups, '+(rate*100).toFixed(1)+'% hit rate vs '+(baseline*100).toFixed(1)+'% parity-trigger baseline.'};
 }
-function premiumParityPrediction(type){
- const target=type==='DIGITODD'?'DIGITODD':'DIGITEVEN',targetParity=target==='DIGITODD'?1:0,history=ticks.slice(-200).map(getDigit);
- if(history.length<70)return {side:'WAIT',strength:0,reason:'Collecting at least 70 real ticks for parity validation.'};
- const test=parityBacktest(history,target),parity=history.map(d=>d%2),current=parity.at(-1),triggerParity=1-targetParity;
- if(!test.ready)return {side:'WAIT',strength:test.rate*100,reason:test.reason+' Not strong enough to trade; keep waiting.'};
- if(current!==triggerParity)return {side:'WAIT',strength:test.rate*100,reason:'Waiting for a '+(triggerParity?'ODD':'EVEN')+' trigger tick. The selected '+(targetParity?'ODD':'EVEN')+' contract is considered only after the opposite parity prints.'};
+function premiumParityPrediction(){
+ const history=ticks.slice(-200).map(getDigit);
+ if(history.length<70)return {side:'WAIT',strength:0,reason:'Collecting at least 70 real ticks before testing both Even and Odd.'};
+ const parity=history.map(d=>d%2),current=parity.at(-1),targetParity=1-current,targetName=targetParity?'Odd':'Even';
+ const test=parityBacktest(history);
+ if(!test.ready)return {side:'WAIT',strength:test.rate*100,reason:test.reason+' Neither side has passed the two-sided validation gate; no trade.'};
  const candidates=[];
  for(let k=1;k<=3;k++){
   const ctx=parity.slice(-k).join('');let hits=0,total=0;
-  for(let j=k;j<parity.length;j++){if(parity.slice(j-k,j).join('')===ctx){total++;if(parity[j]===targetParity)hits++}}
-  if(total>=12)candidates.push({k,ctx,total,rate:hits/total});
+  for(let j=k;j<parity.length-1;j++){
+   if(parity.slice(j-k,j).join('')===ctx&&parity[j]===current){total++;if(parity[j+1]===targetParity)hits++}
+  }
+  if(total>=14)candidates.push({k,ctx,total,rate:(hits+1)/(total+2),rawRate:hits/total});
  }
  candidates.sort((a,b)=>(b.rate-a.rate)||(b.total-a.total));
  const best=candidates[0];
- if(!best||best.rate<.58||best.rate<test.baseline+.08)return {side:'WAIT',strength:best?best.rate*100:0,reason:'Trigger seen, but its matching parity pattern is not strong enough against the baseline. Waiting for a cleaner setup. '+test.reason};
- return {side:targetParity?'Odd':'Even',strength:best.rate*100,reason:'Parity setup '+best.ctx+' → '+(targetParity?'ODD':'EVEN')+' candidate · '+best.total+' historical matches · '+(best.rate*100).toFixed(1)+'% conditional hit rate. '+test.reason+' One-tick entry only.'};
+ let baseHits=0,baseTotal=0;
+ for(let j=0;j<parity.length-1;j++)if(parity[j]===current){baseTotal++;if(parity[j+1]===targetParity)baseHits++}
+ const baseline=baseTotal?baseHits/baseTotal:.5;
+ if(!best||best.rawRate<.58||best.rate<baseline+.08)return {side:'WAIT',strength:best?best.rate*100:0,reason:'Latest '+(current?'ODD':'EVEN')+' trigger was checked against both directions, but the '+targetName+' setup has no sufficient edge over its own trigger baseline. '+test.reason};
+ return {side:targetName,strength:best.rate*100,reason:'Both sides evaluated live. Latest '+(current?'ODD':'EVEN')+' tick triggers a '+targetName.toUpperCase()+' candidate · context '+best.ctx+' · '+best.total+' past matches · '+(best.rawRate*100).toFixed(1)+'% observed hit rate vs '+(baseline*100).toFixed(1)+'% side-specific trigger baseline. '+test.reason+' One-tick entry only.'};
 }
 function premiumBotPrediction(type,barrier){
- if(type==='DIGITEVEN'||type==='DIGITODD')return premiumParityPrediction(type);
+ if(type==='DIGITEVEN'||type==='DIGITODD')return premiumParityPrediction();
  const duration=Math.max(1,Math.round(Number($('botTicks').value)||5)),data=ticks.slice(-200).map(t=>Number(t.quote)).filter(Number.isFinite);
  if(data.length<Math.max(3,duration+1))return {side:'WAIT',strength:0,reason:'Collecting enough real tick history for this contract duration.'};
  if(type==='RUNHIGH'||type==='RUNLOW'){
@@ -344,7 +356,7 @@ async function runPremiumBot(){
  if(!account){$('signal').textContent=selectedAccount.toUpperCase()+' ACCOUNT NOT FOUND';$('reason').textContent='No '+selectedAccount+' account is available in this Deriv login. Connect the correct account first.';return}
  const market=$('botMarket').value;
  if(!live||symbol!==market||ticks.length<200){if(symbol!==market)subscribe(market);$('signal').textContent='WAITING FOR MARKET DATA';$('reason').textContent='Wait until '+market+' has at least 200 live Deriv ticks loaded.';return}
- const runs=Number($('runs').value),stake=Number($('botStake').value);normalizeBotDuration();let duration=Number($('botTicks').value);const contract=pairType(botPair,botSide),isParity=contract==='DIGITEVEN'||contract==='DIGITODD',minDuration=(contract==='RUNHIGH'||contract==='RUNLOW')?2:1;if(isParity){duration=1;$('botTicks').value='1';$('reason').textContent='Even/Odd timing strategy uses a one-tick contract because it validates the next parity transition.'}autoSelectBotBarrier();const touchBarrier=String($('botTouchBarrier').value||'').trim(),barrier=botPair==='TOUCH'?Number(touchBarrier):Number($('botBarrier').value),batchId='bot-'+Date.now().toString(36);
+ const runs=Number($('runs').value),stake=Number($('botStake').value);normalizeBotDuration();let duration=Number($('botTicks').value);let contract=pairType(botPair,botSide);const isParity=botPair==='DIGITEVEN',minDuration=(contract==='RUNHIGH'||contract==='RUNLOW')?2:1;if(isParity){duration=1;$('botTicks').value='1';$('reason').textContent='Even/Odd timing strategy uses a one-tick contract because it validates the next parity transition.'}autoSelectBotBarrier();const touchBarrier=String($('botTouchBarrier').value||'').trim(),barrier=botPair==='TOUCH'?Number(touchBarrier):Number($('botBarrier').value),batchId='bot-'+Date.now().toString(36);
  if(!Number.isSafeInteger(duration)||duration<minDuration||duration>100){$('signal').textContent='INVALID DURATION';$('reason').textContent='Enter a whole-number duration from '+minDuration+' to 100 ticks for this trade type.';return}
  if(!Number.isInteger(runs)||runs<1||runs>100){$('signal').textContent='INVALID RUN COUNT';$('reason').textContent='Number of runs must be between 1 and 100.';return}
  if(!Number.isFinite(stake)||stake<0.35){$('signal').textContent='INVALID STAKE';$('reason').textContent='Enter a valid Premium Bot stake (minimum 0.35 '+(account.currency||'USD')+').' ;return}
@@ -352,7 +364,7 @@ async function runPremiumBot(){
  if(botPair==='TOUCH'&&!/^[+-](?:\d+(?:\.\d*)?|\.\d+)$/.test(touchBarrier)){ $('signal').textContent='INVALID PRICE BARRIER';$('reason').textContent='Enter a signed price offset such as +1.00 or -1.00 for Touch / No Touch.';return}
  if(botPair==='TOUCH'&&(!Number.isFinite(barrier)||barrier===0)){$('signal').textContent='INVALID PRICE BARRIER';$('reason').textContent='Touch / No Touch barrier must be a valid non-zero signed offset.';return}
  if(['DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract)&&(!Number.isInteger(barrier)||barrier<0||barrier>9)){$('signal').textContent='INVALID BARRIER';$('reason').textContent='Set a valid barrier digit from 0 to 9.';return}
- const side=$('bot'+(botSide===0?'Left':'Right')).textContent;
+ let side=$('bot'+(botSide===0?'Left':'Right')).textContent;
  botActiveConfig={contract,barrier:botPair==='TOUCH'?touchBarrier:barrier,market,side};
  botRunning=true;botStopRequested=false;$('botToggle').disabled=true;$('botToggle').textContent='BOT RUNNING · '+runs+' RUNS';$('botStop').disabled=false;$('botStop').textContent='STOP BOT';$('botDrawer').classList.remove('hidden');$('drawer').classList.add('hidden');
  try{
@@ -387,7 +399,7 @@ async function runPremiumBot(){
      const finalGate=premiumBotPrediction(contract,botActiveConfig.barrier);
      if(finalGate.side==='WAIT'){
       $('signal').textContent='WAIT';
-      $('reason').textContent='RUN '+run+'/'+runs+' HELD · signal changed to WAIT after the quote. Quote discarded; waiting for confirmation again.';
+      $('reason').textContent='RUN '+run+'/'+runs+' HELD · the two-sided parity signal changed after the quote. Quote discarded; checking both sides again.';
       if(socket&&socket.readyState<2){try{socket.close()}catch{}}
       socket=null;
       await new Promise(resolve=>setTimeout(resolve,800));
