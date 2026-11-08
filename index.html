@@ -250,7 +250,7 @@ function showTradeToast(message,kind){const toast=$('tradeToast');if(!toast)retu
 renderManualTradeHistory();
 function manualContract(){const t=pairType(manualPair,manualSide);if(['DIGITEVEN','DIGITODD','DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF','CALL','PUT','RUNHIGH','RUNLOW','ONETOUCH','NOTOUCH','ASIANU','ASIAND'].includes(t))return t;throw new Error('This contract type is not yet supported by the authenticated Deriv order flow.')}
 function manualBarrier(contract){if(['ONETOUCH','NOTOUCH'].includes(contract)){const raw=manualTouchOffset(),latest=ticks[ticks.length-1]?.quote,target=latest+Number(raw);if(!Number.isFinite(latest)||!Number.isFinite(target)||target<=0)throw new Error('The selected Touch barrier is outside the valid price range. Check the distance and direction.');return raw}if(['DIGITOVER','DIGITUNDER'].includes(contract)){if(selectedBarrier!==null)return selectedBarrier;if(ticks.length<200)throw new Error('Need 200 real ticks before choosing a barrier.');const c=digitCounts();let best=null;for(let b=0;b<=9;b++){const count=contract==='DIGITOVER'?c.slice(b+1).reduce((a,v)=>a+v,0):c.slice(0,b).reduce((a,v)=>a+v,0);if(!best||count>best.count)best={barrier:b,count}}if(!best||best.count===0)throw new Error('No usable barrier is available for this contract.');return best.barrier}if(['DIGITMATCH','DIGITDIFF'].includes(contract)){if(selectedBarrier!==null)return selectedBarrier;if(contract==='DIGITMATCH'||contract==='DIGITDIFF'){const c=digitCounts();return c.indexOf(Math.max(...c))}throw new Error('Select a barrier digit (0–9) for Touch / No Touch.')}return null}
-function parseTickLimit(value){if(Number.isFinite(Number(value)))return Number(value);const match=String(value||'').match(/(\d+)\s*t/i);return match?Number(match[1]):null}function manualDurationMinimum(){const type=pairType(manualPair,manualSide);return type==='RUNHIGH'||type==='RUNLOW'?2:1}function normalizeManualDuration(){const field=$('manualTicks');if(!field)return;const min=manualDurationMinimum();field.min=String(min);let value=Math.round(Number(field.value)||min);value=Math.max(min,Math.min(100,value));field.value=String(value);$('manualDurationHint').textContent=min===2?'Only Up / Only Down requires at least 2 ticks. Use + / − to change it.':'Use + / − to adjust the contract duration (1–100 ticks).'}function socketMessage(socket,request,expected){return new Promise((resolve,reject)=>{const id=++req;const timer=setTimeout(()=>{cleanup();reject(new Error('Deriv did not respond in time. Please try again.'))},15000);const cleanup=()=>{clearTimeout(timer);socket.removeEventListener('message',onMessage)};const onMessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.req_id!==id)return;cleanup();if(m.error)reject(new Error(m.error.message||'Deriv rejected the request.'));else resolve(m)};socket.addEventListener('message',onMessage);try{socket.send(JSON.stringify({...request,req_id:id}))}catch(e){cleanup();reject(e)}})}
+function parseTickLimit(value){if(Number.isFinite(Number(value)))return Number(value);const match=String(value||'').match(/(\d+)\s*t/i);return match?Number(match[1]):null}function manualDurationMinimum(){const type=pairType(manualPair,manualSide);return type==='RUNHIGH'||type==='RUNLOW'?2:1}function normalizeManualDuration(){const field=$('manualTicks');if(!field)return;const min=manualDurationMinimum();field.min=String(min);let value=Math.round(Number(field.value)||min);value=Math.max(min,Math.min(100,value));field.value=String(value);$('manualDurationHint').textContent=min===2?'Only Up / Only Down requires at least 2 ticks. Use + / − to change it.':'Use + / − to adjust the contract duration (1–100 ticks).'}function socketMessage(socket,request,expected){return new Promise((resolve,reject)=>{const id=++req;const timer=setTimeout(()=>{cleanup();reject(new Error('Deriv did not respond to '+(expected||'request')+' within 15 seconds. No purchase was sent.'))},15000);const cleanup=()=>{clearTimeout(timer);socket.removeEventListener('message',onMessage)};const onMessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(String(m.req_id)!==String(id))return;cleanup();if(m.error)reject(new Error((expected||'Deriv request')+' rejected: '+(m.error.message||m.error.code||'unknown error')));else resolve(m)};socket.addEventListener('message',onMessage);try{socket.send(JSON.stringify({...request,req_id:id}))}catch(e){cleanup();reject(e)}})}
 async function manualBuyNotice(){if(manualBusy){$('manualSignal').textContent='ORDER IN PROGRESS · wait for the current request';return}if(!derivSession){alert('Connect your Deriv account first using Switch → Connect Deriv account.');return}const account=selectedDerivAccount();if(!account){alert('No '+selectedAccount.toUpperCase()+' account is available in this Deriv login. Switch accounts or reconnect.');return}if(ticks.length<200){alert('Wait until 200 real ticks are loaded for this market before placing a manual order.');return}
 
 let socket=null;manualBusy=true;$('manualLeft').disabled=$('manualRight').disabled=true;$('manualSignal').textContent='Connecting securely to Deriv…';
@@ -399,13 +399,13 @@ function matchesProDigit(t){
  if(!Number.isFinite(v))return NaN;
  return Number(v.toFixed(Number.isFinite(ps)?ps:2).replace('.','').slice(-1));
 }
-function analyzeMatchesProSeries(series){
+function analyzeMatchesProSeries(series,fixedTarget=null){
  if(!Array.isArray(series)||series.length<200)return null;
  const rows=series.slice(-200),digits=rows.map(matchesProDigit),prices=rows.map(x=>Number(x.quote));
  if(digits.some(d=>!Number.isInteger(d)||d<0||d>9)||prices.some(v=>!Number.isFinite(v)))return null;
  const training=digits.slice(0,140),validation=digits.slice(140),counts=Array(10).fill(0);
  training.forEach(d=>counts[d]++);
- const target=counts.indexOf(Math.max(...counts)),trainRate=counts[target]/training.length*100;
+ const target=Number.isInteger(fixedTarget)&&fixedTarget>=0&&fixedTarget<=9?fixedTarget:counts.indexOf(Math.max(...counts)),trainRate=counts[target]/training.length*100;
  const hits=validation.filter(d=>d===target).length,holdoutRate=hits/validation.length*100;
  const recent=digits.slice(-30),recentRate=recent.filter(d=>d===target).length/recent.length*100;
  const first=training.slice(0,70),second=training.slice(70,140);
@@ -427,14 +427,25 @@ function analyzeMatchesProSeries(series){
 function matchesProUniverse(){return markets.map(([symbol,name])=>({symbol,name}));}
 function matchesProScan(){
  if(!matchesProRunning||matchesProTradeBusy)return;
- const ranked=[];for(const market of matchesProUniverse()){const model=analyzeMatchesProSeries(matchesProData.get(market.symbol)||[]);if(model?.eligible)ranked.push({...model,...market})}
- if(!ranked.length){const ready=matchesProUniverse().filter(m=>(matchesProData.get(m.symbol)||[]).length>=200).length;matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';matchesProSet('WAIT','No market has passed the unseen-sample, stability and sequence checks yet.','Scanning '+ready+'/'+matchesProUniverse().length+' markets · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades);return}
- ranked.sort((x,y)=>y.score-x.score);
- if(!matchesProCandidate){matchesProCandidate=ranked[0];matchesProCandidateSince=Date.now();matchesProLastCandidateKey=matchesProCandidate.symbol+':'+matchesProCandidate.target}
- const key=matchesProCandidate.symbol+':'+matchesProCandidate.target,locked=ranked.find(x=>x.symbol+':'+x.target===key);
- if(!locked){matchesProSet('CANDIDATE RESET','Locked market/barrier failed fresh validation. Releasing it and scanning again.','Candidate stability failed');matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';return}
- const elapsed=Date.now()-matchesProCandidateSince,remaining=Math.max(0,MATCHES_PRO_OBSERVE_MS-elapsed),best=locked;
- matchesProSet(best.name+' · Matches '+best.target,best.holdoutRate.toFixed(1)+'% holdout · Recent '+best.recentRate.toFixed(1)+'% · Candidate locked '+Math.floor(elapsed/1000)+'s.','OBSERVING '+Math.ceil(remaining/1000)+'s · '+best.name+' / Matches '+best.target+' · Revalidated each tick');
+ let best=null;
+ if(matchesProCandidate){
+  const market=matchesProUniverse().find(x=>x.symbol===matchesProCandidate.symbol);
+  const fixed=analyzeMatchesProSeries(matchesProData.get(matchesProCandidate.symbol)||[],matchesProCandidate.target);
+  if(!market||!fixed?.eligible){
+   matchesProSet('CANDIDATE RELEASED',market?'The locked '+market.name+' Matches '+matchesProCandidate.target+' no longer passes its fixed-barrier validation.':'The locked market is no longer available.','Releasing candidate · scanning all 10 Volatility markets again');
+   matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';return;
+  }
+  best={...fixed,...market};
+ }else{
+  const ranked=[];for(const market of matchesProUniverse()){const model=analyzeMatchesProSeries(matchesProData.get(market.symbol)||[]);if(model?.eligible)ranked.push({...model,...market})}
+  if(!ranked.length){const ready=matchesProUniverse().filter(m=>(matchesProData.get(m.symbol)||[]).length>=200).length;matchesProSet('SCANNING · NO QUALIFIED CANDIDATE','No market has passed the unseen-sample, stability and sequence checks yet.','Ready '+ready+'/'+matchesProUniverse().length+' markets · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades);return}
+  ranked.sort((x,y)=>y.score-x.score);
+  matchesProCandidate={symbol:ranked[0].symbol,target:ranked[0].target,executing:false};
+  matchesProCandidateSince=Date.now();matchesProLastCandidateKey=matchesProCandidate.symbol+':'+matchesProCandidate.target;
+  best=ranked[0];
+ }
+ const key=matchesProCandidate.symbol+':'+matchesProCandidate.target,elapsed=Date.now()-matchesProCandidateSince,remaining=Math.max(0,MATCHES_PRO_OBSERVE_MS-elapsed);
+ matchesProSet(best.name+' · Matches '+best.target,best.holdoutRate.toFixed(1)+'% fixed-barrier holdout · Recent '+best.recentRate.toFixed(1)+'% · Same barrier retained during observation','OBSERVING '+Math.ceil(remaining/1000)+'s · '+best.name+' / Matches '+best.target+' · Fixed barrier revalidated every tick');
  if(remaining>0||Date.now()<matchesProCooldownUntil||matchesProCandidate.executing)return;
  matchesProCandidate.executing=true;matchesProLastCandidateKey=key;
  executeMatchesProCandidate(best).then(()=>{if(matchesProRunning){matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey=''}}).catch(error=>{matchesProTradeBusy=false;matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';matchesProSet('WAIT · ORDER NOT SENT',error.message,'Candidate released · scanner will evaluate again')});
@@ -497,13 +508,18 @@ async function executeMatchesProCandidate(candidate){
  try{
   const account=matchesProAccount,stake=Number($('matchesProStake').value);
   if(!account||!derivSession)throw new Error('Deriv account session is no longer available. No order was sent.');
+  if(!Number.isFinite(stake)||stake<.35)throw new Error('Matches Pro stake is invalid. No order was sent.');
+  matchesProSet('AUTHORIZING TRADE','Requesting a secure '+account.accountType.toUpperCase()+' connection for '+candidate.name+' Matches '+candidate.target+'.','Getting one-use Deriv authorization');
   const otpResponse=await fetch(DERIV_API+'/api/otp',{method:'POST',headers:{'Content-Type':'application/json','X-Deriv-Session':derivSession},body:JSON.stringify({accountId:account.accountId}),cache:'no-store'});
   const otp=await otpResponse.json();if(!otpResponse.ok)throw new Error(otp.error||'Could not authorize the selected Deriv account.');
   if(otp.accountType!==account.accountType)throw new Error('Deriv returned a different account type. No order was sent.');
+  matchesProSet('CONNECTING TRADE SOCKET','Deriv authorization succeeded. Opening the authenticated trading WebSocket.','Connecting to Deriv Options');
   socket=new WebSocket(otp.url);
   await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Secure Deriv connection timed out.')),15000);socket.onopen=()=>{clearTimeout(timer);resolve()};socket.onerror=()=>{clearTimeout(timer);reject(new Error('Secure Deriv WebSocket connection failed.'))};socket.onclose=()=>{clearTimeout(timer);reject(new Error('Deriv closed the authenticated connection.'))}});
+  matchesProSet('CHECKING MATCHES CONTRACT','Checking whether DIGITMATCH is available for '+candidate.name+'.','Requesting contract specifications');
   const specs=await socketMessage(socket,{contracts_for:candidate.symbol},'contracts_for'),available=specs.contracts_for?.available||[];
   if(available.length&&!available.some(x=>x.contract_type==='DIGITMATCH'))throw new Error('Matches is not offered for '+candidate.name+'. No order was sent.');
+  matchesProSet('REQUESTING LIVE QUOTE','Requesting a live Deriv Matches '+candidate.target+' quote for '+candidate.name+'.','Waiting for Deriv proposal response · no trade has been purchased');
   const quote=await socketMessage(socket,{proposal:1,amount:stake,basis:'stake',contract_type:'DIGITMATCH',currency:account.currency,duration:1,duration_unit:'t',underlying_symbol:candidate.symbol,barrier:String(candidate.target)},'proposal');
   const proposal=quote.proposal,ask=Number(proposal?.ask_price),payout=Number(proposal?.payout);
   if(!proposal?.id||!Number.isFinite(ask)||!Number.isFinite(payout)||payout<=0)throw new Error('Deriv did not return a valid Matches quote. No order was sent.');
@@ -511,6 +527,7 @@ async function executeMatchesProCandidate(candidate){
   if(candidate.holdoutRate<breakEven+3){matchesProSet('WAIT · PAYOUT FILTER',candidate.name+' Matches '+candidate.target+' has '+candidate.holdoutRate.toFixed(1)+'% holdout hits, below the quote break-even '+breakEven.toFixed(1)+'% plus the 3-point safety margin. No purchase sent.','Scanning for a stronger validated market');return}
   const fresh=analyzeMatchesProSeries(matchesProData.get(candidate.symbol)||[]);
   if(!fresh?.eligible||fresh.target!==candidate.target||fresh.holdoutRate<breakEven+3)throw new Error('The market evidence changed before purchase. Quote discarded; no order sent.');
+  matchesProSet('SENDING PURCHASE','Quote received and payout filter passed. Sending one purchase request.','Waiting for Deriv purchase confirmation');
   const bought=await socketMessage(socket,{buy:proposal.id,price:ask},'buy');contractId=bought.buy?.contract_id;
   if(!contractId)throw new Error('Deriv did not confirm a contract ID. Check Transactions before retrying.');
   addBotTradeHistory({contractId:String(contractId),batchId:'matches-pro-'+Date.now().toString(36),run:matchesProTradesDone+1,totalRuns:matchesProMaxTrades,accountMode:account.accountType.toUpperCase(),market:candidate.symbol,side:'Matches '+candidate.target,contract:'DIGITMATCH',barrier:candidate.target,stake,currency:account.currency,duration:1,status:'open',profit:null,buyPrice:Number(bought.buy.buy_price??ask),payout,createdAt:new Date().toISOString(),source:'MATCHES PRO'});
