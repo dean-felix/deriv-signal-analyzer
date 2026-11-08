@@ -90,15 +90,13 @@ function premiumBotPrediction(type,barrier){
  const split=Math.max(1,Math.floor((n-duration-1)*.70));
  const summarize=(wins,total)=>({rate:total?wins/total*100:0,wins,total});
  const pairWindows=evaluate=>{
-  let allA=0,allN=0,trainA=0,trainN=0,holdA=0,holdN=0,recentA=0,recentN=0;
+  const counts={all:{left:0,right:0,total:0},train:{left:0,right:0,total:0},hold:{left:0,right:0,total:0},recent:{left:0,right:0,total:0}};
   for(let i=0;i+duration<n;i++){
-   const outcome=evaluate(i),isWin=outcome===1,isLoss=outcome===0;
-   allN++;if(isWin)allA++;
-   if(i<split){trainN++;if(isWin)trainA++}
-   else{holdN++;if(isWin)holdA++}
-   if(i>=Math.max(0,n-55-duration)){recentN++;if(isWin)recentA++}
+   const outcome=evaluate(i),sets=['all',i<split?'train':'hold',i>=Math.max(0,n-55-duration)?'recent':null].filter(Boolean);
+   for(const set of sets){const row=counts[set];row.total++;if(outcome===1)row.left++;else if(outcome===-1)row.right++;}
   }
-  return {all:summarize(allA,allN),train:summarize(trainA,trainN),hold:summarize(holdA,holdN),recent:summarize(recentA,recentN)};
+  const result={};for(const key of Object.keys(counts)){const x=counts[key];result[key]={left:summarize(x.left,x.total),right:summarize(x.right,x.total)}}
+  return result;
  };
  const chosen=(a,b,left,right,minN=25,minGap=2)=>{
   const best=a.rate>=b.rate?left:right,top=Math.max(a.rate,b.rate),gap=Math.abs(a.rate-b.rate);
@@ -157,34 +155,31 @@ function premiumBotPrediction(type,barrier){
   if(['ONETOUCH','NOTOUCH'].includes(type)&&(!Number.isFinite(offset)||offset===0))return {side:'WAIT',strength:0,reason:'Enter a non-zero signed Touch distance, such as +1.00 or -1.00.'};
   const stats=pairWindows(i=>{
    const start=prices[i],window=prices.slice(i+1,i+duration+1),end=window.at(-1);
-   if(type==='CALL')return end>start?1:0;
-   if(type==='PUT')return end<start?1:0;
-   if(type==='RUNHIGH')return window.every((v,j)=>v>prices[i+j])?1:0;
-   if(type==='RUNLOW')return window.every((v,j)=>v<prices[i+j])?1:0;
-   if(type==='ONETOUCH'||type==='NOTOUCH'){
-    const hit=offset>0?Math.max(...window)-start>=Math.abs(offset):start-Math.min(...window)>=Math.abs(offset);
-    return type==='ONETOUCH'?(hit?1:0):(hit?0:1);
+   if(type==='CALL'||type==='PUT')return end>start?1:end<start?-1:0;
+   if(type==='RUNHIGH'||type==='RUNLOW'){
+    const up=window.every((v,j)=>v>prices[i+j]),down=window.every((v,j)=>v<prices[i+j]);return up?1:down?-1:0;
    }
-   const average=window.reduce((sum,v)=>sum+v,0)/window.length;
-   if(type==='ASIANU')return average>start?1:0;
-   return average<start?1:0;
+   if(type==='ONETOUCH'||type==='NOTOUCH'){
+    const hit=offset>0?Math.max(...window)-start>=Math.abs(offset):start-Math.min(...window)>=Math.abs(offset);return hit?1:-1;
+   }
+   const average=window.reduce((sum,v)=>sum+v,0)/window.length;return average>start?1:average<start?-1:0;
   });
-  let opposite,confirmation=false,detail='';
+  const leftType=['CALL','RUNHIGH','ONETOUCH','ASIANU'].includes(type),selected=leftType?stats.hold.left:stats.hold.right,other=leftType?stats.hold.right:stats.hold.left;
+  const train=leftType?stats.train.left:stats.train.right,recent=leftType?stats.recent.left:stats.recent.right;
+  let confirmation=false,detail='';
   if(type==='CALL'||type==='PUT'){
-   opposite=type==='CALL'?'Fall':'Rise';const move=prices.at(-1)-prices.at(-2);confirmation=type==='CALL'?move>0:move<0;detail='Latest tick must confirm the selected direction.';
+   const move=prices.at(-1)-prices.at(-2);confirmation=type==='CALL'?move>0:move<0;detail='Latest tick must confirm the selected Rise/Fall direction.';
   }else if(type==='RUNHIGH'||type==='RUNLOW'){
-   opposite=type==='RUNHIGH'?'Only Down':'Only Up';const tail=prices.slice(-(duration+1));confirmation=tail.length===duration+1&&tail.slice(1).every((v,i)=>type==='RUNHIGH'?v>tail[i]:v<tail[i]);detail='Every one of the latest '+duration+' movements must be strictly '+(type==='RUNHIGH'?'up':'down')+'.';
+   const tail=prices.slice(-(duration+1));confirmation=tail.length===duration+1&&tail.slice(1).every((v,i)=>type==='RUNHIGH'?v>tail[i]:v<tail[i]);detail='Every one of the latest '+duration+' movements must be strictly '+(type==='RUNHIGH'?'up':'down')+'.';
   }else if(type==='ONETOUCH'||type==='NOTOUCH'){
-   opposite=type==='ONETOUCH'?'No Touch':'Touch';const move=prices.at(-1)-prices.at(-2),toward=offset>0?move>0:move<0;confirmation=type==='ONETOUCH'?toward:!toward;detail='Barrier '+(offset>0?'+':'')+offset.toFixed(pipSize)+'; current movement must point '+(type==='ONETOUCH'?'toward':'away from')+' it.';
+   const move=prices.at(-1)-prices.at(-2),toward=offset>0?move>0:move<0;confirmation=type==='ONETOUCH'?toward:!toward;detail='Barrier '+(offset>0?'+':'')+offset.toFixed(pipSize)+'; current movement must point '+(type==='ONETOUCH'?'toward':'away from')+' it.';
   }else{
-   opposite=type==='ASIANU'?'Asian Down':'Asian Up';const tail=prices.slice(-(duration+1)),avg=tail.slice(1).reduce((a,v)=>a+v,0)/Math.max(1,tail.length-1);confirmation=type==='ASIANU'?avg>tail[0]:avg<tail[0];detail='Latest '+duration+'-tick average '+(type==='ASIANU'?'must be above':'must be below')+' its starting price.';
+   const tail=prices.slice(-(duration+1)),avg=tail.slice(1).reduce((a,v)=>a+v,0)/Math.max(1,tail.length-1);confirmation=type==='ASIANU'?avg>tail[0]:avg<tail[0];detail='Latest '+duration+'-tick average '+(type==='ASIANU'?'must be above':'must be below')+' its starting price.';
   }
-  const selected=stats.hold.rate,other=100-selected,selectedLabel=requested;
-  const enough=stats.hold.total>=35&&stats.train.total>=80;
-  const edge=selected-other;
-  const ready=enough&&edge>=4&&confirmation&&stats.recent.rate>=selected-15;
-  return {side:ready?selectedLabel:'WAIT',strength:selected,holdoutRate:selected,breakdown:{training:stats.train.rate,recent:stats.recent.rate,all:stats.all.rate},reason:
-   selectedLabel+' historical holdout rate '+selected.toFixed(1)+'% across '+stats.hold.total+' unseen windows; training '+stats.train.rate.toFixed(1)+'%, recent '+stats.recent.rate.toFixed(1)+'%. '+detail+' '+(ready?'Both outcomes and the comparable windows support this side; check the current Deriv quote.':'Insufficient separation, sample, recent consistency or live confirmation; WAIT.')};
+  const selectedLabel=requested,enough=selected.total>=35&&other.total>=35&&train.total>=80;
+  const edge=selected.rate-other.rate,ready=enough&&edge>=4&&confirmation&&recent.rate>=selected.rate-15;
+  return {side:ready?selectedLabel:'WAIT',strength:selected.rate,holdoutRate:selected.rate,breakdown:{training:train.rate,recent:recent.rate,opposite:other.rate},reason:
+   selectedLabel+' historical holdout rate '+selected.rate.toFixed(1)+'% across '+selected.total+' windows; opposite side '+other.rate.toFixed(1)+'%, training '+train.rate.toFixed(1)+'%, recent '+recent.rate.toFixed(1)+'%. '+detail+' '+(ready?'The selected side leads in comparable windows; check the current Deriv quote.':'Insufficient separation, sample, recent consistency or live confirmation; WAIT.')};
  }
  return {side:'WAIT',strength:0,reason:'No validated analysis model is available for this contract.'};
 }
@@ -406,7 +401,7 @@ async function runPremiumBot(){
  if(!account){$('signal').textContent=selectedAccount.toUpperCase()+' ACCOUNT NOT FOUND';$('reason').textContent='No '+selectedAccount+' account is available in this Deriv login. Connect the correct account first.';return}
  const market=$('botMarket').value;
  if(!live||symbol!==market||ticks.length<200){if(symbol!==market)subscribe(market);$('signal').textContent='WAITING FOR MARKET DATA';$('reason').textContent='Wait until '+market+' has at least 200 live Deriv ticks loaded.';return}
- const runs=Number($('runs').value),stake=Number($('botStake').value);normalizeBotDuration();let duration=Number($('botTicks').value);let contract=pairType(botPair,botSide);const isDigitContract=['DIGITEVEN','DIGITODD','DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract),minDuration=(contract==='RUNHIGH'||contract==='RUNLOW')?2:1;if(isDigitContract){duration=1;$('botTicks').value='1';}autoSelectBotBarrier();const touchBarrier=botPair==='TOUCH'?botTouchOffset():'',barrier=botPair==='TOUCH'?Number(touchBarrier):Number($('botBarrier').value),batchId='bot-'+Date.now().toString(36);
+ const runs=Number($('runs').value),stake=Number($('botStake').value);normalizeBotDuration();let duration=Number($('botTicks').value);autoSelectBotBarrier();let contract=pairType(botPair,botSide);const isDigitContract=['DIGITEVEN','DIGITODD','DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract),minDuration=(contract==='RUNHIGH'||contract==='RUNLOW')?2:1;if(isDigitContract){duration=1;$('botTicks').value='1';}const touchBarrier=botPair==='TOUCH'?botTouchOffset():'',barrier=botPair==='TOUCH'?Number(touchBarrier):Number($('botBarrier').value),batchId='bot-'+Date.now().toString(36);
  if(!Number.isSafeInteger(duration)||duration<minDuration||duration>100){$('signal').textContent='INVALID DURATION';$('reason').textContent='Enter a whole-number duration from '+minDuration+' to 100 ticks for this trade type.';return}
  if(!Number.isInteger(runs)||runs<1||runs>100){$('signal').textContent='INVALID RUN COUNT';$('reason').textContent='Number of runs must be between 1 and 100.';return}
  if(!Number.isFinite(stake)||stake<0.35){$('signal').textContent='INVALID STAKE';$('reason').textContent='Enter a valid Premium Bot stake (minimum 0.35 '+(account.currency||'USD')+').' ;return}
@@ -444,7 +439,16 @@ async function runPremiumBot(){
      proposal=quoteMessage.proposal;
      if(!proposal||!proposal.id)throw new Error('Deriv did not return a valid proposal.');
      ask=Number(proposal.ask_price);payout=Number(proposal.payout);
-     if(!Number.isFinite(ask)||!Number.isFinite(payout))throw new Error('Deriv returned an invalid quote.');
+     if(!Number.isFinite(ask)||!Number.isFinite(payout)||payout<=0)throw new Error('Deriv returned an invalid quote.');
+     if(Number.isFinite(gate.holdoutRate)){
+      const breakEven=ask/payout*100,estimated=gate.holdoutRate;
+      if(estimated<breakEven+3){
+       $('signal').textContent='WAIT · PAYOUT EDGE TOO SMALL';
+       $('reason').textContent='Historical holdout rate '+estimated.toFixed(1)+'% does not clear the quote break-even level '+breakEven.toFixed(1)+'% plus a 3-point safety margin. Quote discarded; no purchase sent.';
+       if(socket&&socket.readyState<2){try{socket.close()}catch{}}
+       socket=null;await new Promise(resolve=>setTimeout(resolve,800));continue;
+      }
+     }
      if(botStopRequested)break;
      const finalGate=premiumBotPrediction(contract,botActiveConfig.barrier);
      if(finalGate.side==='WAIT'){
