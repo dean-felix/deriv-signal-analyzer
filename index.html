@@ -389,12 +389,12 @@ function renderBotTradeHistory(){
 }
 
 function addBotTradeHistory(trade){botTradeHistory.unshift(trade);botTradeHistory=botTradeHistory.slice(0,150);saveBotTradeHistory();renderBotTradeHistory()}
-function resetAllTradeHistory(){if(botRunning||manualBusy||chartBotRunning||matchesProRunning||matchesProTradeBusy){alert('Stop active trading first. Open contracts remain in Deriv and cannot be erased from your account.');return}if(!confirm('Clear all saved Manual, Premium Bot and Chart results from this app? This does not cancel or delete trades in Deriv.'))return;manualTradeHistory=[];botTradeHistory=[];chartTradeHistory=[];for(const key of ['derivManualTradeHistory','derivPremiumBotTradeHistory','derivChartTradeHistory']){try{localStorage.removeItem(key)}catch{}}renderManualTradeHistory();renderBotTradeHistory()}
+function resetAllTradeHistory(){manualTradeHistory=[];botTradeHistory=[];chartTradeHistory=[];for(const key of ['derivManualTradeHistory','derivPremiumBotTradeHistory','derivChartTradeHistory']){try{localStorage.removeItem(key)}catch{}}renderManualTradeHistory();renderBotTradeHistory()}
 function updateBotTradeHistory(contractId,updates){const item=botTradeHistory.find(t=>String(t.contractId)===String(contractId));if(!item)return;Object.assign(item,updates);saveBotTradeHistory();renderBotTradeHistory()}
 renderBotTradeHistory();
 
 
-let matchesProWs=null,matchesProRunning=false,matchesProTradeBusy=false,matchesProTradesDone=0,matchesProMaxTrades=1,matchesProLastCandidateKey='',matchesProCooldownUntil=0,matchesProData=new Map(),matchesProAccount=null;
+let matchesProWs=null,matchesProRunning=false,matchesProTradeBusy=false,matchesProTradesDone=0,matchesProMaxTrades=1,matchesProLastCandidateKey='',matchesProCooldownUntil=0,matchesProData=new Map(),matchesProAccount=null,matchesProCandidate=null,matchesProCandidateSince=0;const MATCHES_PRO_OBSERVE_MS=150000;
 const MATCHES_PRO_FEED='wss://deriv-market-relay-production.up.railway.app/market';
 function matchesProSet(best,reason,progress){
  if($('matchesProBest').textContent!==best)$('matchesProBest').textContent=best;
@@ -434,26 +434,17 @@ function analyzeMatchesProSeries(series){
 function matchesProUniverse(){return markets.map(([symbol,name])=>({symbol,name}));}
 function matchesProScan(){
  if(!matchesProRunning||matchesProTradeBusy)return;
- const ranked=[];
- for(const market of matchesProUniverse()){
-  const series=matchesProData.get(market.symbol)||[];
-  const model=analyzeMatchesProSeries(series);
-  if(model?.eligible)ranked.push({...model,...market});
- }
- if(!ranked.length){
-  const ready=matchesProUniverse().filter(m=>(matchesProData.get(m.symbol)||[]).length>=200).length;
-  matchesProSet('WAIT','No market has passed the unseen-sample, stability and sequence checks yet. Weak or inconsistent candidates are skipped.','Scanning '+ready+'/'+matchesProUniverse().length+' markets with at least 200 real ticks · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades);
-  return;
- }
- ranked.sort((a,b)=>b.score-a.score);
- const best=ranked[0],key=best.symbol+':'+best.target;
- matchesProSet(best.name+' · Matches '+best.target,best.holdoutRate.toFixed(1)+'% unseen-sample hit rate · Recent '+best.recentRate.toFixed(1)+'% · Similar last-digit sequence '+(Number.isFinite(best.sequenceRate)?best.sequenceRate.toFixed(1)+'% ('+best.sequenceN+')':'not enough samples')+'. Price-direction context '+(Number.isFinite(best.movementRate)?best.movementRate.toFixed(1)+'% ('+best.movementN+')':'not enough samples')+'. This is a historical filter, not a guaranteed next-digit probability.','Best of '+ranked.length+' qualified markets · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades+' · Selected account '+selectedAccount.toUpperCase());
- if(Date.now()<matchesProCooldownUntil||key===matchesProLastCandidateKey)return;
- matchesProLastCandidateKey=key;
- executeMatchesProCandidate(best).catch(error=>{
-  matchesProTradeBusy=false;
-  matchesProSet('WAIT · ORDER NOT SENT',error.message,'Scanner remains active · no purchase confirmed');
- });
+ const ranked=[];for(const market of matchesProUniverse()){const model=analyzeMatchesProSeries(matchesProData.get(market.symbol)||[]);if(model?.eligible)ranked.push({...model,...market})}
+ if(!ranked.length){const ready=matchesProUniverse().filter(m=>(matchesProData.get(m.symbol)||[]).length>=200).length;matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';matchesProSet('WAIT','No market has passed the unseen-sample, stability and sequence checks yet.','Scanning '+ready+'/'+matchesProUniverse().length+' markets · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades);return}
+ ranked.sort((x,y)=>y.score-x.score);
+ if(!matchesProCandidate){matchesProCandidate=ranked[0];matchesProCandidateSince=Date.now();matchesProLastCandidateKey=matchesProCandidate.symbol+':'+matchesProCandidate.target}
+ const key=matchesProCandidate.symbol+':'+matchesProCandidate.target,locked=ranked.find(x=>x.symbol+':'+x.target===key);
+ if(!locked){matchesProSet('CANDIDATE RESET','Locked market/barrier failed fresh validation. Releasing it and scanning again.','Candidate stability failed');matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';return}
+ const elapsed=Date.now()-matchesProCandidateSince,remaining=Math.max(0,MATCHES_PRO_OBSERVE_MS-elapsed),best=locked;
+ matchesProSet(best.name+' · Matches '+best.target,best.holdoutRate.toFixed(1)+'% holdout · Recent '+best.recentRate.toFixed(1)+'% · Candidate locked '+Math.floor(elapsed/1000)+'s.','OBSERVING '+Math.ceil(remaining/1000)+'s · '+best.name+' / Matches '+best.target+' · Revalidated each tick');
+ if(remaining>0||Date.now()<matchesProCooldownUntil||matchesProCandidate.executing)return;
+ matchesProCandidate.executing=true;matchesProLastCandidateKey=key;
+ executeMatchesProCandidate(best).then(()=>{if(matchesProRunning){matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey=''}}).catch(error=>{matchesProTradeBusy=false;matchesProCandidate=null;matchesProCandidateSince=0;matchesProLastCandidateKey='';matchesProSet('WAIT · ORDER NOT SENT',error.message,'Candidate released · scanner will evaluate again')});
 }
 function matchesProStopFeed(){
  matchesProRunning=false;
@@ -472,7 +463,7 @@ function startMatchesPro(){
  if(!Number.isFinite(stake)||stake<.35){matchesProSet('INVALID STAKE','Enter a Matches Pro stake of at least 0.35 '+(account.currency||'USD')+'.');return}
  if(!Number.isInteger(maxTrades)||maxTrades<1||maxTrades>20){matchesProSet('INVALID TRADE LIMIT','Maximum trades must be a whole number from 1 to 20.');return}
  matchesProAccount={accountId:account.account_id,accountType:selectedAccount,currency:account.currency||'USD'};
- matchesProMaxTrades=maxTrades;matchesProTradesDone=0;matchesProLastCandidateKey='';matchesProCooldownUntil=0;matchesProData=new Map();matchesProRunning=true;
+ matchesProMaxTrades=maxTrades;matchesProTradesDone=0;matchesProLastCandidateKey='';matchesProCooldownUntil=0;matchesProCandidate=null;matchesProCandidateSince=0;matchesProData=new Map();matchesProRunning=true;
  $('matchesProAccount').textContent=selectedAccount.toUpperCase()+' · ACTIVE';
  $('matchesProStart').disabled=true;$('matchesProStop').disabled=false;$('matchesProStart').textContent='SCANNING MARKETS…';
  matchesProSet('CONNECTING…','Connecting to the Deriv live market feed. No order is sent until a market passes validation and the quote clears the payout filter.','Subscribing to all 10 Volatility markets · '+selectedAccount.toUpperCase()+' account');
