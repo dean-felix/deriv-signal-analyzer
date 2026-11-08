@@ -389,7 +389,7 @@ function renderBotTradeHistory(){
 }
 
 function addBotTradeHistory(trade){botTradeHistory.unshift(trade);botTradeHistory=botTradeHistory.slice(0,150);saveBotTradeHistory();renderBotTradeHistory()}
-function resetAllTradeHistory(){if(botRunning||manualBusy||chartBotRunning){alert('Stop active trading first. Open contracts remain in Deriv and cannot be erased from your account.');return}if(!confirm('Clear all saved Manual, Premium Bot and Chart results from this app? This does not cancel or delete trades in Deriv.'))return;manualTradeHistory=[];botTradeHistory=[];chartTradeHistory=[];for(const key of ['derivManualTradeHistory','derivPremiumBotTradeHistory','derivChartTradeHistory']){try{localStorage.removeItem(key)}catch{}}renderManualTradeHistory();renderBotTradeHistory()}
+function resetAllTradeHistory(){if(botRunning||manualBusy||chartBotRunning||matchesProRunning||matchesProTradeBusy){alert('Stop active trading first. Open contracts remain in Deriv and cannot be erased from your account.');return}if(!confirm('Clear all saved Manual, Premium Bot and Chart results from this app? This does not cancel or delete trades in Deriv.'))return;manualTradeHistory=[];botTradeHistory=[];chartTradeHistory=[];for(const key of ['derivManualTradeHistory','derivPremiumBotTradeHistory','derivChartTradeHistory']){try{localStorage.removeItem(key)}catch{}}renderManualTradeHistory();renderBotTradeHistory()}
 function updateBotTradeHistory(contractId,updates){const item=botTradeHistory.find(t=>String(t.contractId)===String(contractId));if(!item)return;Object.assign(item,updates);saveBotTradeHistory();renderBotTradeHistory()}
 renderBotTradeHistory();
 
