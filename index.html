@@ -281,7 +281,7 @@ function showChartTradePopup(title,status,details,kind){
 async function executeChartTrade(contract,duration,source,analysis){
  if(!derivSession)throw new Error('Connect your Deriv account first using Switch → Connect Deriv account.');
  const account=selectedDerivAccount();if(!account)throw new Error('No verified '+selectedAccount+' account is available in this login.');
- const market=$('market').value,stake=Number($('chartBotStake').value);if(!Number.isFinite(stake)||stake<.35)throw new Error('Enter a valid Chart Bot stake of at least 0.35 USD.');
+ const market=$('market').value,stake=Number($('chartBotStake').value);if(!market||!activeSymbols.has(market)||/volatility/i.test(activeSymbols.get(market)?.display_name||''))throw new Error('Select an available non-Volatility Deriv market in Charts first.');if(!Number.isFinite(stake)||stake<.35)throw new Error('Enter a valid Chart Bot stake of at least 0.35 USD.');
  if(!live||symbol!==market||ticks.length<10)throw new Error('Wait for live Deriv ticks on the selected chart market before sending a request.');
  let socket=null,contractId=null,buyPrice=stake,currency=account.currency||'USD';
  try{
@@ -338,7 +338,7 @@ async function runChartManualTrade(contract){
 async function runChartBot(){
  if(chartBotRunning){showChartTradePopup('CHART BOT','ALREADY RUNNING','Stop the current Chart Bot before starting another.','loss');return}
  if(!derivSession){showChartTradePopup('CHART BOT','CONNECT DERIV ACCOUNT','Connect your Deriv account first. No order was sent.','loss');return}
- const chartAccount=selectedDerivAccount();if(!chartAccount){showChartTradePopup('CHART BOT','ACCOUNT NOT FOUND','No '+selectedAccount.toUpperCase()+' account is available. No order was sent.','loss');return}if(selectedAccount==='live'&&!confirm('Chart Bot will automatically place Deriv Rise/Fall contracts on your LIVE account when the multi-timeframe filters pass. Continue?'))return;
+ const chartMarket=$('market').value;if(!chartMarket||!activeSymbols.has(chartMarket)||/volatility/i.test(activeSymbols.get(chartMarket)?.display_name||'')){showChartTradePopup('CHART BOT','CHART MARKET NOT READY','Choose a non-Volatility market from the Charts market list after Deriv markets load. No order was sent.','loss');return}const chartAccount=selectedDerivAccount();if(!chartAccount){showChartTradePopup('CHART BOT','ACCOUNT NOT FOUND','No '+selectedAccount.toUpperCase()+' account is available. No order was sent.','loss');return}if(selectedAccount==='live'&&!confirm('Chart Bot will automatically place Deriv Rise/Fall contracts on your LIVE account when the multi-timeframe filters pass. Continue?'))return;
  chartBotRunning=true;chartBotStopRequested=false;chartBotLastTradedCandle=null;
  $('startBot').disabled=true;$('startBot').textContent='CHART BOT RUNNING';$('stopChartBot').disabled=false;$('chartBotSignal').textContent='ANALYZING CANDLES…';
  try{
