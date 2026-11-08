@@ -1,39 +1,53 @@
 # Deriv Signal Analyzer
 
-Mobile-first Deriv market analyzer. The app uses public Deriv market data and produces a signal for the selected market and contract type. It does not currently place trades or connect to a personal account.
+Mobile-first Deriv market analyzer and trading desk. Public market data is sourced from Deriv; account actions require an authenticated Deriv session through the configured backend.
 
 ## Open the app
 
 Published URL: https://dean-felix.github.io/deriv-signal-analyzer/
 
-On Android, open the URL in Chrome. If Chrome offers **Install app** or **Add to Home screen**, use that to add an app icon.
+On Android, open the URL in Chrome. If Chrome offers Install app or Add to Home screen, use that to add an app icon.
 
-## Current capabilities
+## Market separation
 
-- Public Deriv market connection and market selector.
-- Recent tick history and manual analysis.
-- Tappable contract-type cards.
-- User-selected target digit for Matches and Differs.
-- User-selected barrier digit for Over/Under.
-- Installable app manifest, icon, and service-worker app shell.
-- GitHub Actions validation before publishing: JavaScript syntax, manifest JSON, required analysis functions, service-worker handlers, and duplicate HTML IDs.
+- **Charts / Chart Bot:** Market choices are populated from Deriv's active-symbols response, excluding Volatility indices. The chart market selector is separate from the fixed Volatility market lists used by Manual Trader and Premium Bot.
+- **Manual Trader:** Retains the supported Volatility indices and its own stake and contract controls.
+- **Premium Bot:** Retains its Volatility-only market list and its independent Premium Bot Stake input.
+- **Matches Pro:** Continues to scan its ten configured Volatility indices only.
 
-## Not yet implemented
+## Chart analysis
 
-- Authenticated Demo/Live account sessions and balances.
-- Actual contract proposals, purchase, settlement tracking, or automatic trading.
-- A verified live-browser test of the WebSocket feed on the deployed domain.
+Chart data requests cover 1-minute, 2-minute, 5-minute, 15-minute, 30-minute, 1-hour, 4-hour and 1-day candles. The Chart Bot evaluates a lower/selected entry timeframe against available higher timeframes and uses a weighted technical confluence model that includes:
 
-## Deriv account integration prerequisite
+- EMA 20/50 trend
+- RSI momentum
+- MACD momentum
+- 20-candle support/resistance breakout
+- Bollinger-band expansion
+- Engulfing candles and pin-bar rejection
+- Support/resistance retests
+- Recent market structure (higher highs/lows or lower highs/lows)
 
-The public market-data WebSocket is read-only. Account balances and trading require an authenticated Deriv session. The current OAuth 2.0 flow requires a registered Deriv OAuth application with a client ID and a redirect URI matching the deployed URL exactly:
+The displayed model score is a technical confluence score, not a statistically verified win probability. The entry/stop-loss/take-profit box is a visual ATR-based risk/reward planning tool; its lines are draggable. These visual levels are not transmitted as stop-loss or take-profit instructions to Deriv Options.
 
-`https://dean-felix.github.io/deriv-signal-analyzer/`
+**Execution distinction:** The current Chart Bot execution route buys Deriv Rise/Fall options contracts through the authenticated Deriv Options flow. It is not an MT5 CFD position, does not hold an open Forex position for a chosen multi-hour/day period, and does not attach MT5 stop-loss/take-profit orders. Conventional MT5-style position execution requires a separate supported MT5 integration.
 
-Deriv's current OAuth 2.0 guidance requires authorization-code exchange through a backend. Do not paste passwords, API tokens, or access tokens into this repository or into chat. A secure backend and registered client configuration must be in place before account login or trade execution can be enabled.
+## Premium Bot and Matches Pro
 
-## Deployment and validation
+- Premium Bot uses its own botStake input; Manual Trader continues to use stake.
+- Premium Bot analysis requires 200 usable real ticks for the selected Volatility market.
+- Matches Pro locks a qualified market/barrier candidate, observes it for 150 seconds while revalidating the same candidate, and only then proceeds to its quote/payout checks.
+- Reset clears the app's locally stored trade-result history immediately. It does not cancel or remove transactions held in Deriv.
 
-GitHub Actions publishes the site from `main`. The workflow validates the app files and JavaScript syntax before uploading the site.
+## Safety and verification
 
-Workflow history: https://github.com/dean-felix/deriv-signal-analyzer/actions
+- Live automatic trading requires an explicit confirmation before Chart Bot or Matches Pro starts.
+- Demo and live account display are kept separate.
+- Never put Deriv passwords, API tokens, or access tokens in this repository or in chat.
+- JavaScript syntax, manifest validity, service-worker handlers and duplicate HTML IDs are checked by the GitHub Pages deployment workflow.
+- A successful GitHub Pages workflow does not prove phone-level behaviour, live Deriv data availability, or successful trade execution. Those require separate live checks.
+
+## Deployment
+
+GitHub Actions publishes the site from main. Workflow history:
+https://github.com/dean-felix/deriv-signal-analyzer/actions
