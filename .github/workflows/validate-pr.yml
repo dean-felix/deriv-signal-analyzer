@@ -1,0 +1,38 @@
+name: Validate Deriv Analyzer pull requests
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate app files and JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+          if (scripts.length !== 1) throw new Error(`Expected one inline app script, found ${scripts.length}`);
+          const js = scripts[0][1];
+          new vm.Script(js, { filename: 'index.html:inline-script' });
+          const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+          const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+          if (duplicates.length) throw new Error('Duplicate HTML IDs: ' + [...new Set(duplicates)].join(', '));
+          for (const name of ['premiumBotPrediction','analyzeMatchesProSeries','startMatchesPro','executeMatchesProCandidate','runPremiumBot']) {
+            if (!js.includes('function ' + name)) throw new Error('Missing function: ' + name);
+          }
+          for (const id of ['matchesPro','matchesProStart','matchesProStop','matchesProBest','matchesProReason']) {
+            if (!ids.includes(id)) throw new Error('Missing Matches Pro element: ' + id);
+          }
+          if (!js.includes('proposalRequest.barrier=touchBarrier')) throw new Error('Premium Bot Touch barrier is not sent as a signed relative offset');
+          console.log('Pull request validation passed: JavaScript parses, IDs are unique, Premium Bot and Matches Pro hooks exist.');
+          NODE

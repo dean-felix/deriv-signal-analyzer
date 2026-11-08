@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#080d20"><title>Deriv Trade Desk</title><style>
-:root{color-scheme:dark;--bg:#080d20;--panel:#111a31;--line:#263553;--muted:#91a2bd;--g:#19d5a0;--r:#ff5578;--y:#f4d46a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef4ff;font:14px system-ui}header{position:sticky;top:0;z-index:4;background:#0a1125;border-bottom:1px solid var(--line);padding:12px}.top,.row{display:flex;align-items:center;gap:9px}.top,.between{justify-content:space-between}.brand{font-size:18px;font-weight:900;color:#ff5675}.wallet,.price{color:var(--g);font-weight:900}.status,.note,label{color:var(--muted)}.status,.note{font-size:11px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--r);margin-right:6px}.dot.on{background:var(--g)}main{max-width:760px;margin:auto;padding:12px 12px 90px}.tabs,.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}button,select,input{font:inherit;color:inherit;background:#17223d;border:1px solid var(--line);border-radius:11px;padding:11px}button{cursor:pointer}.tab.active{border-color:var(--g);color:var(--g)}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:13px;margin-bottom:12px}.field{flex:1;min-width:0}label{display:block;font-size:12px;margin:10px 0 5px}select,input{width:100%;background:#080f22}.price{font-size:23px}canvas{width:100%;height:245px;background:#0a1226;border-radius:10px;display:block}.buy,.primary{background:#0da27b;color:white;border:0;font-weight:900}.sell{background:#d83d65;color:white}.bot{background:#e8d47c;color:#172039;font-weight:900}.digits{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;max-width:430px;margin:12px auto}.digit{aspect-ratio:1;border-radius:50%;padding:0;background:#121d36;border:1px solid #354766;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:17px;min-width:0;touch-action:pan-y;user-select:none}.digit small{font-size:9px;color:var(--muted)}.high{border:2px solid var(--g);color:var(--g)}.low{border:2px solid var(--r);color:var(--r)}.digit.selected-barrier{background:#f4d46a;color:#10182a;border:3px solid #fff0ad;box-shadow:0 0 0 3px #f4d46a44}.digit.selected-barrier small{color:#26324a}.bar{display:none}.hidden{display:none!important}.note{line-height:1.45}.signal{font-size:19px;font-weight:900}.float{position:fixed;right:14px;bottom:24px;z-index:7;border:0;border-radius:50%;width:54px;height:54px;background:var(--g);color:#071b1b;font-size:20px}.drawer{position:fixed;right:10px;bottom:90px;width:min(340px,calc(100vw - 20px));max-height:55vh;overflow:auto;z-index:6;background:#101a31;border:1px solid #4c77a8;border-radius:15px;padding:12px}.history{font-size:12px}.account-strip{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 10px;background:#111a31;border:1px solid var(--line);border-radius:12px}.account-kind{font-weight:900;color:var(--g);letter-spacing:.5px}.account-balance{flex:1;color:var(--muted);font-size:13px}.account-balance b{color:var(--g);font-size:17px}.account-strip button{padding:7px 10px;font-size:12px}.account-menu{display:flex;gap:8px;margin-top:7px;padding:8px;background:#111a31;border:1px solid var(--line);border-radius:11px}.account-menu button{flex:1;font-size:12px}.account-menu button.active{border-color:var(--g);color:var(--g)}.toolrow,.pairrow{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.toolrow button,.pairrow button{flex:1;min-width:76px;padding:9px 5px;font-size:12px}.toolrow button.active,.pairrow button.active{border-color:var(--g);color:var(--g)}.barrier-control{padding:10px;border:1px solid #c59c42;border-radius:12px;margin:10px 0}.barrier-control{padding:8px 10px;border:1px solid var(--line);border-radius:12px;margin:9px 0}.barrier-readout{color:var(--y);font-weight:900}.digit.dragging{transform:scale(1.06)}.digit.dragging{transform:scale(1.06)}#digitTicker{height:13px;position:relative;margin-top:2px;overflow:visible}#tickPointer{position:absolute;top:0;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:9px solid var(--y);transform:translateX(-50%)}.trade-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.trade-pair button{font-weight:900;padding:12px 4px}.trade-pair .up{background:#0b8769}.trade-pair .down{background:#a92f50}.trade-pair .chosen{outline:2px solid var(--y)}.chart-level{font-size:11px;color:var(--y)}@media(max-width:390px){.digit{font-size:15px}.digit small{font-size:10px}.actions button{padding:10px 2px;font-size:12px}}@media(max-width:600px){body{font-size:13px}header{padding:7px 9px}.brand{font-size:15px}.top{gap:6px}.top button{padding:7px 9px;font-size:11px}.status{font-size:10px;margin:4px 0}.account-strip{margin-top:6px;padding:6px 8px;gap:7px}.account-kind{font-size:12px}.account-balance{font-size:11px}.account-balance b{font-size:14px}.account-strip button{padding:6px 8px;font-size:11px}main{padding:8px 8px calc(76px + env(safe-area-inset-bottom))}.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0;padding:7px 9px calc(7px + env(safe-area-inset-bottom));background:#080d20f5;border-top:1px solid #344568;backdrop-filter:blur(10px)}.tabs button{padding:10px 4px;border-radius:10px;font-size:12px;font-weight:800}.card{padding:9px;border-radius:12px;margin-bottom:8px}label{font-size:11px;margin:6px 0 4px}button,select,input{padding:9px;border-radius:9px}.row{gap:7px}.price{font-size:19px}canvas{height:155px}.toolrow{gap:4px;margin:6px 0}.toolrow button{min-width:0;padding:7px 3px;font-size:10px}.pairrow{gap:5px;margin:6px 0}.pairrow button{min-width:0;flex:1 1 30%;padding:7px 4px;font-size:10px}.digits{gap:6px;max-width:360px;margin:7px auto}.digit{font-size:15px}.digit small{font-size:9px}.trade-pair{gap:6px}.trade-pair button{padding:9px 3px;font-size:12px}.signal{font-size:16px}.note{font-size:10px;line-height:1.3}.wallet{font-size:11px}.float{bottom:calc(68px + env(safe-area-inset-bottom));width:43px;height:43px}.drawer{bottom:calc(120px + env(safe-area-inset-bottom));max-height:48vh}.actions{gap:5px;margin:7px 0}.actions button{padding:8px 3px;font-size:11px}}@media(max-height:720px) and (max-width:600px){header{padding:5px 8px}.account-strip{margin-top:4px}.card{padding:8px;margin-bottom:7px}.digits{margin:5px auto;gap:5px}.digit{font-size:14px}.note{font-size:9px}.signal{font-size:15px}canvas{height:130px}}
+:root{color-scheme:dark;--bg:#080d20;--panel:#111a31;--line:#263553;--muted:#91a2bd;--g:#19d5a0;--r:#ff5578;--y:#f4d46a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef4ff;font:14px system-ui}header{position:sticky;top:0;z-index:4;background:#0a1125;border-bottom:1px solid var(--line);padding:12px}.top,.row{display:flex;align-items:center;gap:9px}.top,.between{justify-content:space-between}.brand{font-size:18px;font-weight:900;color:#ff5675}.wallet,.price{color:var(--g);font-weight:900}.status,.note,label{color:var(--muted)}.status,.note{font-size:11px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--r);margin-right:6px}.dot.on{background:var(--g)}main{max-width:760px;margin:auto;padding:12px 12px 90px}.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}button,select,input{font:inherit;color:inherit;background:#17223d;border:1px solid var(--line);border-radius:11px;padding:11px}button{cursor:pointer}.tab.active{border-color:var(--g);color:var(--g)}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:13px;margin-bottom:12px}.field{flex:1;min-width:0}label{display:block;font-size:12px;margin:10px 0 5px}select,input{width:100%;background:#080f22}.price{font-size:23px}canvas{width:100%;height:245px;background:#0a1226;border-radius:10px;display:block}.buy,.primary{background:#0da27b;color:white;border:0;font-weight:900}.sell{background:#d83d65;color:white}.bot{background:#e8d47c;color:#172039;font-weight:900}.digits{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;max-width:430px;margin:12px auto}.digit{aspect-ratio:1;border-radius:50%;padding:0;background:#121d36;border:1px solid #354766;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:17px;min-width:0;touch-action:pan-y;user-select:none}.digit small{font-size:9px;color:var(--muted)}.high{border:2px solid var(--g);color:var(--g)}.low{border:2px solid var(--r);color:var(--r)}.digit.selected-barrier{background:#f4d46a;color:#10182a;border:3px solid #fff0ad;box-shadow:0 0 0 3px #f4d46a44}.digit.selected-barrier small{color:#26324a}.bar{display:none}.hidden{display:none!important}.note{line-height:1.45}.signal{font-size:19px;font-weight:900}.float{position:fixed;right:14px;bottom:24px;z-index:7;border:0;border-radius:50%;width:54px;height:54px;background:var(--g);color:#071b1b;font-size:20px}.drawer{position:fixed;right:10px;bottom:90px;width:min(340px,calc(100vw - 20px));max-height:55vh;overflow:auto;z-index:6;background:#101a31;border:1px solid #4c77a8;border-radius:15px;padding:12px}.history{font-size:12px}.account-strip{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 10px;background:#111a31;border:1px solid var(--line);border-radius:12px}.account-kind{font-weight:900;color:var(--g);letter-spacing:.5px}.account-balance{flex:1;color:var(--muted);font-size:13px}.account-balance b{color:var(--g);font-size:17px}.account-strip button{padding:7px 10px;font-size:12px}.account-menu{display:flex;gap:8px;margin-top:7px;padding:8px;background:#111a31;border:1px solid var(--line);border-radius:11px}.account-menu button{flex:1;font-size:12px}.account-menu button.active{border-color:var(--g);color:var(--g)}.toolrow,.pairrow{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.toolrow button,.pairrow button{flex:1;min-width:76px;padding:9px 5px;font-size:12px}.toolrow button.active,.pairrow button.active{border-color:var(--g);color:var(--g)}.barrier-control{padding:10px;border:1px solid #c59c42;border-radius:12px;margin:10px 0}.barrier-control{padding:8px 10px;border:1px solid var(--line);border-radius:12px;margin:9px 0}.barrier-readout{color:var(--y);font-weight:900}.digit.dragging{transform:scale(1.06)}.digit.dragging{transform:scale(1.06)}#digitTicker{height:13px;position:relative;margin-top:2px;overflow:visible}#tickPointer{position:absolute;top:0;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:9px solid var(--y);transform:translateX(-50%)}.trade-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.trade-pair button{font-weight:900;padding:12px 4px}.trade-pair .up{background:#0b8769}.trade-pair .down{background:#a92f50}.trade-pair .chosen{outline:2px solid var(--y)}.chart-level{font-size:11px;color:var(--y)}@media(max-width:390px){.digit{font-size:15px}.digit small{font-size:10px}.actions button{padding:10px 2px;font-size:12px}}@media(max-width:600px){body{font-size:13px}header{padding:7px 9px}.brand{font-size:15px}.top{gap:6px}.top button{padding:7px 9px;font-size:11px}.status{font-size:10px;margin:4px 0}.account-strip{margin-top:6px;padding:6px 8px;gap:7px}.account-kind{font-size:12px}.account-balance{font-size:11px}.account-balance b{font-size:14px}.account-strip button{padding:6px 8px;font-size:11px}main{padding:8px 8px calc(76px + env(safe-area-inset-bottom))}.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0;padding:7px 9px calc(7px + env(safe-area-inset-bottom));background:#080d20f5;border-top:1px solid #344568;backdrop-filter:blur(10px)}.tabs button{padding:10px 4px;border-radius:10px;font-size:12px;font-weight:800}.card{padding:9px;border-radius:12px;margin-bottom:8px}label{font-size:11px;margin:6px 0 4px}button,select,input{padding:9px;border-radius:9px}.row{gap:7px}.price{font-size:19px}canvas{height:155px}.toolrow{gap:4px;margin:6px 0}.toolrow button{min-width:0;padding:7px 3px;font-size:10px}.pairrow{gap:5px;margin:6px 0}.pairrow button{min-width:0;flex:1 1 30%;padding:7px 4px;font-size:10px}.digits{gap:6px;max-width:360px;margin:7px auto}.digit{font-size:15px}.digit small{font-size:9px}.trade-pair{gap:6px}.trade-pair button{padding:9px 3px;font-size:12px}.signal{font-size:16px}.note{font-size:10px;line-height:1.3}.wallet{font-size:11px}.float{bottom:calc(68px + env(safe-area-inset-bottom));width:43px;height:43px}.drawer{bottom:calc(120px + env(safe-area-inset-bottom));max-height:48vh}.actions{gap:5px;margin:7px 0}.actions button{padding:8px 3px;font-size:11px}}@media(max-height:720px) and (max-width:600px){header{padding:5px 8px}.account-strip{margin-top:4px}.card{padding:8px;margin-bottom:7px}.digits{margin:5px auto;gap:5px}.digit{font-size:14px}.note{font-size:9px}.signal{font-size:15px}canvas{height:130px}}
 .trade-toast{position:fixed;left:50%;top:76px;transform:translateX(-50%);z-index:30;width:min(92vw,360px);padding:13px 16px;border:1px solid var(--line);border-radius:13px;background:#111a31;box-shadow:0 12px 34px #0008;text-align:center;font-weight:900;pointer-events:none}.trade-toast.open{border-color:#e8d47c;color:#f4d46a}.trade-toast.profit{border-color:var(--g);color:var(--g)}.trade-toast.loss{border-color:var(--r);color:var(--r)}.history-list{display:grid;gap:8px;margin-top:10px}.history-item{padding:9px;border:1px solid var(--line);border-radius:10px;background:#0b1429}.history-top{display:flex;justify-content:space-between;gap:8px;font-weight:800}.history-meta{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.45}.history-profit{font-weight:900}.history-profit.positive{color:var(--g)}.history-profit.negative{color:var(--r)}.bot-history-summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;color:var(--muted);font-size:11px}.bot-history-summary b{color:#eef4ff}.bot-run-open{border-color:#c9a94e}.bot-run-error{border-color:var(--r)}.stepper{display:flex;align-items:stretch;gap:6px}.stepper button{min-width:38px;font-size:20px;font-weight:900;padding:5px 10px}.stepper input{min-width:0;text-align:center;flex:1}.digit{transition:transform .12s ease,background .12s ease,border-color .12s ease,box-shadow .12s ease;position:relative}.digit.ticker-active{transform:scale(1.06);background:#203250;border:2px solid var(--y);box-shadow:0 0 0 2px #f4d46a44;z-index:2}.digit.entry-marked{transform:scale(1.06);background:#0b8769;color:#effff9;border:2px solid #a6ffe1;box-shadow:0 0 0 3px #19d5a044;z-index:3}.digit.entry-marked small{color:#e0fff4}.step-hint{display:block;margin-top:4px;color:var(--muted);font-size:10px}
 /* Mobile-first chart improvements */
 html,body{min-height:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -20,10 +20,11 @@ main{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
 }
 @media(max-height:720px) and (max-width:600px){#chart{height:300px;min-height:300px}}
 .chart-trade-modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:18px;background:#020817d9}.chart-trade-modal.hidden{display:none}.chart-trade-dialog{width:min(100%,390px);padding:16px;border:1px solid #4c77a8;border-radius:16px;background:#111a31;box-shadow:0 18px 55px #000b}.chart-trade-status{font-size:21px;font-weight:900;margin:18px 0 10px;color:#f4d46a}.chart-trade-status.profit{color:var(--g)}.chart-trade-status.loss{color:var(--r)}#chartBotStake{font-size:16px}#chartTicks{font-weight:900;color:var(--y)}#stopChartBot:disabled{opacity:.45}</style></head><body><header><div class="top"><b class="brand">DERIV TRADE DESK</b><span class="wallet" id="wallet">Live feed</span><button id="deposit" class="primary" type="button">Deposit</button><button id="connect">Feed</button></div><p class="status"><i class="dot" id="dot"></i><span id="status">Connecting to Deriv public feed…</span></p><div class="account-strip"><span class="account-kind" id="accountLabel">DEMO</span><span class="account-balance">Balance: <b id="accountBalance">USD —</b></span><button id="accountMenuBtn" type="button">Switch ▾</button></div><div id="accountMenu" class="account-menu hidden"><button type="button" id="connectAccount">Connect Deriv account</button><button type="button" data-account="demo">Demo account</button><button type="button" data-account="live">Live account</button></div></header><main>
-<nav class="tabs"><button class="tab active" data-tab="charts">Charts</button><button class="tab" data-tab="manual">Manual</button><button class="tab" data-tab="bot">Premium Bot</button></nav>
+<nav class="tabs"><button class="tab active" data-tab="charts">Charts</button><button class="tab" data-tab="manual">Manual</button><button class="tab" data-tab="bot">Premium Bot</button><button class="tab" data-tab="matchesPro">Matches Pro</button></nav>
 <section id="charts"><div class="card"><div class="row between"><b>LIVE DERIV CHART</b><span class="status" id="feed">Waiting</span></div><div class="row"><div class="field"><label>Market</label><select id="market"></select></div><div class="field"><label>Timeframe</label><select id="tf"><option value="60">1 minute</option><option value="120">2 minutes</option><option value="300">5 minutes</option><option value="900">15 minutes</option><option value="1800">30 minutes</option><option value="3600">1 hour</option><option value="14400">4 hours</option><option value="86400">1 day</option></select></div></div><div class="row between" style="margin:12px 0"><span class="status">Latest price</span><strong class="price" id="price">—</strong></div><div class="toolrow"><button id="toolEntry">ENTRY LINE</button><button id="toolSL">STOP LOSS</button><button id="toolTP">TAKE PROFIT</button><button id="toolStart" class="primary">START</button></div><div class="chart-duration-row"><div class="field"><label>Chart Bot duration · auto ticks</label><input id="chartTicks" type="number" min="1" max="5" step="1" value="1" readonly aria-label="Automatically selected chart bot duration"></div><small class="step-hint" id="chartTicksHint">AUTO · duration is selected from the candle trend. Manual Trader and Premium Bot stay separate.</small></div><canvas id="chart" width="900" height="420" aria-label="Live Deriv candlestick chart"></canvas><p class="chart-level" id="chartToolStatus">Chart tools idle. Start to place and drag entry, stop-loss and take-profit levels.</p><div class="field"><label>Chart Bot Stake (USD)</label><input id="chartBotStake" type="number" min="0.35" step="0.01" value="1.00" inputmode="decimal"></div><div class="actions"><button class="buy" id="buy">BUY RISE</button><button class="sell" id="sell">SELL FALL</button><button class="bot" id="startBot">START CHART BOT</button></div><div class="row" style="gap:8px"><button id="stopChartBot" type="button" disabled style="flex:1">STOP CHART BOT</button><strong id="chartBotSignal" class="signal" style="flex:2;text-align:right">WAIT · candle data</strong></div><p class="note" id="chartBotReason">Independent chart bot · analyzes closed candles, selects 1–5 ticks automatically, and trades demo only. Premium Bot and Manual Trader remain separate.</p></div></section>
 <section id="manual" class="hidden"><div class="card"><b>MANUAL TRADER</b><div class="row"><div class="field"><label>Market</label><select id="manualMarket"></select></div><div class="field"><label>Stake (USD)</label><div class="stepper"><button type="button" id="stakeDown" aria-label="Decrease stake">−</button><input id="stake" type="number" min=".35" step=".01" value="1" inputmode="decimal"><button type="button" id="stakeUp" aria-label="Increase stake">+</button></div></div></div><div class="field"><label>Duration · ticks</label><div class="stepper"><button type="button" id="manualTicksDown" aria-label="Decrease ticks">−</button><input id="manualTicks" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"><button type="button" id="manualTicksUp" aria-label="Increase ticks">+</button></div><small class="step-hint" id="manualDurationHint">Use + / − to adjust the contract duration.</small></div><div class="field hidden" id="manualTouchBarrierWrap"><label>Touch / No Touch distance from current price</label><input id="manualTouchBarrier" type="number" min="0.01" step="any" value="1.00" inputmode="decimal" aria-label="Touch barrier distance"><div class="trade-pair" style="margin-top:7px"><button type="button" id="manualTouchPlus" class="chosen">+ ABOVE</button><button type="button" id="manualTouchMinus">− BELOW</button></div><small class="step-hint">Choose the barrier direction here, outside the phone keyboard. The number is the price distance, not the final barrier price.</small></div><label>Compared trade types</label><select id="contract" class="hidden"><option value="DIGITEVEN">Even</option><option value="DIGITODD">Odd</option><option value="DIGITOVER">Over</option><option value="DIGITUNDER">Under</option><option value="DIGITMATCH">Matches</option><option value="DIGITDIFF">Differs</option><option value="CALL">Rise</option><option value="PUT">Fall</option><option value="ONLYUP">Only Up</option><option value="ONLYDOWN">Only Down</option><option value="ONETOUCH">Touch</option><option value="NOTOUCH">No Touch</option><option value="ASIANU">Asian Up</option><option value="ASIAND">Asian Down</option></select><div class="pairrow" id="manualPairs"><button data-pair="DIGITEVEN" class="active">Even / Odd</button><button data-pair="DIGITOVER">Over / Under</button><button data-pair="DIGITMATCH">Matches / Differs</button><button data-pair="CALL">Rise / Fall</button><button data-pair="ONLYUP">Only Up / Only Down</button><button data-pair="TOUCH">Touch / No Touch</button><button data-pair="ASIAN">Asian Up / Asian Down</button></div><p class="note">Last 200 real ticks · tap or slide across a digit (0–9) to set a digit barrier.</p><div class="digits" id="digits"></div><div id="digitTicker"><i id="tickPointer"></i></div><div class="trade-pair" style="margin:12px 0"><button id="manualLeft" class="up chosen">BUY EVEN</button><button id="manualRight" class="down">BUY ODD</button></div><p id="manualSignal" class="signal">Waiting for ticks</p><div class="card" style="margin:10px 0;background:#0b1429"><b>TICK DISTRIBUTION</b><p class="note">Last 200 ticks split into lower and upper digits.</p><div class="row" style="gap:12px;margin-top:10px"><div class="field"><b>LOWER · 0–4</b><strong id="lowerDist" class="signal">—</strong><div class="bar" style="display:block"><i id="lowerBar" style="width:0"></i></div><small id="lowerCount" class="note">0 ticks</small></div><div class="field"><b>UPPER · 5–9</b><strong id="upperDist" class="signal">—</strong><div class="bar" style="display:block"><i id="upperBar" style="width:0"></i></div><small id="upperCount" class="note">0 ticks</small></div></div></div><button class="primary" id="entry" style="width:100%">ANALYZE OVER / UNDER</button><p class="note">Percentages are observed digit frequencies, not guaranteed win probabilities.</p></div></section>
-<section id="bot" class="hidden"><div class="card"><b>PREMIUM BOT</b><div class="row"><div class="field"><label>Market</label><select id="botMarket"></select></div><div class="field"><label>Duration · ticks</label><div class="stepper"><button type="button" id="botTicksDown" aria-label="Decrease bot duration">−</button><input id="botTicks" type="number" min="1" max="100" step="1" value="5" inputmode="numeric" placeholder="Enter tick count"><button type="button" id="botTicksUp" aria-label="Increase bot duration">+</button></div></div></div><div class="field"><label>Premium Bot Stake (USD)</label><div class="stepper"><button type="button" id="botStakeDown" aria-label="Decrease bot stake">−</button><input id="botStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal" placeholder="Enter bot stake"><button type="button" id="botStakeUp" aria-label="Increase bot stake">+</button></div></div><label>Bot trade types (paired)</label><select id="botContract" class="hidden"><option value="DIGITEVEN">Even</option><option value="DIGITODD">Odd</option><option value="DIGITOVER">Over</option><option value="DIGITUNDER">Under</option><option value="DIGITMATCH">Matches</option><option value="DIGITDIFF">Differs</option><option value="RUNHIGH">Only Up</option><option value="RUNLOW">Only Down</option><option value="CALL">Rise</option><option value="PUT">Fall</option><option value="ONETOUCH">Touch</option><option value="NOTOUCH">No Touch</option></select><div class="pairrow" id="botPairs"><button data-pair="DIGITEVEN" class="active">Even / Odd</button><button data-pair="DIGITOVER">Over / Under</button><button data-pair="DIGITMATCH">Matches / Differs</button><button data-pair="ONLYUP">Only Up / Only Down</button><button data-pair="CALL">Rise / Fall</button><button data-pair="TOUCH">Touch / No Touch</button></div><div class="trade-pair"><button id="botLeft" class="up chosen">Even</button><button id="botRight" class="down">Odd</button></div><div class="row"><div class="field" id="botDigitBarrierWrap"><div class="row between"><label>Digit barrier · automatic analysis</label><button type="button" id="botBarrierAuto">Use Auto</button></div><input id="botBarrier" type="number" min="0" max="9" step="1" value="4" inputmode="numeric" aria-label="Premium Bot barrier"><small class="step-hint" id="botBarrierHint">AUTO · selected from the latest 200 real ticks. Edit to use your own barrier.</small></div><div class="field"><label>Runs</label><div class="stepper"><button type="button" id="runsDown" aria-label="Decrease number of runs">−</button><input id="runs" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"><button type="button" id="runsUp" aria-label="Increase number of runs">+</button></div></div></div><div class="field hidden" id="botTouchBarrierWrap"><label>Touch / No Touch distance from current price</label><input id="botTouchBarrier" type="number" min="0.01" step="any" value="1.00" inputmode="decimal" aria-label="Premium Bot Touch distance"><div class="trade-pair" style="margin-top:7px"><button type="button" id="botTouchPlus" class="chosen">+ ABOVE</button><button type="button" id="botTouchMinus">− BELOW</button></div><small class="step-hint">Choose the direction outside the keyboard. The app converts this distance into Deriv's absolute price barrier.</small></div><div class="row between" style="margin:14px 0"><span class="status">Signal</span><strong id="signal" class="signal">WAIT</strong></div><p id="reason" class="note">Waiting for candle data.</p><button class="primary" id="analyze" style="width:100%">ANALYZE MARKET</button><div class="row" style="gap:8px;margin-top:8px"><button id="botToggle" class="primary" style="flex:1">START BOT · DEMO LOCKED</button><button id="botStop" type="button" disabled style="flex:1">STOP BOT</button></div><p class="note">Signals use the latest 200 real ticks. Starting the bot authorizes the configured DEMO runs; each purchase is sent using a fresh Deriv quote and its result appears in Transactions.</p></div></section>
+<section id="bot" class="hidden"><div class="card"><b>PREMIUM BOT</b><div class="row"><div class="field"><label>Market</label><select id="botMarket"></select></div><div class="field"><label>Duration · ticks</label><div class="stepper"><button type="button" id="botTicksDown" aria-label="Decrease bot duration">−</button><input id="botTicks" type="number" min="1" max="100" step="1" value="5" inputmode="numeric" placeholder="Enter tick count"><button type="button" id="botTicksUp" aria-label="Increase bot duration">+</button></div></div></div><div class="field"><label>Premium Bot Stake (USD)</label><div class="stepper"><button type="button" id="botStakeDown" aria-label="Decrease bot stake">−</button><input id="botStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal" placeholder="Enter bot stake"><button type="button" id="botStakeUp" aria-label="Increase bot stake">+</button></div></div><label>Bot trade types (paired)</label><select id="botContract" class="hidden"><option value="DIGITEVEN">Even</option><option value="DIGITODD">Odd</option><option value="DIGITOVER">Over</option><option value="DIGITUNDER">Under</option><option value="DIGITMATCH">Matches</option><option value="DIGITDIFF">Differs</option><option value="RUNHIGH">Only Up</option><option value="RUNLOW">Only Down</option><option value="CALL">Rise</option><option value="PUT">Fall</option><option value="ONETOUCH">Touch</option><option value="NOTOUCH">No Touch</option><option value="ASIANU">Asian Up</option><option value="ASIAND">Asian Down</option></select><div class="pairrow" id="botPairs"><button data-pair="DIGITEVEN" class="active">Even / Odd</button><button data-pair="DIGITOVER">Over / Under</button><button data-pair="DIGITMATCH">Matches / Differs</button><button data-pair="ONLYUP">Only Up / Only Down</button><button data-pair="CALL">Rise / Fall</button><button data-pair="TOUCH">Touch / No Touch</button><button data-pair="ASIAN">Asian Up / Asian Down</button></div><div class="trade-pair"><button id="botLeft" class="up chosen">Even</button><button id="botRight" class="down">Odd</button></div><div class="row"><div class="field" id="botDigitBarrierWrap"><div class="row between"><label>Digit barrier · automatic analysis</label><button type="button" id="botBarrierAuto">Use Auto</button></div><input id="botBarrier" type="number" min="0" max="9" step="1" value="4" inputmode="numeric" aria-label="Premium Bot barrier"><small class="step-hint" id="botBarrierHint">AUTO · selected from the latest 200 real ticks. Edit to use your own barrier.</small></div><div class="field"><label>Runs</label><div class="stepper"><button type="button" id="runsDown" aria-label="Decrease number of runs">−</button><input id="runs" type="number" min="1" max="100" step="1" value="1" inputmode="numeric"><button type="button" id="runsUp" aria-label="Increase number of runs">+</button></div></div></div><div class="field hidden" id="botTouchBarrierWrap"><label>Touch / No Touch distance from current price</label><input id="botTouchBarrier" type="number" min="0.01" step="any" value="1.00" inputmode="decimal" aria-label="Premium Bot Touch distance"><div class="trade-pair" style="margin-top:7px"><button type="button" id="botTouchPlus" class="chosen">+ ABOVE</button><button type="button" id="botTouchMinus">− BELOW</button></div><small class="step-hint">Choose the direction and distance. Premium Bot sends this as a signed relative barrier to Deriv.</small></div><div class="row between" style="margin:14px 0"><span class="status">Signal</span><strong id="signal" class="signal">WAIT</strong></div><p id="reason" class="note">Waiting for candle data.</p><button class="primary" id="analyze" style="width:100%">ANALYZE MARKET</button><div class="row" style="gap:8px;margin-top:8px"><button id="botToggle" class="primary" style="flex:1">START BOT · DEMO LOCKED</button><button id="botStop" type="button" disabled style="flex:1">STOP BOT</button></div><p class="note">Signals use the latest 200 real ticks. Starting the bot authorizes the configured DEMO runs; each purchase is sent using a fresh Deriv quote and its result appears in Transactions.</p></div></section>
+<section id="matchesPro" class="hidden"><div class="card"><div class="row between"><b>MATCHES PRO</b><span class="status" id="matchesProAccount">DEMO · STOPPED</span></div><p class="note">Scans all 10 Volatility markets using real Deriv ticks. It selects a digit on training data, validates it on unseen ticks, checks recent sequences and tick direction, then checks the live payout before any purchase.</p><div class="row between" style="margin:10px 0"><span class="status">Best validated market</span><strong id="matchesProBest" class="signal">WAIT</strong></div><p id="matchesProReason" class="note">Ready to scan real market data. Start with a DEMO account.</p><div class="row"><div class="field"><label>Stake (USD)</label><input id="matchesProStake" type="number" min="0.35" step="0.01" value="1.00" inputmode="decimal"></div><div class="field"><label>Maximum trades</label><input id="matchesProMaxTrades" type="number" min="1" max="20" step="1" value="1" inputmode="numeric"></div></div><div class="row" style="gap:8px;margin-top:10px"><button class="primary" id="matchesProStart" style="flex:1">START MATCHES PRO</button><button id="matchesProStop" disabled style="flex:1">STOP</button></div><p class="note" id="matchesProProgress">No scan running. One open contract at a time; Stop prevents new entries but cannot cancel a contract already bought.</p></div></section>
 </main><div id="chartBotPopup" class="chart-trade-modal hidden" role="dialog" aria-modal="true" aria-labelledby="chartBotPopupTitle"><div class="chart-trade-dialog"><div class="row between"><b id="chartBotPopupTitle">CHART TRADE</b><button id="chartBotPopupClose" type="button">Close</button></div><div id="chartBotPopupStatus" class="chart-trade-status">Waiting for order…</div><div id="chartBotPopupDetails" class="note"></div></div></div><div id="tradeToast" class="trade-toast hidden" role="status" aria-live="polite"></div><button class="float" id="historyToggle" aria-label="Open trade history">▤</button><aside class="drawer hidden" id="drawer"><div class="row between"><b>Manual trade history</b><div class="row"><button id="manualReset" type="button">Reset all</button><button id="hide">Hide</button></div></div><div class="history" id="history">No manual trades yet.</div></aside><aside class="drawer hidden" id="botDrawer"><div class="row between"><b>Trade results · All sections</b><div class="row"><button id="botReset" type="button">Reset all</button><button id="botHide">Hide</button></div></div><div class="history" id="botHistory">No bot transactions yet.</div></aside>
 <script>
 (()=>{'use strict';
@@ -76,23 +77,112 @@ function premiumParityPrediction(){
  return {side:ready?chosen:'WAIT',strength:confidence,reason:'Both next-parity outcomes checked. Current digit is '+(current?'ODD':'EVEN')+' with a '+streak+'-tick streak. Similar streaks: '+same+' stayed / '+flip+' switched; all matching-current transitions: '+allSame+' stayed / '+allFlip+' switched. '+(ready?'Best next digit parity: '+chosen+' ('+confidence.toFixed(1)+'% model score).':'Not enough comparable transitions or clear separation; WAIT.')+' One-tick entry only.'};
 }
 function premiumBotPrediction(type,barrier){
- if(type==='DIGITEVEN'||type==='DIGITODD')return premiumParityPrediction();
- const duration=Math.max(1,Math.round(Number($('botTicks').value)||5)),data=ticks.slice(-200).map(t=>Number(t.quote)).filter(Number.isFinite);
- if(data.length<Math.max(3,duration+1))return {side:'WAIT',strength:0,reason:'Collecting enough real tick history for this contract duration.'};
- if(type==='RUNHIGH'||type==='RUNLOW'){
-  let hits=0,total=0;for(let i=0;i+duration<data.length;i++){let ok=true;for(let j=1;j<=duration;j++){if(type==='RUNHIGH'?data[i+j]<=data[i+j-1]:data[i+j]>=data[i+j-1]){ok=false;break}}total++;if(ok)hits++}
-  const rate=total?hits/total*100:0,up=type==='RUNHIGH',aligned=up?(data.at(-1)>data.at(-2)&&data.at(-2)>data.at(-3)):(data.at(-1)<data.at(-2)&&data.at(-2)<data.at(-3));
-  const ready=aligned&&rate>0,side=ready?(up?'Only Up':'Only Down'):'WAIT';
-  return {side,strength:rate,reason:'Historical '+duration+'-tick all-'+(up?'rising':'falling')+' window rate: '+rate.toFixed(1)+'%. Entry also requires the latest two tick moves to point '+(up?'up':'down')+'.'};
+ const rows=ticks.slice(-200).filter(t=>Number.isFinite(Number(t.quote)));
+ const prices=rows.map(t=>Number(t.quote)),digitsList=rows.map(getDigit),n=prices.length;
+ const duration=Math.max(1,Math.round(Number($('botTicks').value)||1));
+ if(n<200)return {side:'WAIT',strength:0,reason:'Collecting real market history ('+n+'/200 ticks).'};
+ const requested={
+  DIGITEVEN:'Even',DIGITODD:'Odd',DIGITOVER:'Over '+barrier,DIGITUNDER:'Under '+barrier,
+  DIGITMATCH:'Matches '+barrier,DIGITDIFF:'Differs '+barrier,CALL:'Rise',PUT:'Fall',
+  RUNHIGH:'Only Up',RUNLOW:'Only Down',ONETOUCH:'Touch',NOTOUCH:'No Touch',
+  ASIANU:'Asian Up',ASIAND:'Asian Down'
+ }[type];
+ if(!requested)return {side:'WAIT',strength:0,reason:'This Premium Bot contract has no analysis model yet.'};
+ const split=Math.max(1,Math.floor((n-duration-1)*.70));
+ const summarize=(wins,total)=>({rate:total?wins/total*100:0,wins,total});
+ const pairWindows=evaluate=>{
+  const counts={all:{left:0,right:0,total:0},train:{left:0,right:0,total:0},hold:{left:0,right:0,total:0},recent:{left:0,right:0,total:0}};
+  for(let i=0;i+duration<n;i++){
+   const outcome=evaluate(i),sets=['all',i<split?'train':'hold',i>=Math.max(0,n-55-duration)?'recent':null].filter(Boolean);
+   for(const set of sets){const row=counts[set];row.total++;if(outcome===1)row.left++;else if(outcome===-1)row.right++;}
+  }
+  const result={};for(const key of Object.keys(counts)){const x=counts[key];result[key]={left:summarize(x.left,x.total),right:summarize(x.right,x.total)}}
+  return result;
+ };
+ const chosen=(a,b,left,right,minN=25,minGap=2)=>{
+  const best=a.rate>=b.rate?left:right,top=Math.max(a.rate,b.rate),gap=Math.abs(a.rate-b.rate);
+  const ok=a.total>=minN&&b.total>=minN&&gap>=minGap;
+  const selected=requested===left?a:requested===right?b:null;
+  const confirmed=ok&&best===requested;
+  return {side:confirmed?requested:'WAIT',strength:selected?.rate??top,reason:
+   'Both outcomes tested on '+Math.min(a.total,b.total)+' comparable windows. '+left+' '+a.rate.toFixed(1)+'% / '+right+' '+b.rate.toFixed(1)+'%. '+(confirmed?'The selected side leads by '+gap.toFixed(1)+' percentage points.':!ok?'The sample or separation is too weak; WAIT.':'The opposite side has the stronger historical result; WAIT.')};
+ };
+ if(['DIGITEVEN','DIGITODD'].includes(type)){
+  const parity=digitsList.map(d=>d%2),current=parity.at(-1);let streak=1;
+  for(let i=n-2;i>=0&&parity[i]===current;i--)streak++;
+  const bucket=Math.min(streak,4);let same=0,flip=0,baseSame=0,baseFlip=0;
+  for(let i=1;i<n-1;i++){
+   if(parity[i]===current){if(parity[i+1]===current)baseSame++;else baseFlip++;
+    let run=1;for(let j=i-1;j>=0&&parity[j]===current;j--)run++;
+    if(Math.min(run,4)===bucket){if(parity[i+1]===current)same++;else flip++}
+   }
+  }
+  const sample=same+flip,base=baseSame+baseFlip,stay=(same+1)/(sample+2),change=(flip+1)/(sample+2);
+  const priorStay=(baseSame+1)/(base+2),priorChange=(baseFlip+1)/(base+2);
+  const scoreEven=current===0?stay:change,scoreOdd=current===1?stay:change;
+  const even=(.7*scoreEven+.3*(current===0?priorStay:priorChange))*100;
+  const odd=(.7*scoreOdd+.3*(current===1?priorStay:priorChange))*100;
+  const result=chosen({rate:even,total:sample},{rate:odd,total:sample},'Even','Odd',8,8);
+  return {...result,reason:'Both parity outcomes checked after the current '+(current?'ODD':'EVEN')+' streak of '+streak+'. Similar streaks: '+same+' stayed / '+flip+' switched; baseline transitions: '+baseSame+' stayed / '+baseFlip+' switched. '+result.reason};
  }
- if(type==='ONETOUCH'||type==='NOTOUCH'){
-  const offset=Number(barrier);if(!Number.isFinite(offset)||offset===0)return {side:'WAIT',strength:0,reason:'Enter a non-zero signed price offset, such as +1.00 or -1.00.'};
-  let hits=0,total=0;for(let i=0;i+duration<data.length;i++){const start=data[i],window=data.slice(i+1,i+duration+1),hit=offset>0?Math.max(...window)-start>=offset:start-Math.min(...window)>=Math.abs(offset);total++;if(hit)hits++}
-  const touchRate=total?hits/total*100:0,rate=type==='ONETOUCH'?touchRate:100-touchRate,pointsAway=offset>0?data.at(-1)<data.at(-2):data.at(-1)>data.at(-2),aligned=type==='ONETOUCH'?!pointsAway:pointsAway;
-  const ready=rate>0&&aligned,side=ready?((type==='ONETOUCH'?'Touch ':'No Touch ')+(offset>0?'+':'')+offset.toFixed(2)):'WAIT';
-  return {side,strength:rate,reason:'Historical '+duration+'-tick '+(type==='ONETOUCH'?'barrier-hit':'barrier-not-hit')+' rate: '+rate.toFixed(1)+'% for '+(offset>0?'+':'')+offset.toFixed(2)+' price offset. Recent ticks must move '+(type==='ONETOUCH'?'toward':'away from')+' the barrier.'};
+ if(['DIGITMATCH','DIGITDIFF','DIGITOVER','DIGITUNDER'].includes(type)){
+  const b=Number(barrier);if(!Number.isInteger(b)||b<0||b>9)return {side:'WAIT',strength:0,reason:'Choose a valid digit barrier from 0 to 9.'};
+  const selectedDigit=digitsList.at(-1),lastMove=Math.sign(prices.at(-1)-prices.at(-2));
+  const isMatch=type==='DIGITMATCH'||type==='DIGITDIFF',isOver=type==='DIGITOVER'||type==='DIGITUNDER';
+  const win=(d)=>type==='DIGITMATCH'?d===b:type==='DIGITDIFF'?d!==b:type==='DIGITOVER'?d>b:d<b;
+  const trainEnd=150,train=digitsList.slice(0,trainEnd),hold=digitsList.slice(trainEnd);
+  const rateFor=(arr)=>summarize(arr.filter(win).length,arr.length);
+  const trainRate=rateFor(train),holdRate=rateFor(hold),fullRate=rateFor(digitsList);
+  const recentRate=rateFor(digitsList.slice(-50));
+  let contextHit=0,contextN=0,movementHit=0,movementN=0;
+  for(let i=1;i<n-1;i++){
+   if(digitsList[i]===selectedDigit){contextN++;if(win(digitsList[i+1]))contextHit++}
+   const move=Math.sign(prices[i]-prices[i-1]);
+   if(move===lastMove&&move!==0){movementN++;if(win(digitsList[i+1]))movementHit++}
+  }
+  const contextRate=contextN?contextHit/contextN*100:NaN,movementRate=movementN?movementHit/movementN*100:NaN;
+  const baseline=isMatch?10:isOver?((type==='DIGITOVER'?9-b:b)/10*100):type==='DIGITUNDER'?b/10*100:90;
+  const stable=Math.abs(trainRate.rate-holdRate.rate)<=Math.max(12,baseline*.22);
+  const enough=holdRate.total>=40&&trainRate.total>=100;
+  const selectedName=requested;
+  const supportedContext=(contextN<8||contextRate>=baseline-12)&&(movementN<8||movementRate>=baseline-12);
+  const edge=holdRate.rate-baseline;
+  const ready=enough&&stable&&supportedContext&&edge>=1.5&&recentRate.rate>=baseline-3;
+  return {side:ready?selectedName:'WAIT',strength:holdRate.rate,holdoutRate:holdRate.rate,breakdown:{train:trainRate.rate,recent:recentRate.rate,context:contextRate,movement:movementRate,baseline},reason:
+   selectedName+' tested on '+holdRate.total+' unseen holdout ticks: '+holdRate.rate.toFixed(1)+'% (training '+trainRate.rate.toFixed(1)+'%, recent 50 '+recentRate.rate.toFixed(1)+'%). '+(contextN>=8?'After the current last digit '+selectedDigit+': '+contextRate.toFixed(1)+'% from '+contextN+' examples. ':'Sequence context sample is small. ')+(movementN>=8?'After similar price direction: '+movementRate.toFixed(1)+'% from '+movementN+' examples. ':'Tick-direction context sample is small. ')+(ready?'Evidence is reasonably consistent; still compare the live quote payout before entry.':'Validation, stability, context or baseline edge is insufficient; WAIT.')};
  }
- return prediction(type,barrier);
+ if(['CALL','PUT','RUNHIGH','RUNLOW','ONETOUCH','NOTOUCH','ASIANU','ASIAND'].includes(type)){
+  const offset=Number(barrier);
+  if(['ONETOUCH','NOTOUCH'].includes(type)&&(!Number.isFinite(offset)||offset===0))return {side:'WAIT',strength:0,reason:'Enter a non-zero signed Touch distance, such as +1.00 or -1.00.'};
+  const stats=pairWindows(i=>{
+   const start=prices[i],window=prices.slice(i+1,i+duration+1),end=window.at(-1);
+   if(type==='CALL'||type==='PUT')return end>start?1:end<start?-1:0;
+   if(type==='RUNHIGH'||type==='RUNLOW'){
+    const up=window.every((v,j)=>v>prices[i+j]),down=window.every((v,j)=>v<prices[i+j]);return up?1:down?-1:0;
+   }
+   if(type==='ONETOUCH'||type==='NOTOUCH'){
+    const hit=offset>0?Math.max(...window)-start>=Math.abs(offset):start-Math.min(...window)>=Math.abs(offset);return hit?1:-1;
+   }
+   const average=window.reduce((sum,v)=>sum+v,0)/window.length;return average>start?1:average<start?-1:0;
+  });
+  const leftType=['CALL','RUNHIGH','ONETOUCH','ASIANU'].includes(type),selected=leftType?stats.hold.left:stats.hold.right,other=leftType?stats.hold.right:stats.hold.left;
+  const train=leftType?stats.train.left:stats.train.right,recent=leftType?stats.recent.left:stats.recent.right;
+  let confirmation=false,detail='';
+  if(type==='CALL'||type==='PUT'){
+   const move=prices.at(-1)-prices.at(-2);confirmation=type==='CALL'?move>0:move<0;detail='Latest tick must confirm the selected Rise/Fall direction.';
+  }else if(type==='RUNHIGH'||type==='RUNLOW'){
+   const tail=prices.slice(-(duration+1));confirmation=tail.length===duration+1&&tail.slice(1).every((v,i)=>type==='RUNHIGH'?v>tail[i]:v<tail[i]);detail='Every one of the latest '+duration+' movements must be strictly '+(type==='RUNHIGH'?'up':'down')+'.';
+  }else if(type==='ONETOUCH'||type==='NOTOUCH'){
+   const move=prices.at(-1)-prices.at(-2),toward=offset>0?move>0:move<0;confirmation=type==='ONETOUCH'?toward:!toward;detail='Barrier '+(offset>0?'+':'')+offset.toFixed(pipSize)+'; current movement must point '+(type==='ONETOUCH'?'toward':'away from')+' it.';
+  }else{
+   const tail=prices.slice(-(duration+1)),avg=tail.slice(1).reduce((a,v)=>a+v,0)/Math.max(1,tail.length-1);confirmation=type==='ASIANU'?avg>tail[0]:avg<tail[0];detail='Latest '+duration+'-tick average '+(type==='ASIANU'?'must be above':'must be below')+' its starting price.';
+  }
+  const selectedLabel=requested,enough=selected.total>=35&&other.total>=35&&train.total>=80;
+  const edge=selected.rate-other.rate,ready=enough&&edge>=4&&confirmation&&recent.rate>=selected.rate-15;
+  return {side:ready?selectedLabel:'WAIT',strength:selected.rate,holdoutRate:selected.rate,breakdown:{training:train.rate,recent:recent.rate,opposite:other.rate},reason:
+   selectedLabel+' historical holdout rate '+selected.rate.toFixed(1)+'% across '+selected.total+' windows; opposite side '+other.rate.toFixed(1)+'%, training '+train.rate.toFixed(1)+'%, recent '+recent.rate.toFixed(1)+'%. '+detail+' '+(ready?'The selected side leads in comparable windows; check the current Deriv quote.':'Insufficient separation, sample, recent consistency or live confirmation; WAIT.')};
+ }
+ return {side:'WAIT',strength:0,reason:'No validated analysis model is available for this contract.'};
 }
 let manualPair='DIGITEVEN',manualSide=0,manualTouchDirection=1,botPair='DIGITEVEN',botSide=0,botTouchDirection=1,selectedBarrier=null,digitPointer=null,manualEntryDigit=null,chartLevels={started:false,entry:null,sl:null,tp:null,drag:null};
 function pairType(pair,side){return pair==='DIGITEVEN'?(side?'DIGITODD':'DIGITEVEN'):pair==='DIGITOVER'?(side?'DIGITUNDER':'DIGITOVER'):pair==='DIGITMATCH'?(side?'DIGITDIFF':'DIGITMATCH'):pair==='CALL'?(side?'PUT':'CALL'):pair==='ONLYUP'?(side?'RUNLOW':'RUNHIGH'):pair==='TOUCH'?(side?'NOTOUCH':'ONETOUCH'):pair==='ASIAN'?(side?'ASIAND':'ASIANU'):null}
@@ -108,18 +198,18 @@ function autoSelectBotBarrier(){
  if(botPair==='TOUCH'){$('botBarrierHint').textContent='Touch / No Touch uses the signed price-offset field below.';return null}
  if(botBarrierMode==='manual')return Number($('botBarrier').value);
  if(ticks.length<200)return null;
- const counts=digitCounts();let barrier=null,detail='';
+ const trainingTicks=ticks.slice(-200,-50),counts=Array(10).fill(0);trainingTicks.forEach(t=>counts[getDigit(t)]++);const sample=trainingTicks.length;let barrier=null,detail='';
  if(botPair==='DIGITOVER'||botPair==='DIGITUNDER'){
-  const best=bestOverUnder();if(!best)return null;
-  barrier=best.barrier;botSide=best.side==='OVER'?0:1;detail=best.side+' · '+best.strength.toFixed(1)+'% observed frequency';
+  let best=null;for(let b=0;b<=9;b++){const over=counts.slice(b+1).reduce((a,v)=>a+v,0),under=counts.slice(0,b).reduce((a,v)=>a+v,0);for(const x of [{side:'OVER',barrier:b,count:over},{side:'UNDER',barrier:b,count:under}])if(x.count>0&&(!best||x.count>best.count))best=x;}
+  if(!best)return null;barrier=best.barrier;botSide=best.side==='OVER'?0:1;detail=best.side+' · '+(best.count/sample*100).toFixed(1)+'% training frequency';
  }else if(botPair==='DIGITMATCH'||botPair==='DIGITDIFF'){
   const target=botPair==='DIGITMATCH'?Math.max(...counts):Math.min(...counts);
-  barrier=counts.indexOf(target);detail=(botPair==='DIGITMATCH'?'Most frequent matching digit':'Least frequent digit for differs')+' · '+(target/ticks.length*100).toFixed(1)+'% digit frequency';
+  barrier=counts.indexOf(target);detail=(botPair==='DIGITMATCH'?'Most frequent matching digit':'Least frequent digit for differs')+' · '+(target/sample*100).toFixed(1)+'% training frequency';
  }
  if(barrier!==null){$('botBarrier').value=String(barrier);$('botBarrierHint').textContent='AUTO '+barrier+' · '+detail;updatePairs()}else{$('botBarrierHint').textContent='AUTO · no digit barrier required for this trade type.'}
  return barrier;
 }
-function refreshSignals(){updateManualSignal();if(botRunning&&botActiveConfig){if(ticks.length<200){$('signal').textContent='WAIT';$('reason').textContent='Bot paused · collecting '+ticks.length+'/200 real ticks before the next run.';return}const cfg=botActiveConfig,r=premiumBotPrediction(cfg.contract,cfg.barrier);$('signal').textContent=r.side;$('reason').textContent=(r.side==='WAIT'?'Bot paused · ':'Active bot signal · ')+r.reason+' · '+r.strength.toFixed(1)+'% historical rate.';return}if(ticks.length<200){$('signal').textContent='WAIT';$('reason').textContent='Collecting '+ticks.length+'/200 real ticks.';$('botBarrierHint').textContent='Barrier will be selected from the latest 200 real ticks.';return}autoSelectBotBarrier();const t=pairType(botPair,botSide);if(!t){$('signal').textContent='WAIT';$('reason').textContent='Select a supported Premium Bot contract.';return}const barrier=botPair==='TOUCH'?botTouchOffset():$('botBarrier').value,r=premiumBotPrediction(t,barrier);$('signal').textContent=r.side;$('reason').textContent=r.reason+' · '+r.strength.toFixed(1)+'% historical rate.'}
+function refreshSignals(){updateManualSignal();if(botRunning&&botActiveConfig)return;if(ticks.length<200){$('signal').textContent='WAIT';$('reason').textContent='Collecting '+ticks.length+'/200 real ticks.';$('botBarrierHint').textContent='Barrier will be selected from the latest 200 real ticks.';return}autoSelectBotBarrier();const t=pairType(botPair,botSide);if(!t){$('signal').textContent='WAIT';$('reason').textContent='Select a supported Premium Bot contract.';return}const barrier=botPair==='TOUCH'?botTouchOffset():$('botBarrier').value,r=premiumBotPrediction(t,barrier);$('signal').textContent=r.side;$('reason').textContent=r.reason+' · '+r.strength.toFixed(1)+'% historical rate.'}
 function analyze(){if(ticks.length<200){$('signal').textContent='WAIT';$('reason').textContent='Need 200 real ticks. Currently '+ticks.length+'.';return}autoSelectBotBarrier();const t=pairType(botPair,botSide);if(!t){$('signal').textContent='WAIT';$('reason').textContent='Select a supported Premium Bot contract.';return}const barrier=botPair==='TOUCH'?botTouchOffset():$('botBarrier').value,r=premiumBotPrediction(t,barrier);$('signal').textContent=r.side;$('reason').textContent=r.reason+' · '+r.strength.toFixed(1)+'% historical rate.'}
 function bestOverUnder(){if(ticks.length<200)return null;const c=digitCounts(),n=200;let best=null;for(let b=0;b<=9;b++){const overCount=c.slice(b+1).reduce((a,v)=>a+v,0),underCount=c.slice(0,b).reduce((a,v)=>a+v,0);for(const x of [{side:'OVER',barrier:b,count:overCount},{side:'UNDER',barrier:b,count:underCount}]){if(x.count===0)continue;x.strength=x.count/n*100;if(!best||x.count>best.count||(x.count===best.count&&Math.abs(b-4)<Math.abs(best.barrier-4)))best=x;}}return best}
 function updateManualBuyButtons(){const names=namesFor(manualPair);$('manualLeft').textContent='BUY '+names[0].toUpperCase();$('manualRight').textContent='BUY '+names[1].toUpperCase();$('manualLeft').classList.toggle('chosen',manualSide===0);$('manualRight').classList.toggle('chosen',manualSide===1)}
@@ -140,8 +230,8 @@ $('chart').addEventListener('pointermove',e=>{if($('chart').hasPointerCapture(e.
 $('chart').addEventListener('pointerup',e=>{if($('chart').hasPointerCapture(e.pointerId))$('chart').releasePointerCapture(e.pointerId)});
 updatePairs();
 digits();draw();$('manualSignal').textContent='WAIT · connect to Deriv to start live analysis';$('connect').onclick=connect;$('chartTicks').value='1';$('market').onchange=()=>subscribe($('market').value);$('tf').onchange=()=>{if(live){send({forget_all:'candles'});send({ticks_history:symbol,count:120,end:'latest',style:'candles',granularity:+$('tf').value,subscribe:1})}};$('manualMarket').onchange=()=>subscribe($('manualMarket').value);$('botMarket').onchange=()=>subscribe($('botMarket').value);/* Premium Bot now uses its own Tick Count input; chart timeframe remains independent. */$('contract').onchange=updateManualSignal;$('botContract').onchange=refreshSignals;
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(v=>v.classList.toggle('active',v===b));['charts','manual','bot'].forEach(id=>$(id).classList.toggle('hidden',id!==b.dataset.tab));if(b.dataset.tab==='manual'&&$('manualMarket').value!==symbol)subscribe($('manualMarket').value);if(b.dataset.tab==='bot'&&$('botMarket').value!==symbol)subscribe($('botMarket').value)});
-$('analyze').onclick=analyze;$('startBot').onclick=runChartBot;$('historyToggle').onclick=()=>{$('drawer').classList.add('hidden');$('botDrawer').classList.toggle('hidden');renderBotTradeHistory()};$('hide').onclick=()=>$('drawer').classList.add('hidden');$('botHide').onclick=()=>$('botDrawer').classList.add('hidden');const locked=()=>alert('Chart and bot orders are not connected yet. Use Manual Trader for the authenticated Deriv order flow.');let manualBusy=false,manualQuote=null,manualTradeHistory=loadManualTradeHistory(),tradeToastTimer=null;let botStopRequested=false,botRunning=false,botBarrierMode='auto',botActiveConfig=null;let chartBotRunning=false,chartBotStopRequested=false,chartBotLastTradedCandle=null;
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(v=>v.classList.toggle('active',v===b));['charts','manual','bot','matchesPro'].forEach(id=>$(id).classList.toggle('hidden',id!==b.dataset.tab));if(b.dataset.tab==='manual'&&$('manualMarket').value!==symbol)subscribe($('manualMarket').value);if(b.dataset.tab==='bot'&&$('botMarket').value!==symbol)subscribe($('botMarket').value)});
+$('analyze').onclick=analyze;$('startBot').onclick=runChartBot;$('matchesProStart').onclick=startMatchesPro;$('matchesProStop').onclick=matchesProStopFeed;$('historyToggle').onclick=()=>{$('drawer').classList.add('hidden');$('botDrawer').classList.toggle('hidden');renderBotTradeHistory()};$('hide').onclick=()=>$('drawer').classList.add('hidden');$('botHide').onclick=()=>$('botDrawer').classList.add('hidden');const locked=()=>alert('Chart and bot orders are not connected yet. Use Manual Trader for the authenticated Deriv order flow.');let manualBusy=false,manualQuote=null,manualTradeHistory=loadManualTradeHistory(),tradeToastTimer=null;let botStopRequested=false,botRunning=false,botBarrierMode='auto',botActiveConfig=null;let chartBotRunning=false,chartBotStopRequested=false,chartBotLastTradedCandle=null;
 function selectedDerivAccount(){const isDemo=a=>a.is_virtual===1||a.is_virtual===true||String(a.account_type||'').toLowerCase().includes('demo')||String(a.account_type||'').toLowerCase().includes('virtual')||/^VRTC/i.test(a.account_id||'');return derivAccounts.find(a=>selectedAccount==='demo'?isDemo(a):!isDemo(a))}
 function loadManualTradeHistory(){try{const value=JSON.parse(localStorage.getItem('derivManualTradeHistory')||'[]');return Array.isArray(value)?value:[]}catch{return[]}}
 function saveManualTradeHistory(){try{localStorage.setItem('derivManualTradeHistory',JSON.stringify(manualTradeHistory.slice(0,100)))}catch{}}
@@ -303,6 +393,168 @@ function resetAllTradeHistory(){if(botRunning||manualBusy||chartBotRunning){aler
 function updateBotTradeHistory(contractId,updates){const item=botTradeHistory.find(t=>String(t.contractId)===String(contractId));if(!item)return;Object.assign(item,updates);saveBotTradeHistory();renderBotTradeHistory()}
 renderBotTradeHistory();
 
+
+let matchesProWs=null,matchesProRunning=false,matchesProTradeBusy=false,matchesProTradesDone=0,matchesProMaxTrades=1,matchesProLastCandidateKey='',matchesProCooldownUntil=0,matchesProData=new Map(),matchesProAccount=null;
+const MATCHES_PRO_FEED='wss://deriv-market-relay-production.up.railway.app/market';
+function matchesProSet(best,reason,progress){
+ if($('matchesProBest').textContent!==best)$('matchesProBest').textContent=best;
+ if($('matchesProReason').textContent!==reason)$('matchesProReason').textContent=reason;
+ if(progress&&$('matchesProProgress').textContent!==progress)$('matchesProProgress').textContent=progress;
+}
+function matchesProDigit(t){
+ const ps=Number(t.pip_size??2),v=Number(t.quote);
+ if(!Number.isFinite(v))return NaN;
+ return Number(v.toFixed(Number.isFinite(ps)?ps:2).replace('.','').slice(-1));
+}
+function analyzeMatchesProSeries(series){
+ if(!Array.isArray(series)||series.length<200)return null;
+ const rows=series.slice(-200),digits=rows.map(matchesProDigit),prices=rows.map(x=>Number(x.quote));
+ if(digits.some(d=>!Number.isInteger(d)||d<0||d>9)||prices.some(v=>!Number.isFinite(v)))return null;
+ const training=digits.slice(0,140),validation=digits.slice(140),counts=Array(10).fill(0);
+ training.forEach(d=>counts[d]++);
+ const target=counts.indexOf(Math.max(...counts)),trainRate=counts[target]/training.length*100;
+ const hits=validation.filter(d=>d===target).length,holdoutRate=hits/validation.length*100;
+ const recent=digits.slice(-30),recentRate=recent.filter(d=>d===target).length/recent.length*100;
+ const first=training.slice(0,70),second=training.slice(70,140);
+ const firstRate=first.filter(d=>d===target).length/first.length*100,secondRate=second.filter(d=>d===target).length/second.length*100;
+ const previousDigit=digits.at(-1),priorDigit=digits.at(-2),currentMove=Math.sign(prices.at(-1)-prices.at(-2));
+ let sequenceHits=0,sequenceN=0,movementHits=0,movementN=0;
+ for(let i=1;i<digits.length-1;i++){
+  if(digits[i]===previousDigit){sequenceN++;if(digits[i+1]===target)sequenceHits++}
+  const move=Math.sign(prices[i]-prices[i-1]);
+  if(currentMove!==0&&move===currentMove){movementN++;if(digits[i+1]===target)movementHits++}
+ }
+ const sequenceRate=sequenceN?sequenceHits/sequenceN*100:NaN,movementRate=movementN?movementHits/movementN*100:NaN;
+ const stable=Math.abs(firstRate-secondRate)<=15;
+ const contextOk=(sequenceN<8||sequenceRate>=5)&&(movementN<8||movementRate>=5);
+ const eligible=hits>=8&&trainRate>=11&&holdoutRate>=12.5&&recentRate>=10&&stable&&contextOk;
+ const score=.55*holdoutRate+.20*recentRate+.15*trainRate+.05*(Number.isFinite(sequenceRate)?sequenceRate:holdoutRate)+.05*(Number.isFinite(movementRate)?movementRate:holdoutRate);
+ return {target,trainRate,holdoutRate,recentRate,firstRate,secondRate,sequenceRate,sequenceN,movementRate,movementN,hits,score,eligible,lastEpoch:Number(rows.at(-1).epoch)||0};
+}
+function matchesProUniverse(){return markets.map(([symbol,name])=>({symbol,name}));}
+function matchesProScan(){
+ if(!matchesProRunning||matchesProTradeBusy)return;
+ const ranked=[];
+ for(const market of matchesProUniverse()){
+  const series=matchesProData.get(market.symbol)||[];
+  const model=analyzeMatchesProSeries(series);
+  if(model?.eligible)ranked.push({...model,...market});
+ }
+ if(!ranked.length){
+  const ready=matchesProUniverse().filter(m=>(matchesProData.get(m.symbol)||[]).length>=200).length;
+  matchesProSet('WAIT','No market has passed the unseen-sample, stability and sequence checks yet. Weak or inconsistent candidates are skipped.','Scanning '+ready+'/'+matchesProUniverse().length+' markets with at least 200 real ticks · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades);
+  return;
+ }
+ ranked.sort((a,b)=>b.score-a.score);
+ const best=ranked[0],key=best.symbol+':'+best.target;
+ matchesProSet(best.name+' · Matches '+best.target,best.holdoutRate.toFixed(1)+'% unseen-sample hit rate · Recent '+best.recentRate.toFixed(1)+'% · Similar last-digit sequence '+(Number.isFinite(best.sequenceRate)?best.sequenceRate.toFixed(1)+'% ('+best.sequenceN+')':'not enough samples')+'. Price-direction context '+(Number.isFinite(best.movementRate)?best.movementRate.toFixed(1)+'% ('+best.movementN+')':'not enough samples')+'. This is a historical filter, not a guaranteed next-digit probability.','Best of '+ranked.length+' qualified markets · Trades '+matchesProTradesDone+'/'+matchesProMaxTrades+' · Selected account '+selectedAccount.toUpperCase());
+ if(Date.now()<matchesProCooldownUntil||key===matchesProLastCandidateKey)return;
+ matchesProLastCandidateKey=key;
+ executeMatchesProCandidate(best).catch(error=>{
+  matchesProTradeBusy=false;
+  matchesProSet('WAIT · ORDER NOT SENT',error.message,'Scanner remains active · no purchase confirmed');
+ });
+}
+function matchesProStopFeed(){
+ matchesProRunning=false;
+ if(matchesProWs){try{matchesProWs.close()}catch{}matchesProWs=null}
+ $('matchesProStart').disabled=false;$('matchesProStop').disabled=true;
+ $('matchesProStart').textContent='START MATCHES PRO';
+ if(!matchesProTradeBusy)matchesProSet($('matchesProBest').textContent,'Scanner stopped. Any contract already purchased remains with Deriv until settlement.','Stopped · '+matchesProTradesDone+' settled/attempted trade(s)');
+}
+function startMatchesPro(){
+ if(matchesProRunning)return;
+ if(!derivSession){matchesProSet('CONNECT DERIV ACCOUNT','Connect your Deriv account before starting Matches Pro. No order was sent.');return}
+ const account=selectedDerivAccount();
+ if(!account){matchesProSet('ACCOUNT NOT FOUND','No '+selectedAccount.toUpperCase()+' account is available in this Deriv login. No order was sent.');return}
+ if(selectedAccount==='live'&&!confirm('Matches Pro will automatically place real-money Matches trades on your LIVE Deriv account after its filters pass. Continue?'))return;
+ const stake=Number($('matchesProStake').value),maxTrades=Number($('matchesProMaxTrades').value);
+ if(!Number.isFinite(stake)||stake<.35){matchesProSet('INVALID STAKE','Enter a Matches Pro stake of at least 0.35 '+(account.currency||'USD')+'.');return}
+ if(!Number.isInteger(maxTrades)||maxTrades<1||maxTrades>20){matchesProSet('INVALID TRADE LIMIT','Maximum trades must be a whole number from 1 to 20.');return}
+ matchesProAccount={accountId:account.account_id,accountType:selectedAccount,currency:account.currency||'USD'};
+ matchesProMaxTrades=maxTrades;matchesProTradesDone=0;matchesProLastCandidateKey='';matchesProCooldownUntil=0;matchesProData=new Map();matchesProRunning=true;
+ $('matchesProAccount').textContent=selectedAccount.toUpperCase()+' · ACTIVE';
+ $('matchesProStart').disabled=true;$('matchesProStop').disabled=false;$('matchesProStart').textContent='SCANNING MARKETS…';
+ matchesProSet('CONNECTING…','Connecting to the Deriv live market feed. No order is sent until a market passes validation and the quote clears the payout filter.','Subscribing to all 10 Volatility markets · '+selectedAccount.toUpperCase()+' account');
+ try{
+  matchesProWs=new WebSocket(MATCHES_PRO_FEED);
+  matchesProWs.onopen=()=>{
+   if(!matchesProRunning)return;
+   for(const [symbol] of markets){
+    matchesProData.set(symbol,[]);
+    matchesProWs.send(JSON.stringify({ticks_history:symbol,count:200,end:'latest',style:'ticks'}));
+    matchesProWs.send(JSON.stringify({ticks:symbol,subscribe:1}));
+   }
+   $('matchesProStart').textContent='MATCHES PRO RUNNING';
+  };
+  matchesProWs.onmessage=e=>{
+   let m;try{m=JSON.parse(e.data)}catch{return}
+   if(m.error){matchesProSet('FEED WARNING',m.error.message,'Waiting for valid market data');return}
+   const requested=m.echo_req?.ticks_history||m.echo_req?.ticks||m.tick?.symbol;
+   if(m.msg_type==='history'&&m.history?.prices&&requested){
+    const times=m.history.times||[],series=(m.history.prices||[]).map((quote,i)=>({quote:Number(quote),epoch:Number(times[i]||0),pip_size:Number(m.pip_size??2)})).slice(-200);
+    matchesProData.set(requested,series);matchesProScan();return;
+   }
+   if(m.msg_type==='tick'&&m.tick?.symbol){
+    const symbol=m.tick.symbol,series=matchesProData.get(symbol);if(!series)return;
+    series.push({quote:Number(m.tick.quote),epoch:Number(m.tick.epoch),pip_size:Number(m.tick.pip_size??2)});
+    if(series.length>200)series.shift();
+    matchesProScan();
+   }
+  };
+  matchesProWs.onerror=()=>{matchesProSet('FEED ERROR','Matches Pro could not maintain its market-data connection. No new order will be sent.','Feed error · stop and reconnect');matchesProStopFeed()};
+  matchesProWs.onclose=()=>{if(matchesProRunning){matchesProSet('FEED DISCONNECTED','The all-market feed disconnected. Matches Pro stopped to avoid decisions on stale data.','Disconnected · no further entries');matchesProStopFeed()}};
+ }catch(error){matchesProStopFeed();matchesProSet('FEED ERROR',error.message)}
+}
+async function executeMatchesProCandidate(candidate){
+ if(!matchesProRunning||matchesProTradeBusy)return;
+ matchesProTradeBusy=true;
+ let socket=null,contractId=null;
+ try{
+  const account=matchesProAccount,stake=Number($('matchesProStake').value);
+  if(!account||!derivSession)throw new Error('Deriv account session is no longer available. No order was sent.');
+  const otpResponse=await fetch(DERIV_API+'/api/otp',{method:'POST',headers:{'Content-Type':'application/json','X-Deriv-Session':derivSession},body:JSON.stringify({accountId:account.accountId}),cache:'no-store'});
+  const otp=await otpResponse.json();if(!otpResponse.ok)throw new Error(otp.error||'Could not authorize the selected Deriv account.');
+  if(otp.accountType!==account.accountType)throw new Error('Deriv returned a different account type. No order was sent.');
+  socket=new WebSocket(otp.url);
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Secure Deriv connection timed out.')),15000);socket.onopen=()=>{clearTimeout(timer);resolve()};socket.onerror=()=>{clearTimeout(timer);reject(new Error('Secure Deriv WebSocket connection failed.'))};socket.onclose=()=>{clearTimeout(timer);reject(new Error('Deriv closed the authenticated connection.'))}});
+  const specs=await socketMessage(socket,{contracts_for:candidate.symbol},'contracts_for'),available=specs.contracts_for?.available||[];
+  if(available.length&&!available.some(x=>x.contract_type==='DIGITMATCH'))throw new Error('Matches is not offered for '+candidate.name+'. No order was sent.');
+  const quote=await socketMessage(socket,{proposal:1,amount:stake,basis:'stake',contract_type:'DIGITMATCH',currency:account.currency,duration:1,duration_unit:'t',underlying_symbol:candidate.symbol,barrier:String(candidate.target)},'proposal');
+  const proposal=quote.proposal,ask=Number(proposal?.ask_price),payout=Number(proposal?.payout);
+  if(!proposal?.id||!Number.isFinite(ask)||!Number.isFinite(payout)||payout<=0)throw new Error('Deriv did not return a valid Matches quote. No order was sent.');
+  const breakEven=ask/payout*100;
+  if(candidate.holdoutRate<breakEven+3){matchesProSet('WAIT · PAYOUT FILTER',candidate.name+' Matches '+candidate.target+' has '+candidate.holdoutRate.toFixed(1)+'% holdout hits, below the quote break-even '+breakEven.toFixed(1)+'% plus the 3-point safety margin. No purchase sent.','Scanning for a stronger validated market');return}
+  const fresh=analyzeMatchesProSeries(matchesProData.get(candidate.symbol)||[]);
+  if(!fresh?.eligible||fresh.target!==candidate.target||fresh.holdoutRate<breakEven+3)throw new Error('The market evidence changed before purchase. Quote discarded; no order sent.');
+  const bought=await socketMessage(socket,{buy:proposal.id,price:ask},'buy');contractId=bought.buy?.contract_id;
+  if(!contractId)throw new Error('Deriv did not confirm a contract ID. Check Transactions before retrying.');
+  addBotTradeHistory({contractId:String(contractId),batchId:'matches-pro-'+Date.now().toString(36),run:matchesProTradesDone+1,totalRuns:matchesProMaxTrades,accountMode:account.accountType.toUpperCase(),market:candidate.symbol,side:'Matches '+candidate.target,contract:'DIGITMATCH',barrier:candidate.target,stake,currency:account.currency,duration:1,status:'open',profit:null,buyPrice:Number(bought.buy.buy_price??ask),payout,createdAt:new Date().toISOString(),source:'MATCHES PRO'});
+  matchesProSet('TRADE OPEN · '+candidate.name,'Matches '+candidate.target+' · Holdout '+candidate.holdoutRate.toFixed(1)+'% · Quote break-even '+breakEven.toFixed(1)+'% · Contract '+contractId,'Waiting for Deriv settlement · no second entry while this contract is open');
+  const settlement=new Promise(resolve=>{
+   const timer=setTimeout(()=>{cleanup();resolve(null)},120000);
+   const cleanup=()=>{clearTimeout(timer);socket.removeEventListener('message',onContract)};
+   const onContract=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.msg_type!=='proposal_open_contract'||!m.proposal_open_contract)return;const c=m.proposal_open_contract;if(String(c.contract_id)===String(contractId)&&(c.is_sold||c.status==='sold'||c.status==='won'||c.status==='lost')){cleanup();resolve(c)}};
+   socket.addEventListener('message',onContract);
+  });
+  await socketMessage(socket,{proposal_open_contract:1,contract_id:contractId,subscribe:1},'proposal_open_contract');
+  const settled=await settlement;
+  if(!settled){updateBotTradeHistory(contractId,{status:'open',message:'Settlement pending'});matchesProSet('SETTLEMENT PENDING','Deriv has not sent a final result yet. Check Transactions before starting another trade.','Paused · contract '+contractId+' remains open');matchesProStopFeed();return}
+  const profit=Number(settled.profit||0),won=profit>0;
+  updateBotTradeHistory(contractId,{status:won?'won':'lost',profit});
+  matchesProTradesDone++;await loadDerivAccounts();
+  matchesProCooldownUntil=Date.now()+15000;matchesProLastCandidateKey='';
+  matchesProSet((won?'WON':'LOST')+' · '+candidate.name,'Matches '+candidate.target+' · P/L '+(profit>=0?'+':'')+profit.toFixed(2)+' '+account.currency+' · Contract '+contractId,'Settled '+matchesProTradesDone+'/'+matchesProMaxTrades+' · 15-second cooldown before another candidate');
+  if(matchesProTradesDone>=matchesProMaxTrades)matchesProStopFeed();
+ }catch(error){
+  matchesProSet('TRADE NOT SENT',error.message,'No successful purchase confirmed · scanner paused for review');
+  matchesProStopFeed();
+ }finally{
+  matchesProTradeBusy=false;
+  if(socket&&socket.readyState<2){try{socket.close()}catch{}}
+ }
+}
+
 async function runPremiumBot(){
  if(botRunning){$('signal').textContent='BOT ALREADY RUNNING';$('reason').textContent='Stop the current Premium Bot batch before starting another.';return}
  if(manualBusy){$('signal').textContent='MANUAL ORDER IN PROGRESS';$('reason').textContent='Wait for the Manual Trader request to finish before starting Premium Bot.';return}
@@ -312,7 +564,7 @@ async function runPremiumBot(){
  if(!account){$('signal').textContent=selectedAccount.toUpperCase()+' ACCOUNT NOT FOUND';$('reason').textContent='No '+selectedAccount+' account is available in this Deriv login. Connect the correct account first.';return}
  const market=$('botMarket').value;
  if(!live||symbol!==market||ticks.length<200){if(symbol!==market)subscribe(market);$('signal').textContent='WAITING FOR MARKET DATA';$('reason').textContent='Wait until '+market+' has at least 200 live Deriv ticks loaded.';return}
- const runs=Number($('runs').value),stake=Number($('botStake').value);normalizeBotDuration();let duration=Number($('botTicks').value);let contract=pairType(botPair,botSide);const isParity=botPair==='DIGITEVEN',minDuration=(contract==='RUNHIGH'||contract==='RUNLOW')?2:1;if(isParity){duration=1;$('botTicks').value='1';$('reason').textContent='Even/Odd timing strategy uses a one-tick contract because it validates the next parity transition.'}autoSelectBotBarrier();const touchBarrier=botPair==='TOUCH'?botTouchOffset():'',barrier=botPair==='TOUCH'?Number(touchBarrier):Number($('botBarrier').value),batchId='bot-'+Date.now().toString(36);
+ const runs=Number($('runs').value),stake=Number($('botStake').value);normalizeBotDuration();let duration=Number($('botTicks').value);autoSelectBotBarrier();let contract=pairType(botPair,botSide);const isDigitContract=['DIGITEVEN','DIGITODD','DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract),minDuration=(contract==='RUNHIGH'||contract==='RUNLOW')?2:1;if(isDigitContract){duration=1;$('botTicks').value='1';}const touchBarrier=botPair==='TOUCH'?botTouchOffset():'',barrier=botPair==='TOUCH'?Number(touchBarrier):Number($('botBarrier').value),batchId='bot-'+Date.now().toString(36);
  if(!Number.isSafeInteger(duration)||duration<minDuration||duration>100){$('signal').textContent='INVALID DURATION';$('reason').textContent='Enter a whole-number duration from '+minDuration+' to 100 ticks for this trade type.';return}
  if(!Number.isInteger(runs)||runs<1||runs>100){$('signal').textContent='INVALID RUN COUNT';$('reason').textContent='Number of runs must be between 1 and 100.';return}
  if(!Number.isFinite(stake)||stake<0.35){$('signal').textContent='INVALID STAKE';$('reason').textContent='Enter a valid Premium Bot stake (minimum 0.35 '+(account.currency||'USD')+').' ;return}
@@ -331,9 +583,9 @@ async function runPremiumBot(){
     while(!botStopRequested){
      if(!live||symbol!==market||ticks.length<200){$('signal').textContent='WAIT';$('reason').textContent='RUN '+run+'/'+runs+' HELD · waiting for '+market+' live data (200 ticks required).';await new Promise(resolve=>setTimeout(resolve,800));continue}
      const gate=premiumBotPrediction(contract,botActiveConfig.barrier);
-     if(gate.side==='WAIT'){$('signal').textContent='WAIT';$('reason').textContent='RUN '+run+'/'+runs+' HELD · '+gate.reason+' Waiting for the selected '+side+' signal to return.';await new Promise(resolve=>setTimeout(resolve,800));continue}
-     $('signal').textContent=gate.side;
-     $('reason').textContent='Signal confirmed for run '+run+'/'+runs+' · '+gate.strength.toFixed(1)+'% historical rate. Requesting a fresh Deriv quote.';
+     if(gate.side==='WAIT'){$('signal').textContent='WAIT';$('reason').textContent='No reliable edge yet. Both outcomes and current market conditions are being checked. No order has been sent.';await new Promise(resolve=>setTimeout(resolve,800));continue}
+     $('signal').textContent='ENTRY CONDITIONS MET';
+     $('reason').textContent='A setup passed the historical and live filters. Checking a fresh Deriv quote and payout before any purchase.';
      $('signal').textContent='RUN '+run+'/'+runs+' · REQUESTING QUOTE';
      const otpResponse=await fetch(DERIV_API+'/api/otp',{method:'POST',headers:{'Content-Type':'application/json','X-Deriv-Session':derivSession},body:JSON.stringify({accountId:account.account_id}),cache:'no-store'});
      const otp=await otpResponse.json();
@@ -345,12 +597,23 @@ async function runPremiumBot(){
      if(botStopRequested)break;
      const contractInfo=await socketMessage(socket,{contracts_for:market},'contracts_for');const contractSpecs=contractInfo.contracts_for?.available||[];const selectedSpec=contractSpecs.find(item=>item.contract_type===contract);if(contractSpecs.length&&!selectedSpec)throw new Error(contract+' is not available on '+market+'.');const serverMin=parseTickLimit(selectedSpec?.min_contract_duration)||1,serverMax=parseTickLimit(selectedSpec?.max_contract_duration)||100;duration=Math.max(serverMin,Math.min(serverMax,Math.round(duration)));$('botTicks').value=String(duration);
      const proposalRequest={proposal:1,amount:stake,basis:'stake',contract_type:contract,currency:account.currency||'USD',duration,duration_unit:'t',underlying_symbol:market};
-     if(['DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract))proposalRequest.barrier=String(barrier);else if(contract==='ONETOUCH'||contract==='NOTOUCH'){const latest=ticks.at(-1)?.quote,target=latest+Number(touchBarrier);if(!Number.isFinite(latest)||!Number.isFinite(target)||target<=0)throw new Error('Invalid Touch barrier: choose a signed distance that keeps the target price above zero.');proposalRequest.barrier=target.toFixed(pipSize)}
+     if(['DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contract))proposalRequest.barrier=String(barrier);else if(contract==='ONETOUCH'||contract==='NOTOUCH'){const latest=ticks.at(-1)?.quote,target=latest+Number(touchBarrier);if(!Number.isFinite(latest)||!Number.isFinite(target)||target<=0)throw new Error('Invalid Touch barrier: choose a signed distance that keeps the target price above zero.');proposalRequest.barrier=touchBarrier}
      const quoteMessage=await socketMessage(socket,proposalRequest,'proposal');
      proposal=quoteMessage.proposal;
      if(!proposal||!proposal.id)throw new Error('Deriv did not return a valid proposal.');
      ask=Number(proposal.ask_price);payout=Number(proposal.payout);
-     if(!Number.isFinite(ask)||!Number.isFinite(payout))throw new Error('Deriv returned an invalid quote.');
+     if(!Number.isFinite(ask)||!Number.isFinite(payout)||payout<=0)throw new Error('Deriv returned an invalid quote.');
+     if(Number.isFinite(gate.holdoutRate)){
+      const breakEven=ask/payout*100,estimated=gate.holdoutRate,attemptedEpoch=ticks.at(-1)?.epoch;
+      if(estimated<breakEven+3){
+       $('signal').textContent='WAIT · PAYOUT FILTER';
+       $('reason').textContent='The observed holdout rate does not clear the current quote break-even plus the safety margin. No purchase sent; waiting for a new tick before checking another quote.';
+       if(socket&&socket.readyState<2){try{socket.close()}catch{}}
+       socket=null;
+       while(!botStopRequested&&live&&ticks.at(-1)?.epoch===attemptedEpoch)await new Promise(resolve=>setTimeout(resolve,200));
+       continue;
+      }
+     }
      if(botStopRequested)break;
      const finalGate=premiumBotPrediction(contract,botActiveConfig.barrier);
      if(finalGate.side==='WAIT'){
