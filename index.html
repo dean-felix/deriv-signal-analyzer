@@ -198,13 +198,13 @@ function autoSelectBotBarrier(){
  if(botPair==='TOUCH'){$('botBarrierHint').textContent='Touch / No Touch uses the signed price-offset field below.';return null}
  if(botBarrierMode==='manual')return Number($('botBarrier').value);
  if(ticks.length<200)return null;
- const counts=digitCounts();let barrier=null,detail='';
+ const trainingTicks=ticks.slice(-200,-50),counts=Array(10).fill(0);trainingTicks.forEach(t=>counts[getDigit(t)]++);const sample=trainingTicks.length;let barrier=null,detail='';
  if(botPair==='DIGITOVER'||botPair==='DIGITUNDER'){
-  const best=bestOverUnder();if(!best)return null;
-  barrier=best.barrier;botSide=best.side==='OVER'?0:1;detail=best.side+' · '+best.strength.toFixed(1)+'% observed frequency';
+  let best=null;for(let b=0;b<=9;b++){const over=counts.slice(b+1).reduce((a,v)=>a+v,0),under=counts.slice(0,b).reduce((a,v)=>a+v,0);for(const x of [{side:'OVER',barrier:b,count:over},{side:'UNDER',barrier:b,count:under}])if(x.count>0&&(!best||x.count>best.count))best=x;}
+  if(!best)return null;barrier=best.barrier;botSide=best.side==='OVER'?0:1;detail=best.side+' · '+(best.count/sample*100).toFixed(1)+'% training frequency';
  }else if(botPair==='DIGITMATCH'||botPair==='DIGITDIFF'){
   const target=botPair==='DIGITMATCH'?Math.max(...counts):Math.min(...counts);
-  barrier=counts.indexOf(target);detail=(botPair==='DIGITMATCH'?'Most frequent matching digit':'Least frequent digit for differs')+' · '+(target/ticks.length*100).toFixed(1)+'% digit frequency';
+  barrier=counts.indexOf(target);detail=(botPair==='DIGITMATCH'?'Most frequent matching digit':'Least frequent digit for differs')+' · '+(target/sample*100).toFixed(1)+'% training frequency';
  }
  if(barrier!==null){$('botBarrier').value=String(barrier);$('botBarrierHint').textContent='AUTO '+barrier+' · '+detail;updatePairs()}else{$('botBarrierHint').textContent='AUTO · no digit barrier required for this trade type.'}
  return barrier;
