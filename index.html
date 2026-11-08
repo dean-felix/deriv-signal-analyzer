@@ -64,55 +64,6 @@ else {const a=ticks.slice(-20).map(t=>t.quote),delta=a[a.length-1]-a[0],mean=a.r
 if(type.startsWith('DIGIT')&&strength<50){side='WAIT';reason+=' Current historical frequency is below 50%; no entry edge.'}
 if(type==='CALL'||type==='PUT'||type==='ONLYUP'||type==='ONLYDOWN'){const dir=ticks.slice(-6).map(t=>t.quote);const delta=dir.at(-1)-dir[0],up=type==='CALL'||type==='ONLYUP';const aligned=up?delta>0:delta<0;strength=Math.min(99,Math.abs(delta)/(Math.abs(dir[0])||1)*10000);side=aligned&&strength>.01?(type==='ONLYUP'?'Only Up':type==='ONLYDOWN'?'Only Down':up?'Rise':'Fall'):'WAIT';reason='Short-window tick direction; requires confirmation.'}
 return {side,strength,reason,counts:c,top:hi,rare:lo}}
-function parityModel(history){
- const p=history.map(d=>d%2),n=p.length;
- if(n<70)return {ready:false,reason:'Collecting at least 70 real ticks before predicting parity.'};
- const current=p[n-1],lastDigit=history[n-1],previousDigit=history[n-2];
- const counts=p.slice(-200).reduce((a,v)=>(a[v]++,a),[0,0]);
- const recent=p.slice(-30).reduce((a,v)=>(a[v]++,a),[0,0]);
- const dominant=counts[1]===counts[0]?(recent[1]>=recent[0]?1:0):(counts[1]>counts[0]?1:0);
- const dominantRate=counts[dominant]/Math.min(200,n);
- let streak=1;for(let i=n-2;i>=0&&p[i]===current;i--)streak++;
- const runKey=Math.min(streak,4);
- const stats=(predicate)=>{
-  let total=0,even=0,odd=0;
-  for(let i=1;i<n-1;i++)if(predicate(i)){total++;p[i+1]===0?even++:odd++}
-  return {total,prob:[(even+1)/(total+2),(odd+1)/(total+2)]};
- };
- const transition=stats(i=>p[i]===current);
- const context=stats(i=>i>=1&&p[i]===current&&p[i-1]===p[n-2]);
- const run=stats(i=>{
-  if(p[i]!==current)return false;
-  let len=1;for(let j=i-1;j>=0&&p[j]===current;j--)len++;
-  return Math.min(len,4)===runKey;
- });
- const movement=lastDigit-previousDigit;
- const movementClass=Math.sign(movement);
- const moveStats=stats(i=>Math.sign(history[i]-history[i-1])===movementClass&&p[i]===current);
- const recentDominant=recent[1]>=recent[0]?1:0;
- const scores=[0,0];
- for(let side=0;side<=1;side++){
-  scores[side]=.22*(counts[side]/Math.min(200,n))+
-   .25*transition.prob[side]+.22*context.prob[side]+
-   .18*run.prob[side]+.13*moveStats.prob[side];
-  if(side===recentDominant)scores[side]+=.025;
- }
- const total=scores[0]+scores[1],prob=scores.map(v=>v/total);
- const chosen=prob[1]>prob[0]?1:0,confidence=prob[chosen],margin=Math.abs(prob[1]-prob[0]);
- const evidence=Math.min(transition.total,context.total,run.total,moveStats.total);
- const ready=evidence>=8&&confidence>=.56&&margin>=.10;
- return {ready,side:chosen?'Odd':'Even',confidence:confidence*100,margin:margin*100,dominant:dominant?'Odd':'Even',dominantRate:dominantRate*100,current:current?'Odd':'Even',streak,previousDigit,lastDigit,movement,counts,transition,context,run,moveStats,evidence,
-  reason:'Both parities scored. Dominant '+(dominant?'ODD':'EVEN')+' '+(dominantRate*100).toFixed(1)+'%; last digits '+previousDigit+' → '+lastDigit+' ('+(movement>0?'up':movement<0?'down':'unchanged')+'); current '+(current?'ODD':'EVEN')+' streak '+streak+'. Next-parity estimate: '+(chosen?'ODD':'EVEN')+' '+(confidence*100).toFixed(1)+'%, lead '+(margin*100).toFixed(1)+' points.'+(ready?'':' Evidence/confidence is not strong enough; WAIT.')};
-}
-function parityBacktest(history){
- const p=history.map(d=>d%2),results=[];
- for(let i=70;i<p.length-1;i++){
-  const model=parityModel(history.slice(0,i+1));
-  if(model.ready)results.push({hit:(p[i+1]===(model.side==='Odd'?1:0))?1:0});
- }
- const rate=results.length?results.reduce((a,x)=>a+x.hit,0)/results.length:0;
- return {signals:results.length,rate,ready:results.length>=10&&rate>=.53,reason:'Past-only rolling test: '+results.length+' qualified predictions, '+(rate*100).toFixed(1)+'% hit rate.'};
-}
 function premiumParityPrediction(){
  const history=ticks.slice(-200).map(getDigit),n=history.length;
  if(n<100)return {side:'WAIT',strength:0,reason:'Collecting real ticks ('+n+'/100).'};
