@@ -122,11 +122,11 @@ Bun.serve<RelayData>({
       try {
         const request = JSON.parse(raw);
         if (request && (request.subscribe === 1 || request.ticks_history || request.active_symbols)) {
-          const key = request.ticks ? "ticks:" + request.ticks : request.ticks_history ? "history:" + request.ticks_history : request.active_symbols ? "active_symbols" : raw;
+          const key = request.ticks ? "ticks:" + request.ticks : request.ticks_history ? "history:" + request.ticks_history + ":" + String(request.style || "ticks") + ":" + String(request.granularity || "") : request.active_symbols ? "active_symbols:" + String(request.active_symbols) : raw;
           client.data.subscriptions = client.data.subscriptions.filter(item => {
             try {
               const saved = JSON.parse(item);
-              const savedKey = saved.ticks ? "ticks:" + saved.ticks : saved.ticks_history ? "history:" + saved.ticks_history : saved.active_symbols ? "active_symbols" : item;
+              const savedKey = saved.ticks ? "ticks:" + saved.ticks : saved.ticks_history ? "history:" + saved.ticks_history + ":" + String(saved.style || "ticks") + ":" + String(saved.granularity || "") : saved.active_symbols ? "active_symbols:" + String(saved.active_symbols) : item;
               return savedKey !== key;
             } catch { return item !== raw; }
           });
